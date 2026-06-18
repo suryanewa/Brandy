@@ -1,5 +1,4 @@
 import {
-  Accessibility,
   ChevronDown,
   Palette,
   RotateCcw,
@@ -23,7 +22,10 @@ import {
   generateBrandDerivationRemix,
   generatePaletteRemix,
 } from "../../lib/brandTheme.mjs";
-import { LAYOUT_GENERATED_TOKEN_NAMES } from "../../lib/layoutTheme.mjs";
+import {
+  LAYOUT_GENERATED_TOKEN_NAMES,
+  generateLayoutRemix,
+} from "../../lib/layoutTheme.mjs";
 import {
   TYPOGRAPHY_FONT_OPTIONS,
   TYPOGRAPHY_GENERATED_TOKEN_NAMES,
@@ -324,6 +326,8 @@ const PALETTE_KEYS = [
   "readableTextDistancePercent",
   "secondaryTextDistancePercent",
   "darkMode",
+  "mutedMode",
+  "highContrast",
 ] as const satisfies readonly ResetKey[];
 const LAYOUT_KEYS = [
   "sectionSpacing",
@@ -346,11 +350,6 @@ const TYPOGRAPHY_KEYS = [
   "headlineStyle",
   "typographyTightness",
 ] as const satisfies readonly ResetKey[];
-const MODE_KEYS = [
-  "mutedMode",
-  "highContrast",
-] as const satisfies readonly ResetKey[];
-
 const INITIAL_GROUP_STATE: Record<DesignOverlayGroupKey, boolean> = {
   palette: true,
   layout: true,
@@ -377,6 +376,7 @@ const SOURCE_GENERATED_TOKEN_NAMES = new Set<`--${string}`>([
 ]);
 const SOURCE_SYNC_DEBOUNCE_MS = 650;
 const PALETTE_REMIX_SALT_RANGE = 4096;
+const LAYOUT_REMIX_SALT_RANGE = 4096;
 const TYPOGRAPHY_REMIX_SALT_RANGE = 4096;
 const DERIVED_COLOR_CONTROLS = [
   {
@@ -507,6 +507,8 @@ export function DesignOverlay({
   );
   const paletteRemixSaltRef = useRef(getPaletteRemixSalt());
   const paletteRemixStepRef = useRef(0);
+  const layoutRemixSaltRef = useRef(getLayoutRemixSalt());
+  const layoutRemixStepRef = useRef(0);
   const typographyRemixSaltRef = useRef(getTypographyRemixSalt());
   const typographyRemixStepRef = useRef(0);
   const [open, setOpen] = useState(initialOpen);
@@ -738,6 +740,10 @@ export function DesignOverlay({
         typographyRemixSaltRef.current = getTypographyRemixSalt();
         typographyRemixStepRef.current = 0;
       }
+      if ((LAYOUT_KEYS as readonly ResetKey[]).includes(key)) {
+        layoutRemixSaltRef.current = getLayoutRemixSalt();
+        layoutRemixStepRef.current = 0;
+      }
       updateValue(key, nextValue);
     },
     [updateValue],
@@ -806,6 +812,28 @@ export function DesignOverlay({
     }));
   }, [getNextTypographyRemix, markSourceSyncDirty]);
 
+  const remixLayout = useCallback(() => {
+    markSourceSyncDirty();
+    const remixStep = layoutRemixStepRef.current;
+    layoutRemixStepRef.current += 1;
+    const remix = generateLayoutRemix({
+      salt: layoutRemixSaltRef.current,
+      step: remixStep,
+    });
+
+    setValues((current) => ({
+      ...current,
+      gridDensity: remix.gridDensity,
+      heroBalance: remix.heroBalance,
+      heroScale: remix.heroScale,
+      pageGutter: remix.pageGutter,
+      pageWidth: remix.width,
+      radius: remix.radius,
+      sectionSpacing: remix.spacing,
+      textWidth: remix.textWidth,
+    }));
+  }, [markSourceSyncDirty]);
+
   const updateTypographyPresetValue = useCallback(
     <Key extends TypographySelectSettingKey>(
       key: Key,
@@ -841,11 +869,12 @@ export function DesignOverlay({
       event.preventDefault();
       remixPalette();
       remixTypography();
+      remixLayout();
     };
 
     window.addEventListener("keydown", handlePaletteRemixShortcut);
     return () => window.removeEventListener("keydown", handlePaletteRemixShortcut);
-  }, [remixPalette, remixTypography]);
+  }, [remixLayout, remixPalette, remixTypography]);
 
   const resetAll = useCallback(() => {
     markSourceSyncDirty();
@@ -854,6 +883,8 @@ export function DesignOverlay({
     paletteRemixBaseRef.current = null;
     paletteRemixSaltRef.current = getPaletteRemixSalt();
     paletteRemixStepRef.current = 0;
+    layoutRemixSaltRef.current = getLayoutRemixSalt();
+    layoutRemixStepRef.current = 0;
     typographyRemixSaltRef.current = getTypographyRemixSalt();
     typographyRemixStepRef.current = 0;
   }, [markSourceSyncDirty, resolvedDefaults]);
@@ -865,6 +896,10 @@ export function DesignOverlay({
         paletteRemixBaseRef.current = null;
         paletteRemixSaltRef.current = getPaletteRemixSalt();
         paletteRemixStepRef.current = 0;
+      }
+      if (keys === LAYOUT_KEYS) {
+        layoutRemixSaltRef.current = getLayoutRemixSalt();
+        layoutRemixStepRef.current = 0;
       }
       if (keys === TYPOGRAPHY_KEYS) {
         typographyRemixSaltRef.current = getTypographyRemixSalt();
@@ -1132,6 +1167,7 @@ export function DesignOverlay({
                 checked={values.darkMode}
                 onChange={(checked) => updatePreviewValue("darkMode", checked)}
               />
+              {MODE_TOGGLES.map(renderToggleControl)}
               <DerivedColorPreview
                 activeColorId={activeDerivedColor}
                 colors={DERIVED_COLOR_CONTROLS.map((control) => ({
@@ -1152,18 +1188,6 @@ export function DesignOverlay({
                   )
                 }
               />
-            </CollapsibleGroup>
-
-            <CollapsibleGroup
-              id={`${baseId}-layout`}
-              title="Layout"
-              icon={<SlidersHorizontal aria-hidden="true" />}
-              open={expandedGroups.layout}
-              onToggle={() => toggleGroup("layout")}
-              onReset={() => resetDefaultKeys(LAYOUT_KEYS)}
-            >
-              {LAYOUT_SEGMENTED_CONTROLS.map(renderSegmentedControl)}
-              {LAYOUT_SLIDERS.map(renderSliderControl)}
             </CollapsibleGroup>
 
             <CollapsibleGroup
@@ -1189,14 +1213,25 @@ export function DesignOverlay({
             </CollapsibleGroup>
 
             <CollapsibleGroup
-              id={`${baseId}-modes`}
-              title="Mode preview"
-              icon={<Accessibility aria-hidden="true" />}
-              open={expandedGroups.modes}
-              onToggle={() => toggleGroup("modes")}
-              onReset={() => resetDefaultKeys(MODE_KEYS)}
+              id={`${baseId}-layout`}
+              title="Layout"
+              icon={<SlidersHorizontal aria-hidden="true" />}
+              open={expandedGroups.layout}
+              onToggle={() => toggleGroup("layout")}
+              onReset={() => resetDefaultKeys(LAYOUT_KEYS)}
+              actions={
+                <button
+                  type="button"
+                  className="design-overlay__group-action"
+                  aria-label="Remix layout"
+                  onClick={remixLayout}
+                >
+                  <Shuffle aria-hidden="true" />
+                </button>
+              }
             >
-              {MODE_TOGGLES.map(renderToggleControl)}
+              {LAYOUT_SEGMENTED_CONTROLS.map(renderSegmentedControl)}
+              {LAYOUT_SLIDERS.map(renderSliderControl)}
             </CollapsibleGroup>
           </div>
 
@@ -1312,6 +1347,10 @@ function isPaletteRemixShortcut(event: KeyboardEvent): boolean {
 
 function getPaletteRemixSalt(): number {
   return Math.floor(Math.random() * PALETTE_REMIX_SALT_RANGE);
+}
+
+function getLayoutRemixSalt(): number {
+  return Math.floor(Math.random() * LAYOUT_REMIX_SALT_RANGE);
 }
 
 function getTypographyRemixSalt(): number {

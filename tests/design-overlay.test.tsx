@@ -3,6 +3,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -22,6 +23,25 @@ afterEach(() => {
   window.localStorage.clear();
   document.documentElement.removeAttribute("style");
 });
+
+function getCheckedRadioValue<Value extends string>(
+  groupName: string,
+  options: Record<string, Value>,
+): Value {
+  const group = screen.getByRole("radiogroup", { name: groupName });
+
+  for (const [label, value] of Object.entries(options)) {
+    if (
+      within(group)
+        .getByRole("radio", { name: label })
+        .getAttribute("aria-checked") === "true"
+    ) {
+      return value;
+    }
+  }
+
+  throw new Error(`No checked radio found in ${groupName}`);
+}
 
 describe("DesignOverlay", () => {
   it("opens as a side-panel dialog from the floating trigger", () => {
@@ -72,7 +92,11 @@ describe("DesignOverlay", () => {
     expect(screen.getByLabelText("Page gutter value")).toBeTruthy();
     expect(screen.getByLabelText("Hero balance value")).toBeTruthy();
     expect(screen.getByLabelText("Text width value")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remix layout" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Motion" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mode preview" })).toBeNull();
+    expect(screen.getByRole("switch", { name: "Muted mode" })).toBeTruthy();
+    expect(screen.getByRole("switch", { name: "High contrast" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("radio", { name: "Wide" }));
     expect(document.documentElement.style.getPropertyValue("--container-lg")).toBe(
@@ -103,6 +127,21 @@ describe("DesignOverlay", () => {
     expect(
       screen.getByRole("button", { name: "Reset design" }).hasAttribute("disabled"),
     ).toBe(false);
+  });
+
+  it("orders typography above layout in the settings panel", () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const panelText =
+      screen.getByRole("dialog", { name: "Design Settings" }).textContent ?? "";
+
+    expect(panelText.indexOf("Palette")).toBeLessThan(
+      panelText.indexOf("Typography"),
+    );
+    expect(panelText.indexOf("Typography")).toBeLessThan(
+      panelText.indexOf("Layout"),
+    );
   });
 
   it("only adjusts slider values by wheel over the numeric value", () => {
@@ -190,6 +229,8 @@ describe("DesignOverlay", () => {
     expect(screen.getByLabelText("Accent hex color")).toBeTruthy();
     expect(screen.getByLabelText("Highlight hex color")).toBeTruthy();
     expect(screen.getByRole("switch", { name: "Dark mode" })).toBeTruthy();
+    expect(screen.getByRole("switch", { name: "Muted mode" })).toBeTruthy();
+    expect(screen.getByRole("switch", { name: "High contrast" })).toBeTruthy();
     expect(screen.queryByLabelText("Primary presets")).toBeNull();
     expect(screen.queryByLabelText("Secondary presets")).toBeNull();
     expect(screen.queryByLabelText("Accent presets")).toBeNull();
@@ -433,7 +474,7 @@ describe("DesignOverlay", () => {
     expect(payload.values["--gradient-hero-accent"]).toBeUndefined();
   });
 
-  it("remixes palette and typography with the Space shortcut", () => {
+  it("remixes palette, typography, and layout with the Space shortcut", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     render(<DesignOverlay />);
 
@@ -451,6 +492,9 @@ describe("DesignOverlay", () => {
     expect(document.documentElement.style.getPropertyValue("--font-size-display")).toBe(
       "5.986rem",
     );
+    expect(
+      document.documentElement.style.getPropertyValue("--section-padding-y-md"),
+    ).not.toBe("");
   });
 
   it("does not remix with Tab because Tab remains focus navigation", () => {
@@ -464,6 +508,9 @@ describe("DesignOverlay", () => {
     expect(document.documentElement.style.getPropertyValue("--font-size-display")).toBe(
       "",
     );
+    expect(
+      document.documentElement.style.getPropertyValue("--section-padding-y-md"),
+    ).toBe("");
   });
 
   it("keeps sequential remixes anchored to the starting seed palette", () => {
@@ -697,6 +744,110 @@ describe("DesignOverlay", () => {
     });
     expect(payload.values["--font-family-heading"]).toBeUndefined();
     expect(payload.values["--font-size-display"]).toBeUndefined();
+  });
+
+  it("remixes layout controls and syncs the source layout seeds", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, changedCount: 1 }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Remix layout" }));
+
+    const pageWidth = getCheckedRadioValue("Page width", {
+      Full: "full",
+      Narrow: "narrow",
+      Standard: "standard",
+      Wide: "wide",
+    });
+    const heroScale = getCheckedRadioValue("Hero", {
+      Balanced: "balanced",
+      Compact: "compact",
+      Immersive: "immersive",
+    });
+    const gridDensity = getCheckedRadioValue("Grid density", {
+      Balanced: "balanced",
+      Dense: "dense",
+      Sparse: "sparse",
+    });
+    const spacing = Number(
+      (screen.getByLabelText("Spacing value") as HTMLInputElement).value,
+    );
+    const radius = Number(
+      (screen.getByLabelText("Corners value") as HTMLInputElement).value,
+    );
+    const pageGutter = Number(
+      (screen.getByLabelText("Page gutter value") as HTMLInputElement).value,
+    );
+    const heroBalance = Number(
+      (screen.getByLabelText("Hero balance value") as HTMLInputElement).value,
+    );
+    const textWidth = Number(
+      (screen.getByLabelText("Text width value") as HTMLInputElement).value,
+    );
+
+    expect({
+      gridDensity,
+      heroBalance,
+      heroScale,
+      pageGutter,
+      radius,
+      spacing,
+      textWidth,
+      width: pageWidth,
+    }).not.toEqual({
+      gridDensity: DEFAULT_DESIGN_OVERLAY_VALUES.gridDensity,
+      heroBalance: DEFAULT_DESIGN_OVERLAY_VALUES.heroBalance,
+      heroScale: DEFAULT_DESIGN_OVERLAY_VALUES.heroScale,
+      pageGutter: DEFAULT_DESIGN_OVERLAY_VALUES.pageGutter,
+      radius: DEFAULT_DESIGN_OVERLAY_VALUES.radius,
+      spacing: DEFAULT_DESIGN_OVERLAY_VALUES.sectionSpacing,
+      textWidth: DEFAULT_DESIGN_OVERLAY_VALUES.textWidth,
+      width: DEFAULT_DESIGN_OVERLAY_VALUES.pageWidth,
+    });
+    expect(
+      document.documentElement.style.getPropertyValue("--section-padding-y-md"),
+    ).not.toBe("");
+    expect(document.documentElement.style.getPropertyValue("--container-lg")).not.toBe(
+      "",
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--hero-grid-text-fr"),
+    ).not.toBe("");
+
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+    vi.useRealTimers();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
+    const payload = JSON.parse(String(requestInit.body)) as {
+      layout: Record<string, string | number>;
+      values: Record<string, string>;
+    };
+
+    expect(payload.layout).toEqual({
+      gridDensity,
+      heroBalance,
+      heroScale,
+      pageGutter,
+      radius,
+      spacing,
+      textWidth,
+      width: pageWidth,
+    });
+    expect(payload.values["--section-padding-y-md"]).toBeUndefined();
+    expect(payload.values["--container-lg"]).toBeUndefined();
+    expect(payload.values["--hero-grid-text-fr"]).toBeUndefined();
   });
 
   it("cycles concrete font pairings when type style or pairing selections repeat", () => {

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LAYOUT_SEEDS,
+  GRID_DENSITY_OPTIONS,
+  HERO_SCALE_OPTIONS,
   LAYOUT_GENERATED_TOKEN_NAMES,
+  LAYOUT_WIDTH_OPTIONS,
+  generateLayoutRemix,
   generateLayoutThemeTokens,
   sanitizeLayoutSeeds,
 } from "../src/lib/layoutTheme.mjs";
@@ -70,5 +74,42 @@ describe("layout theme generator", () => {
       spacing: 130,
       textWidth: 28,
     });
+  });
+
+  it("generates deterministic sanitized layout remixes", () => {
+    const firstRemix = generateLayoutRemix({ salt: 0, step: 0 });
+    const repeatedRemix = generateLayoutRemix({ salt: 0, step: 0 });
+    const nextRemix = generateLayoutRemix({ salt: 0, step: 1 });
+
+    expect(firstRemix).toEqual(repeatedRemix);
+    expect(firstRemix).toEqual(sanitizeLayoutSeeds(firstRemix));
+    expect(firstRemix).not.toEqual(DEFAULT_LAYOUT_SEEDS);
+    expect(nextRemix).not.toEqual(firstRemix);
+
+    const tokens = generateLayoutThemeTokens(firstRemix);
+    expect(tokens["--section-padding-y-md"]).not.toBe("");
+    expect(tokens["--container-lg"]).not.toBe("");
+    expect(tokens["--hero-grid-text-fr"]).not.toBe("");
+  });
+
+  it("covers the layout option space across remix steps", () => {
+    const remixes = Array.from({ length: 16 }, (_, step) =>
+      generateLayoutRemix({ salt: 0, step }),
+    );
+
+    expect(new Set(remixes.map((remix) => remix.width))).toEqual(
+      new Set(LAYOUT_WIDTH_OPTIONS),
+    );
+    expect(new Set(remixes.map((remix) => remix.heroScale))).toEqual(
+      new Set(HERO_SCALE_OPTIONS),
+    );
+    expect(new Set(remixes.map((remix) => remix.gridDensity))).toEqual(
+      new Set(GRID_DENSITY_OPTIONS),
+    );
+    expect(new Set(remixes.map((remix) => remix.spacing)).size).toBeGreaterThan(4);
+
+    for (const remix of remixes) {
+      expect(remix).toEqual(sanitizeLayoutSeeds(remix));
+    }
   });
 });

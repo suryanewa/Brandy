@@ -50,6 +50,25 @@ export const LAYOUT_GENERATED_TOKEN_NAMES = [
   "--radius-lg",
 ];
 
+const LAYOUT_REMIX_PRESETS = [
+  layoutPreset(58, 2, "narrow", 55, "compact", 43, 32, "dense"),
+  layoutPreset(112, 12, "wide", 95, "immersive", 62, 44, "sparse"),
+  layoutPreset(86, 0, "standard", 82, "balanced", 38, 52, "balanced"),
+  layoutPreset(98, 8, "full", 110, "immersive", 60, 46, "balanced"),
+  layoutPreset(64, 6, "standard", 62, "compact", 50, 36, "dense"),
+  layoutPreset(124, 18, "wide", 120, "immersive", 55, 40, "sparse"),
+  layoutPreset(74, 3, "narrow", 70, "balanced", 46, 34, "balanced"),
+  layoutPreset(90, 14, "full", 88, "balanced", 35, 50, "dense"),
+  layoutPreset(105, 4, "standard", 100, "immersive", 65, 42, "sparse"),
+  layoutPreset(70, 20, "wide", 68, "compact", 48, 30, "dense"),
+  layoutPreset(118, 0, "full", 125, "immersive", 40, 52, "balanced"),
+  layoutPreset(82, 10, "standard", 75, "balanced", 58, 38, "balanced"),
+  layoutPreset(52, 1, "narrow", 50, "compact", 35, 28, "dense"),
+  layoutPreset(130, 24, "full", 130, "immersive", 65, 52, "sparse"),
+  layoutPreset(96, 16, "wide", 90, "balanced", 52, 48, "balanced"),
+  layoutPreset(68, 8, "standard", 58, "compact", 57, 36, "dense"),
+];
+
 const WIDTH_BASES = {
   narrow: 960,
   standard: 1120,
@@ -127,6 +146,23 @@ export function sanitizeLayoutSeeds(seeds = {}) {
   };
 }
 
+export function generateLayoutRemix(options = {}) {
+  const step = Number.isFinite(options.step) ? Math.max(0, Math.floor(options.step)) : 0;
+  const salt = Number.isFinite(options.salt) ? Math.max(0, Math.floor(options.salt)) : 0;
+  const remixStep = step + salt;
+  const preset = LAYOUT_REMIX_PRESETS[remixStep % LAYOUT_REMIX_PRESETS.length];
+  const cycle = Math.floor(remixStep / LAYOUT_REMIX_PRESETS.length);
+
+  return sanitizeLayoutSeeds({
+    ...preset,
+    heroBalance: preset.heroBalance + getLayoutJitter(remixStep, cycle, 1, 4),
+    pageGutter: preset.pageGutter + getLayoutJitter(remixStep, cycle, 2, 7),
+    radius: preset.radius + getLayoutJitter(remixStep, cycle, 3, 3),
+    spacing: preset.spacing + getLayoutJitter(remixStep, cycle, 4, 8),
+    textWidth: preset.textWidth + getLayoutJitter(remixStep, cycle, 5, 4),
+  });
+}
+
 export function generateLayoutThemeTokens(seeds = {}) {
   const layout = sanitizeLayoutSeeds(seeds);
   const spacingScale = layout.spacing / 100;
@@ -186,6 +222,38 @@ function getFooterColumns(gridDensity) {
   if (gridDensity === "sparse") return "1fr";
   if (gridDensity === "dense") return "1fr 1fr auto";
   return "1.2fr 1fr auto";
+}
+
+function layoutPreset(
+  spacing,
+  radius,
+  width,
+  pageGutter,
+  heroScale,
+  heroBalance,
+  textWidth,
+  gridDensity,
+) {
+  return {
+    gridDensity,
+    heroBalance,
+    heroScale,
+    pageGutter,
+    radius,
+    spacing,
+    textWidth,
+    width,
+  };
+}
+
+function getLayoutJitter(step, cycle, channel, spread) {
+  if (cycle === 0) return 0;
+  return Math.round((getDeterministicRatio(step, channel) - 0.5) * 2 * spread);
+}
+
+function getDeterministicRatio(step, channel) {
+  const value = Math.sin((step + 1) * 12.9898 + channel * 78.233) * 43758.5453;
+  return value - Math.floor(value);
 }
 
 function sanitizeEnum(value, options, fallback) {
