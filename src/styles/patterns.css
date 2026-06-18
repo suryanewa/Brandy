@@ -21,6 +21,7 @@
   border: var(--stroke-thin) solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-raised);
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -77,6 +78,7 @@
   display: grid;
   grid-template-columns: var(--demo-sidebar-width) minmax(0, 1fr);
   min-height: var(--demo-frame-min-height);
+  min-width: 0;
 }
 
 .demo-frame__sidebar {
@@ -131,7 +133,8 @@
   gap: var(--space-5);
   grid-template-columns:
     minmax(0, var(--demo-canvas-left-fr))
-    minmax(var(--demo-canvas-min-column), var(--demo-canvas-right-fr));
+    minmax(min(100%, var(--demo-canvas-min-column)), var(--demo-canvas-right-fr));
+  min-width: 0;
   padding: var(--space-5);
 }
 
@@ -141,6 +144,7 @@
   border: var(--stroke-thin) solid var(--color-border);
   border-radius: var(--radius-lg);
   min-width: 0;
+  overflow-wrap: break-word;
   padding: var(--space-5);
 }
 
@@ -173,6 +177,7 @@
 .demo-preview__hero strong {
   font-size: var(--font-size-h3);
   line-height: 1.1;
+  overflow-wrap: break-word;
 }
 
 .demo-preview__hero p {
@@ -187,7 +192,14 @@
 
 .demo-module {
   justify-content: space-between;
+  min-width: 0;
   width: 100%;
+}
+
+.demo-module span,
+.demo-layer span,
+.token-row span {
+  min-width: 0;
 }
 
 .demo-inspector {
@@ -230,6 +242,7 @@
   display: grid;
   gap: var(--space-2);
   grid-template-columns: auto 1fr auto;
+  min-width: 0;
 }
 
 .token-row strong {

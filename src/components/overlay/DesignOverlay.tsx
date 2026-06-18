@@ -174,7 +174,7 @@ const LAYOUT_SLIDERS: readonly SliderControlConfig[] = [
   {
     key: "textWidth",
     label: "Text width",
-    min: 28,
+    min: 22,
     max: 52,
     startLabel: "Focused",
     endLabel: "Expanded",

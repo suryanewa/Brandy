@@ -20,6 +20,7 @@ describe("layout theme generator", () => {
   it("maps default layout seeds to Brandy layout tokens", () => {
     const tokens = generateLayoutThemeTokens(DEFAULT_LAYOUT_SEEDS);
 
+    expect(tokens["--section-padding-x"]).toBe("clamp(1.25rem, 2.8vw, 2.1rem)");
     expect(tokens["--section-padding-y-md"]).toBe("3.5rem");
     expect(tokens["--container-lg"]).toBe("1120px");
     expect(tokens["--content-readable-max"]).toBe("38rem");
@@ -40,9 +41,9 @@ describe("layout theme generator", () => {
       width: "narrow",
     });
 
-    expect(tokens["--section-padding-x"]).toBe("clamp(1rem, 2.4vw, 1.8rem)");
+    expect(tokens["--section-padding-x"]).toBe("clamp(1.25rem, 2.4vw, 1.8rem)");
     expect(tokens["--section-padding-y-md"]).toBe("3rem");
-    expect(tokens["--container-lg"]).toBe("960px");
+    expect(tokens["--container-lg"]).toBe("820px");
     expect(tokens["--brandy-grid-default-columns"]).toBe(
       "repeat(4, minmax(0, 1fr))",
     );
@@ -72,7 +73,7 @@ describe("layout theme generator", () => {
       pageGutter: 50,
       radius: 0,
       spacing: 130,
-      textWidth: 28,
+      textWidth: 22,
     });
   });
 
@@ -90,6 +91,23 @@ describe("layout theme generator", () => {
     expect(tokens["--section-padding-y-md"]).not.toBe("");
     expect(tokens["--container-lg"]).not.toBe("");
     expect(tokens["--hero-grid-text-fr"]).not.toBe("");
+  });
+
+  it("keeps remix seeds inside edge-safe layout guardrails", () => {
+    for (let step = 0; step < 96; step += 1) {
+      const remix = generateLayoutRemix({ salt: 0, step });
+      const tokens = generateLayoutThemeTokens(remix);
+
+      expect(remix.heroBalance).toBeGreaterThanOrEqual(40);
+      expect(remix.heroBalance).toBeLessThanOrEqual(60);
+      expect(remix.pageGutter).toBeGreaterThanOrEqual(64);
+      expect(remix.spacing).toBeGreaterThanOrEqual(60);
+      expect(remix.textWidth).toBeGreaterThanOrEqual(24);
+      expect(remix.textWidth).toBeLessThanOrEqual(48);
+      expect(tokens["--section-padding-x"]).toMatch(/^clamp\(1\.25rem,/);
+      expect(tokens["--hero-grid-text-fr"]).not.toBe("0.7fr");
+      expect(tokens["--hero-grid-visual-fr"]).not.toBe("1.3fr");
+    }
   });
 
   it("covers the layout option space across remix steps", () => {

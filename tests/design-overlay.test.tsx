@@ -1045,6 +1045,7 @@ describe("design overlay model", () => {
     expect(variables["--green-100"]).toBe(variables["--color-accent-soft"]);
     expect(variables["--button-primary-text"]).toBe("#ffffff");
     expect(variables["--chart-4"]).toBe("#fde68a");
+    expect(variables["--section-padding-x"]).toBe("clamp(1.25rem, 2.8vw, 2.1rem)");
     expect(variables["--section-padding-y-md"]).toBe("3.5rem");
     expect(variables["--container-lg"]).toBe("1120px");
     expect(variables["--hero-grid-visual-fr"]).toBe("1.14fr");

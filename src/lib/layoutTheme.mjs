@@ -51,26 +51,26 @@ export const LAYOUT_GENERATED_TOKEN_NAMES = [
 ];
 
 const LAYOUT_REMIX_PRESETS = [
-  layoutPreset(58, 2, "narrow", 55, "compact", 43, 32, "dense"),
-  layoutPreset(112, 12, "wide", 95, "immersive", 62, 44, "sparse"),
-  layoutPreset(86, 0, "standard", 82, "balanced", 38, 52, "balanced"),
-  layoutPreset(98, 8, "full", 110, "immersive", 60, 46, "balanced"),
-  layoutPreset(64, 6, "standard", 62, "compact", 50, 36, "dense"),
+  layoutPreset(62, 2, "narrow", 66, "compact", 43, 28, "dense"),
+  layoutPreset(112, 12, "wide", 95, "immersive", 60, 44, "sparse"),
+  layoutPreset(86, 0, "standard", 82, "balanced", 40, 46, "balanced"),
+  layoutPreset(98, 8, "full", 110, "immersive", 58, 46, "balanced"),
+  layoutPreset(64, 6, "standard", 66, "compact", 50, 30, "dense"),
   layoutPreset(124, 18, "wide", 120, "immersive", 55, 40, "sparse"),
-  layoutPreset(74, 3, "narrow", 70, "balanced", 46, 34, "balanced"),
-  layoutPreset(90, 14, "full", 88, "balanced", 35, 50, "dense"),
-  layoutPreset(105, 4, "standard", 100, "immersive", 65, 42, "sparse"),
-  layoutPreset(70, 20, "wide", 68, "compact", 48, 30, "dense"),
-  layoutPreset(118, 0, "full", 125, "immersive", 40, 52, "balanced"),
+  layoutPreset(74, 3, "narrow", 70, "balanced", 46, 28, "balanced"),
+  layoutPreset(90, 14, "full", 88, "balanced", 40, 46, "dense"),
+  layoutPreset(105, 4, "standard", 100, "immersive", 60, 42, "sparse"),
+  layoutPreset(70, 20, "wide", 68, "compact", 48, 26, "dense"),
+  layoutPreset(118, 0, "full", 125, "immersive", 40, 46, "balanced"),
   layoutPreset(82, 10, "standard", 75, "balanced", 58, 38, "balanced"),
-  layoutPreset(52, 1, "narrow", 50, "compact", 35, 28, "dense"),
-  layoutPreset(130, 24, "full", 130, "immersive", 65, 52, "sparse"),
+  layoutPreset(60, 1, "narrow", 64, "compact", 40, 24, "dense"),
+  layoutPreset(124, 24, "full", 124, "immersive", 60, 46, "sparse"),
   layoutPreset(96, 16, "wide", 90, "balanced", 52, 48, "balanced"),
-  layoutPreset(68, 8, "standard", 58, "compact", 57, 36, "dense"),
+  layoutPreset(68, 8, "standard", 66, "compact", 57, 30, "dense"),
 ];
 
 const WIDTH_BASES = {
-  narrow: 960,
+  narrow: 820,
   standard: 1120,
   wide: 1328,
   full: 1520,
@@ -137,7 +137,7 @@ export function sanitizeLayoutSeeds(seeds = {}) {
       1,
       DEFAULT_LAYOUT_SEEDS.heroBalance,
     ),
-    textWidth: snapNumber(seeds.textWidth, 28, 52, 1, DEFAULT_LAYOUT_SEEDS.textWidth),
+    textWidth: snapNumber(seeds.textWidth, 22, 52, 1, DEFAULT_LAYOUT_SEEDS.textWidth),
     gridDensity: sanitizeEnum(
       seeds.gridDensity,
       GRID_DENSITY_OPTIONS,
@@ -153,7 +153,7 @@ export function generateLayoutRemix(options = {}) {
   const preset = LAYOUT_REMIX_PRESETS[remixStep % LAYOUT_REMIX_PRESETS.length];
   const cycle = Math.floor(remixStep / LAYOUT_REMIX_PRESETS.length);
 
-  return sanitizeLayoutSeeds({
+  return sanitizeLayoutRemixSeeds({
     ...preset,
     heroBalance: preset.heroBalance + getLayoutJitter(remixStep, cycle, 1, 4),
     pageGutter: preset.pageGutter + getLayoutJitter(remixStep, cycle, 2, 7),
@@ -178,7 +178,7 @@ export function generateLayoutThemeTokens(seeds = {}) {
   const radius = clampNumber(layout.radius, 0, 24);
 
   return {
-    "--section-padding-x": `clamp(1rem, ${roundNumber(
+    "--section-padding-x": `clamp(1.25rem, ${roundNumber(
       4 * gutterScale,
       2,
     )}vw, ${roundNumber(3 * gutterScale, 2)}rem)`,
@@ -222,6 +222,18 @@ function getFooterColumns(gridDensity) {
   if (gridDensity === "sparse") return "1fr";
   if (gridDensity === "dense") return "1fr 1fr auto";
   return "1.2fr 1fr auto";
+}
+
+function sanitizeLayoutRemixSeeds(seeds = {}) {
+  const layout = sanitizeLayoutSeeds(seeds);
+
+  return {
+    ...layout,
+    heroBalance: clampNumber(layout.heroBalance, 40, 60),
+    pageGutter: clampNumber(layout.pageGutter, 64, 124),
+    spacing: clampNumber(layout.spacing, 60, 124),
+    textWidth: clampNumber(layout.textWidth, 24, 48),
+  };
 }
 
 function layoutPreset(

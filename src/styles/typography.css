@@ -41,6 +41,8 @@ h2,
 h3,
 h4 {
   margin: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .text-display,
@@ -52,6 +54,7 @@ h4 {
   font-family: var(--font-family-heading);
   font-weight: var(--font-weight-heading);
   letter-spacing: var(--letter-spacing-heading);
+  text-wrap: balance;
 }
 
 .text-display {
@@ -83,12 +86,14 @@ h4 {
   color: var(--color-muted);
   font-size: var(--font-size-body-lg);
   line-height: var(--line-height-body-lg);
+  text-wrap: pretty;
 }
 
 .text-body {
   color: var(--color-muted);
   font-size: var(--font-size-body);
   line-height: var(--line-height-body);
+  text-wrap: pretty;
 }
 
 .text-caption {

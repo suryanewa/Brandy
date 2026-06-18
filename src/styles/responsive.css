@@ -108,7 +108,7 @@
   }
 
   .hero-browser .browser-frame__content {
-    height: 6rem;
+    height: auto;
   }
 
   .hero-browser .demo-frame__sidebar,
