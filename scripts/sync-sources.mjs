@@ -598,7 +598,7 @@ function sanitizeSourceTypographySeeds(typography) {
     Array.isArray(typography)
   ) {
     throw new Error(
-      "Typography seeds must contain style, pairing, scale, density, weight, headlineStyle, and tightness.",
+      "Typography seeds must contain style, pairing, primaryFont, secondaryFont, scale, density, weight, headlineStyle, and tightness.",
     );
   }
 
@@ -606,7 +606,7 @@ function sanitizeSourceTypographySeeds(typography) {
   const expectedKeys = [...TYPOGRAPHY_SEED_KEYS].sort();
   if (keys.join(",") !== expectedKeys.join(",")) {
     throw new Error(
-      "Typography seeds must contain only style, pairing, scale, density, weight, headlineStyle, and tightness.",
+      "Typography seeds must contain only style, pairing, primaryFont, secondaryFont, scale, density, weight, headlineStyle, and tightness.",
     );
   }
 
@@ -616,7 +616,7 @@ function sanitizeSourceTypographySeeds(typography) {
     }
   }
 
-  for (const key of ["style", "pairing"]) {
+  for (const key of ["style", "pairing", "primaryFont", "secondaryFont"]) {
     if (typeof typography[key] !== "string") {
       throw new Error(`Typography seed ${key} must be a string.`);
     }

@@ -19,6 +19,7 @@ import {
 import {
   generateTypographyThemeTokens,
   sanitizeTypographySeeds,
+  type TypographyFont,
   type TypographyPairing,
   type TypographySeeds,
   type TypographyStyle,
@@ -55,6 +56,8 @@ export interface DesignOverlayValues {
   gridDensity: GridDensity;
   typographyStyle: TypographyStyle;
   typographyPairing: TypographyPairing;
+  typographyPrimaryFont: TypographyFont;
+  typographySecondaryFont: TypographyFont;
   typographyScale: number;
   typographyDensity: number;
   typographyWeight: number;
@@ -112,6 +115,8 @@ export const DEFAULT_DESIGN_OVERLAY_VALUES: DesignOverlayValues = {
   gridDensity: "balanced",
   typographyStyle: "geometric",
   typographyPairing: "display_plus_text",
+  typographyPrimaryFont: "inter",
+  typographySecondaryFont: "roboto",
   typographyScale: 70,
   typographyDensity: 60,
   typographyWeight: 60,
@@ -423,7 +428,9 @@ export function getDesignTypographySeeds(
     density: values.typographyDensity,
     headlineStyle: values.headlineStyle,
     pairing: values.typographyPairing,
+    primaryFont: values.typographyPrimaryFont,
     scale: values.typographyScale,
+    secondaryFont: values.typographySecondaryFont,
     style: values.typographyStyle,
     tightness: values.typographyTightness,
     weight: values.typographyWeight,

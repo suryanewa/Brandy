@@ -409,7 +409,9 @@ type TypographySyncPayload = {
     | "display_plus_text"
     | "editorial_contrast"
     | "mono_accent";
+  primaryFont: string;
   scale: number;
+  secondaryFont: string;
   style:
     | "geometric"
     | "grotesk"
@@ -487,7 +489,9 @@ function getValidatedTypographyPayload(
     "density",
     "headlineStyle",
     "pairing",
+    "primaryFont",
     "scale",
+    "secondaryFont",
     "style",
     "tightness",
     "weight",
@@ -508,7 +512,9 @@ function getValidatedTypographyPayload(
       ["single_family", "display_plus_text", "editorial_contrast", "mono_accent"],
       "pairing",
     ),
+    primaryFont: getStringValue(value.primaryFont, "primaryFont"),
     scale: getNumberValue(value.scale, "scale"),
+    secondaryFont: getStringValue(value.secondaryFont, "secondaryFont"),
     style: getStringEnumValue(
       value.style,
       [
@@ -527,6 +533,14 @@ function getValidatedTypographyPayload(
   };
 
   return typography as TypographySyncPayload;
+}
+
+function getStringValue(value: unknown, key: string): string {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new SyncRequestError(400, `Invalid design seed for ${key}.`);
+  }
+
+  return value;
 }
 
 function getNumberValue(value: unknown, key: string): number {

@@ -24,7 +24,11 @@ import {
   generatePaletteRemix,
 } from "../../lib/brandTheme.mjs";
 import { LAYOUT_GENERATED_TOKEN_NAMES } from "../../lib/layoutTheme.mjs";
-import { TYPOGRAPHY_GENERATED_TOKEN_NAMES } from "../../lib/typographyTheme.mjs";
+import {
+  TYPOGRAPHY_FONT_OPTIONS,
+  TYPOGRAPHY_GENERATED_TOKEN_NAMES,
+  generateTypographyRemix,
+} from "../../lib/typographyTheme.mjs";
 import {
   DEFAULT_DESIGN_OVERLAY_VALUES,
   DESIGN_CSS_VARIABLE_NAMES,
@@ -99,7 +103,11 @@ type NumberSettingKey =
   | "typographyTightness";
 type LayoutSelectSettingKey = "gridDensity" | "heroScale" | "pageWidth";
 type TypographySelectSettingKey = "typographyPairing" | "typographyStyle";
-type SelectSettingKey = LayoutSelectSettingKey | TypographySelectSettingKey;
+type TypographyFontSettingKey = "typographyPrimaryFont" | "typographySecondaryFont";
+type SelectSettingKey =
+  | LayoutSelectSettingKey
+  | TypographyFontSettingKey
+  | TypographySelectSettingKey;
 type BooleanSettingKey = "darkMode" | "mutedMode" | "highContrast";
 type ResetKey = keyof DesignOverlayValues;
 type SliderControlConfig = {
@@ -273,7 +281,25 @@ const TYPOGRAPHY_SELECT_CONTROLS = [
       { label: "Mono accent", value: "mono_accent" },
     ],
   },
-] as const satisfies readonly SelectControlConfig<TypographySelectSettingKey>[];
+  {
+    key: "typographyPrimaryFont",
+    label: "Primary font",
+    options: TYPOGRAPHY_FONT_OPTIONS.map((font) => ({
+      label: font.label,
+      value: font.id,
+    })),
+  },
+  {
+    key: "typographySecondaryFont",
+    label: "Secondary font",
+    options: TYPOGRAPHY_FONT_OPTIONS.map((font) => ({
+      label: font.label,
+      value: font.id,
+    })),
+  },
+] as const satisfies readonly SelectControlConfig<
+  TypographyFontSettingKey | TypographySelectSettingKey
+>[];
 const MODE_TOGGLES: readonly ToggleControlConfig[] = [
   { key: "mutedMode", label: "Muted mode" },
   { key: "highContrast", label: "High contrast" },
@@ -312,6 +338,8 @@ const LAYOUT_KEYS = [
 const TYPOGRAPHY_KEYS = [
   "typographyStyle",
   "typographyPairing",
+  "typographyPrimaryFont",
+  "typographySecondaryFont",
   "typographyScale",
   "typographyDensity",
   "typographyWeight",
@@ -349,6 +377,7 @@ const SOURCE_GENERATED_TOKEN_NAMES = new Set<`--${string}`>([
 ]);
 const SOURCE_SYNC_DEBOUNCE_MS = 650;
 const PALETTE_REMIX_SALT_RANGE = 4096;
+const TYPOGRAPHY_REMIX_SALT_RANGE = 4096;
 const DERIVED_COLOR_CONTROLS = [
   {
     id: "background",
@@ -478,6 +507,8 @@ export function DesignOverlay({
   );
   const paletteRemixSaltRef = useRef(getPaletteRemixSalt());
   const paletteRemixStepRef = useRef(0);
+  const typographyRemixSaltRef = useRef(getTypographyRemixSalt());
+  const typographyRemixStepRef = useRef(0);
   const [open, setOpen] = useState(initialOpen);
   const [expandedGroups, setExpandedGroups] =
     useState<Record<DesignOverlayGroupKey, boolean>>(INITIAL_GROUP_STATE);
@@ -698,6 +729,19 @@ export function DesignOverlay({
     },
     [],
   );
+  const updateControlValue = useCallback(
+    <Key extends keyof DesignOverlayValues,>(
+      key: Key,
+      nextValue: DesignOverlayValues[Key],
+    ) => {
+      if ((TYPOGRAPHY_KEYS as readonly ResetKey[]).includes(key)) {
+        typographyRemixSaltRef.current = getTypographyRemixSalt();
+        typographyRemixStepRef.current = 0;
+      }
+      updateValue(key, nextValue);
+    },
+    [updateValue],
+  );
   const updateBrandColorValue = useCallback(
     (key: "primaryColor" | "secondaryColor" | "accentColor" | "highlightColor", value: string) => {
       paletteRemixBaseRef.current = null;
@@ -706,6 +750,19 @@ export function DesignOverlay({
       updateValue(key, value);
     },
     [updateValue],
+  );
+
+  const getNextTypographyRemix = useCallback(
+    (options: Parameters<typeof generateTypographyRemix>[0] = {}) => {
+      const remixStep = typographyRemixStepRef.current;
+      typographyRemixStepRef.current += 1;
+      return generateTypographyRemix({
+        ...options,
+        salt: typographyRemixSaltRef.current,
+        step: remixStep,
+      });
+    },
+    [],
   );
 
   const remixPalette = useCallback(() => {
@@ -731,16 +788,64 @@ export function DesignOverlay({
     });
   }, [markSourceSyncDirty]);
 
+  const remixTypography = useCallback(() => {
+    markSourceSyncDirty();
+    const remix = getNextTypographyRemix();
+
+    setValues((current) => ({
+      ...current,
+      headlineStyle: remix.headlineStyle,
+      typographyDensity: remix.density,
+      typographyPairing: remix.pairing,
+      typographyPrimaryFont: remix.primaryFont,
+      typographyScale: remix.scale,
+      typographySecondaryFont: remix.secondaryFont,
+      typographyStyle: remix.style,
+      typographyTightness: remix.tightness,
+      typographyWeight: remix.weight,
+    }));
+  }, [getNextTypographyRemix, markSourceSyncDirty]);
+
+  const updateTypographyPresetValue = useCallback(
+    <Key extends TypographySelectSettingKey>(
+      key: Key,
+      nextValue: DesignOverlayValues[Key],
+    ) => {
+      markSourceSyncDirty();
+      const remix = generateTypographyRemix({
+        [key === "typographyStyle" ? "style" : "pairing"]: nextValue,
+        salt: typographyRemixSaltRef.current,
+        step: typographyRemixStepRef.current,
+      });
+      typographyRemixStepRef.current += 1;
+
+      setValues((current) => ({
+        ...current,
+        headlineStyle: remix.headlineStyle,
+        typographyDensity: remix.density,
+        typographyPairing: remix.pairing,
+        typographyPrimaryFont: remix.primaryFont,
+        typographyScale: remix.scale,
+        typographySecondaryFont: remix.secondaryFont,
+        typographyStyle: remix.style,
+        typographyTightness: remix.tightness,
+        typographyWeight: remix.weight,
+      }));
+    },
+    [markSourceSyncDirty],
+  );
+
   useEffect(() => {
     const handlePaletteRemixShortcut = (event: KeyboardEvent) => {
       if (!isPaletteRemixShortcut(event)) return;
       event.preventDefault();
       remixPalette();
+      remixTypography();
     };
 
     window.addEventListener("keydown", handlePaletteRemixShortcut);
     return () => window.removeEventListener("keydown", handlePaletteRemixShortcut);
-  }, [remixPalette]);
+  }, [remixPalette, remixTypography]);
 
   const resetAll = useCallback(() => {
     markSourceSyncDirty();
@@ -749,6 +854,8 @@ export function DesignOverlay({
     paletteRemixBaseRef.current = null;
     paletteRemixSaltRef.current = getPaletteRemixSalt();
     paletteRemixStepRef.current = 0;
+    typographyRemixSaltRef.current = getTypographyRemixSalt();
+    typographyRemixStepRef.current = 0;
   }, [markSourceSyncDirty, resolvedDefaults]);
 
   const resetDefaultKeys = useCallback(
@@ -758,6 +865,10 @@ export function DesignOverlay({
         paletteRemixBaseRef.current = null;
         paletteRemixSaltRef.current = getPaletteRemixSalt();
         paletteRemixStepRef.current = 0;
+      }
+      if (keys === TYPOGRAPHY_KEYS) {
+        typographyRemixSaltRef.current = getTypographyRemixSalt();
+        typographyRemixStepRef.current = 0;
       }
       setValues((current) => {
         const next = { ...current };
@@ -872,7 +983,7 @@ export function DesignOverlay({
       suffix={suffix}
       startLabel={startLabel}
       endLabel={endLabel}
-      onChange={(value) => updateValue(key, value)}
+      onChange={(value) => updateControlValue(key, value)}
     />
   );
   const renderSegmentedControl = <Key extends SelectSettingKey>({
@@ -886,23 +997,34 @@ export function DesignOverlay({
       label={label}
       value={values[key]}
       options={options}
-      onChange={(value) => updateValue(key, value)}
+      onChange={(value) => updateControlValue(key, value)}
     />
   );
   const renderSelectControl = <Key extends SelectSettingKey>({
     key,
     label,
     options,
-  }: SelectControlConfig<Key>) => (
-    <SelectControl
-      key={key}
-      id={`${baseId}-${key}`}
-      label={label}
-      value={values[key]}
-      options={options}
-      onChange={(value) => updateValue(key, value)}
-    />
-  );
+  }: SelectControlConfig<Key>) => {
+    const handleChange =
+      key === "typographyStyle" || key === "typographyPairing"
+        ? (value: DesignOverlayValues[Key]) =>
+            updateTypographyPresetValue(
+              key,
+              value as DesignOverlayValues[TypographySelectSettingKey],
+            )
+        : (value: DesignOverlayValues[Key]) => updateControlValue(key, value);
+
+    return (
+      <SelectControl
+        key={key}
+        id={`${baseId}-${key}`}
+        label={label}
+        value={values[key]}
+        options={options}
+        onChange={handleChange}
+      />
+    );
+  };
   const renderToggleControl = ({ key, label }: ToggleControlConfig) => (
     <ToggleControl
       key={key}
@@ -1051,6 +1173,16 @@ export function DesignOverlay({
               open={expandedGroups.typography}
               onToggle={() => toggleGroup("typography")}
               onReset={() => resetDefaultKeys(TYPOGRAPHY_KEYS)}
+              actions={
+                <button
+                  type="button"
+                  className="design-overlay__group-action"
+                  aria-label="Remix typography"
+                  onClick={remixTypography}
+                >
+                  <Shuffle aria-hidden="true" />
+                </button>
+              }
             >
               {TYPOGRAPHY_SELECT_CONTROLS.map(renderSelectControl)}
               {TYPOGRAPHY_SLIDERS.map(renderSliderControl)}
@@ -1167,7 +1299,7 @@ function isDarkModeShortcut(event: KeyboardEvent): boolean {
 }
 
 function isPaletteRemixShortcut(event: KeyboardEvent): boolean {
-  if (event.key !== "Tab") return false;
+  if (event.key !== " " && event.key !== "Spacebar") return false;
   if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return false;
 
   const target = event.target;
@@ -1180,4 +1312,8 @@ function isPaletteRemixShortcut(event: KeyboardEvent): boolean {
 
 function getPaletteRemixSalt(): number {
   return Math.floor(Math.random() * PALETTE_REMIX_SALT_RANGE);
+}
+
+function getTypographyRemixSalt(): number {
+  return Math.floor(Math.random() * TYPOGRAPHY_REMIX_SALT_RANGE);
 }

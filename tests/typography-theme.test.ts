@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_TYPOGRAPHY_SEEDS,
+  TYPOGRAPHY_FONT_IDS,
   TYPOGRAPHY_GENERATED_MEDIA_TOKEN_NAMES,
   TYPOGRAPHY_GENERATED_TOKEN_NAMES,
+  TYPOGRAPHY_PAIRING_OPTIONS,
+  TYPOGRAPHY_STYLE_OPTIONS,
   generateTypographyMediaThemeTokens,
+  generateTypographyRemix,
   generateTypographyThemeTokens,
   sanitizeTypographySeeds,
 } from "../src/lib/typographyTheme.mjs";
@@ -76,7 +80,9 @@ describe("typography theme generator", () => {
         density: -10,
         headlineStyle: 130,
         pairing: "mismatch",
+        primaryFont: "papyrus",
         scale: 140,
+        secondaryFont: "comic_sans",
         style: "poster",
         tightness: -20,
         weight: 500,
@@ -85,9 +91,73 @@ describe("typography theme generator", () => {
       ...DEFAULT_TYPOGRAPHY_SEEDS,
       density: 0,
       headlineStyle: 100,
+      primaryFont: "inter",
       scale: 100,
+      secondaryFont: "roboto",
       tightness: 0,
       weight: 100,
     });
+  });
+
+  it("generates deterministic curated typography remixes", () => {
+    expect(generateTypographyRemix({ salt: 0, step: 0 })).toEqual({
+      density: 58,
+      headlineStyle: 64,
+      pairing: "display_plus_text",
+      primaryFont: "inter",
+      scale: 72,
+      secondaryFont: "roboto",
+      style: "geometric",
+      tightness: 54,
+      weight: 64,
+    });
+    expect(generateTypographyRemix({ salt: 0, step: 1 })).toEqual({
+      density: 56,
+      headlineStyle: 72,
+      pairing: "display_plus_text",
+      primaryFont: "space_grotesk",
+      scale: 76,
+      secondaryFont: "dm_sans",
+      style: "geometric",
+      tightness: 56,
+      weight: 68,
+    });
+    expect(generateTypographyRemix({ salt: 0, step: 0 })).toEqual(
+      generateTypographyRemix({ salt: 0, step: 0 }),
+    );
+    expect(generateTypographyRemix({ salt: 1, step: 0 })).toEqual(
+      generateTypographyRemix({ salt: 0, step: 1 }),
+    );
+  });
+
+  it("covers every typography style and pairing across remix presets", () => {
+    expect(TYPOGRAPHY_FONT_IDS.length).toBeGreaterThanOrEqual(70);
+
+    const remixes = Array.from({ length: 110 }, (_, step) =>
+      generateTypographyRemix({ salt: 0, step }),
+    );
+
+    expect(new Set(remixes.map((remix) => remix.style))).toEqual(
+      new Set(TYPOGRAPHY_STYLE_OPTIONS),
+    );
+    expect(new Set(remixes.map((remix) => remix.pairing))).toEqual(
+      new Set(TYPOGRAPHY_PAIRING_OPTIONS),
+    );
+    expect(
+      remixes.map((remix) => generateTypographyThemeTokens(remix)["--font-family-heading"]),
+    ).toContain("Georgia, \"Times New Roman\", Times, serif");
+    expect(
+      new Set(remixes.map((remix) => `${remix.primaryFont}/${remix.secondaryFont}`)).size,
+    ).toBeGreaterThanOrEqual(80);
+    expect(new Set(remixes.map((remix) => remix.primaryFont)).size).toBeGreaterThanOrEqual(
+      55,
+    );
+    expect(
+      new Set(remixes.map((remix) => remix.secondaryFont)).size,
+    ).toBeGreaterThanOrEqual(45);
+    for (const remix of remixes) {
+      expect(TYPOGRAPHY_FONT_IDS).toContain(remix.primaryFont);
+      expect(TYPOGRAPHY_FONT_IDS).toContain(remix.secondaryFont);
+    }
   });
 });

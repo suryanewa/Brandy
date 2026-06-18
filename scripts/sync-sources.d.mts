@@ -46,7 +46,9 @@ export function syncDesignTokensFromValues(
         | "display_plus_text"
         | "editorial_contrast"
         | "mono_accent";
+      primaryFont: string;
       scale: number;
+      secondaryFont: string;
       style:
         | "geometric"
         | "grotesk"

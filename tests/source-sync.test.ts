@@ -19,16 +19,19 @@ import {
   LAYOUT_GENERATED_TOKEN_NAMES,
   LAYOUT_WIDTH_OPTIONS,
   generateLayoutThemeTokens,
+  sanitizeLayoutSeeds,
   type LayoutSeeds,
 } from "../src/lib/layoutTheme.mjs";
 import {
   TYPOGRAPHY_GENERATED_MEDIA_TOKEN_NAMES,
   TYPOGRAPHY_GENERATED_TOKEN_NAMES,
+  TYPOGRAPHY_FONT_IDS,
   TYPOGRAPHY_PAIRING_OPTIONS,
   TYPOGRAPHY_SEED_KEYS,
   TYPOGRAPHY_STYLE_OPTIONS,
   generateTypographyMediaThemeTokens,
   generateTypographyThemeTokens,
+  sanitizeTypographySeeds,
   type TypographySeeds,
 } from "../src/lib/typographyTheme.mjs";
 
@@ -115,8 +118,9 @@ describe("source sync files", () => {
         "width",
       ].sort(),
     );
-    expect(source.creativeSeeds.layout.spacing).toBe(70);
-    expect(source.creativeSeeds.layout.radius).toBe(2);
+    expect(sanitizeLayoutSeeds(source.creativeSeeds.layout)).toEqual(
+      source.creativeSeeds.layout,
+    );
     expect(LAYOUT_WIDTH_OPTIONS).toContain(source.creativeSeeds.layout.width);
     expect(HERO_SCALE_OPTIONS).toContain(source.creativeSeeds.layout.heroScale);
     expect(GRID_DENSITY_OPTIONS).toContain(source.creativeSeeds.layout.gridDensity);
@@ -137,14 +141,20 @@ describe("source sync files", () => {
     expect(Object.keys(source.creativeSeeds.typography).sort()).toEqual(
       [...TYPOGRAPHY_SEED_KEYS].sort(),
     );
-    expect(source.creativeSeeds.typography.scale).toBe(70);
-    expect(source.creativeSeeds.typography.density).toBe(60);
-    expect(source.creativeSeeds.typography.weight).toBe(60);
+    expect(sanitizeTypographySeeds(source.creativeSeeds.typography)).toEqual(
+      source.creativeSeeds.typography,
+    );
     expect(TYPOGRAPHY_STYLE_OPTIONS).toContain(
       source.creativeSeeds.typography.style,
     );
     expect(TYPOGRAPHY_PAIRING_OPTIONS).toContain(
       source.creativeSeeds.typography.pairing,
+    );
+    expect(TYPOGRAPHY_FONT_IDS).toContain(
+      source.creativeSeeds.typography.primaryFont,
+    );
+    expect(TYPOGRAPHY_FONT_IDS).toContain(
+      source.creativeSeeds.typography.secondaryFont,
     );
   });
 
@@ -338,7 +348,9 @@ function readDesignTokenYaml(): {
         density: 0,
         headlineStyle: 0,
         pairing: "display_plus_text",
+        primaryFont: "inter",
         scale: 0,
+        secondaryFont: "roboto",
         style: "geometric",
         tightness: 0,
         weight: 0,

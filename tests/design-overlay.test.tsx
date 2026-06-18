@@ -140,8 +140,11 @@ describe("DesignOverlay", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
+    expect(screen.getByRole("button", { name: "Remix typography" })).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "Type style" })).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "Pairing" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Primary font" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Secondary font" })).toBeTruthy();
     expect(screen.queryByRole("radiogroup", { name: "Type style" })).toBeNull();
     expect(screen.queryByRole("radiogroup", { name: "Pairing" })).toBeNull();
     expect(screen.getByLabelText("Scale value")).toBeTruthy();
@@ -430,11 +433,11 @@ describe("DesignOverlay", () => {
     expect(payload.values["--gradient-hero-accent"]).toBeUndefined();
   });
 
-  it("remixes palette and derived colors with the Tab shortcut", () => {
+  it("remixes palette and typography with the Space shortcut", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     render(<DesignOverlay />);
 
-    fireEvent.keyDown(window, { key: "Tab" });
+    fireEvent.keyDown(window, { key: " " });
 
     expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
       "#f7a036",
@@ -444,6 +447,22 @@ describe("DesignOverlay", () => {
     );
     expect(document.documentElement.style.getPropertyValue("--color-muted")).toBe(
       "#4a3e34",
+    );
+    expect(document.documentElement.style.getPropertyValue("--font-size-display")).toBe(
+      "5.986rem",
+    );
+  });
+
+  it("does not remix with Tab because Tab remains focus navigation", () => {
+    render(<DesignOverlay />);
+
+    fireEvent.keyDown(window, { key: "Tab" });
+
+    expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
+      "",
+    );
+    expect(document.documentElement.style.getPropertyValue("--font-size-display")).toBe(
+      "",
     );
   });
 
@@ -463,13 +482,13 @@ describe("DesignOverlay", () => {
     );
   });
 
-  it("does not remix with Tab while typing in controls", () => {
+  it("does not remix with Space while typing in controls", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
     const primaryInput = screen.getByLabelText("Primary hex color");
     primaryInput.focus();
-    fireEvent.keyDown(primaryInput, { key: "Tab" });
+    fireEvent.keyDown(primaryInput, { key: " " });
 
     expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
       "",
@@ -569,23 +588,153 @@ describe("DesignOverlay", () => {
   });
 
   it("derives typography tokens from compact typography controls", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
     fireEvent.change(screen.getByRole("combobox", { name: "Type style" }), {
       target: { value: "editorial" },
     });
-    fireEvent.change(screen.getByLabelText("Tightness value"), {
-      target: { value: "80" },
-    });
-    fireEvent.blur(screen.getByLabelText("Tightness value"));
 
+    expect((screen.getByRole("combobox", { name: "Primary font" }) as HTMLSelectElement).value).toBe(
+      "georgia",
+    );
+    expect((screen.getByRole("combobox", { name: "Secondary font" }) as HTMLSelectElement).value).toBe(
+      "inter",
+    );
     expect(
       document.documentElement.style.getPropertyValue("--font-family-heading"),
     ).toContain("Georgia");
+    expect(document.documentElement.style.getPropertyValue("--font-size-display")).toBe(
+      "6.7262rem",
+    );
+  });
+
+  it("remixes typography pairings and syncs the source typography seeds", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, changedCount: 1 }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Remix typography" }));
+
+    expect((screen.getByRole("combobox", { name: "Type style" }) as HTMLSelectElement).value).toBe(
+      "geometric",
+    );
+    expect((screen.getByRole("combobox", { name: "Pairing" }) as HTMLSelectElement).value).toBe(
+      "display_plus_text",
+    );
+    expect((screen.getByRole("combobox", { name: "Primary font" }) as HTMLSelectElement).value).toBe(
+      "inter",
+    );
+    expect((screen.getByRole("combobox", { name: "Secondary font" }) as HTMLSelectElement).value).toBe(
+      "roboto",
+    );
+    expect((screen.getByLabelText("Scale value") as HTMLInputElement).value).toBe(
+      "72",
+    );
+    expect((screen.getByLabelText("Density value") as HTMLInputElement).value).toBe(
+      "58",
+    );
+    expect((screen.getByLabelText("Weight value") as HTMLInputElement).value).toBe(
+      "64",
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--font-size-display"),
+    ).toBe("5.986rem");
     expect(
       document.documentElement.style.getPropertyValue("--letter-spacing-heading"),
-    ).toBe("-0.042em");
+    ).toBe("-0.005em");
+
+    fireEvent.click(screen.getByRole("button", { name: "Remix typography" }));
+
+    expect((screen.getByRole("combobox", { name: "Type style" }) as HTMLSelectElement).value).toBe(
+      "geometric",
+    );
+    expect((screen.getByRole("combobox", { name: "Pairing" }) as HTMLSelectElement).value).toBe(
+      "display_plus_text",
+    );
+    expect((screen.getByRole("combobox", { name: "Primary font" }) as HTMLSelectElement).value).toBe(
+      "space_grotesk",
+    );
+    expect((screen.getByRole("combobox", { name: "Secondary font" }) as HTMLSelectElement).value).toBe(
+      "dm_sans",
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--font-family-heading"),
+    ).toContain("Space Grotesk");
+
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+    vi.useRealTimers();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
+    const payload = JSON.parse(String(requestInit.body)) as {
+      typography: Record<string, string | number>;
+      values: Record<string, string>;
+    };
+
+    expect(payload.typography).toEqual({
+      density: 56,
+      headlineStyle: 72,
+      pairing: "display_plus_text",
+      primaryFont: "space_grotesk",
+      scale: 76,
+      secondaryFont: "dm_sans",
+      style: "geometric",
+      tightness: 56,
+      weight: 68,
+    });
+    expect(payload.values["--font-family-heading"]).toBeUndefined();
+    expect(payload.values["--font-size-display"]).toBeUndefined();
+  });
+
+  it("cycles concrete font pairings when type style or pairing selections repeat", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const typeStyle = screen.getByRole("combobox", {
+      name: "Type style",
+    }) as HTMLSelectElement;
+    const pairing = screen.getByRole("combobox", {
+      name: "Pairing",
+    }) as HTMLSelectElement;
+    const primaryFont = screen.getByRole("combobox", {
+      name: "Primary font",
+    }) as HTMLSelectElement;
+    const secondaryFont = screen.getByRole("combobox", {
+      name: "Secondary font",
+    }) as HTMLSelectElement;
+
+    fireEvent.change(typeStyle, { target: { value: "editorial" } });
+    const firstEditorialPair = `${primaryFont.value}/${secondaryFont.value}`;
+
+    fireEvent.change(typeStyle, { target: { value: "geometric" } });
+    fireEvent.change(typeStyle, { target: { value: "editorial" } });
+    const secondEditorialPair = `${primaryFont.value}/${secondaryFont.value}`;
+
+    expect(typeStyle.value).toBe("editorial");
+    expect(firstEditorialPair).not.toBe(secondEditorialPair);
+
+    fireEvent.change(pairing, { target: { value: "mono_accent" } });
+    const firstMonoPair = `${primaryFont.value}/${secondaryFont.value}`;
+    fireEvent.change(pairing, { target: { value: "display_plus_text" } });
+    fireEvent.change(pairing, { target: { value: "mono_accent" } });
+    const secondMonoPair = `${primaryFont.value}/${secondaryFont.value}`;
+
+    expect(pairing.value).toBe("mono_accent");
+    expect(firstMonoPair).not.toBe(secondMonoPair);
   });
 
   it("automatically debounces source sync updates without forcing a reload", async () => {
@@ -668,7 +817,9 @@ describe("DesignOverlay", () => {
       density: 60,
       headlineStyle: 60,
       pairing: "display_plus_text",
+      primaryFont: "inter",
       scale: 70,
+      secondaryFont: "roboto",
       style: "geometric",
       tightness: 50,
       weight: 85,
