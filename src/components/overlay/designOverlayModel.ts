@@ -46,6 +46,7 @@ export interface DesignOverlayValues {
   elevation: number;
   animationDuration: number;
   navbarBlur: number;
+  darkMode: boolean;
   mutedMode: boolean;
   highContrast: boolean;
   reducedMotion: boolean;
@@ -84,6 +85,7 @@ export const DEFAULT_DESIGN_OVERLAY_VALUES: DesignOverlayValues = {
   elevation: 100,
   animationDuration: 260,
   navbarBlur: 28,
+  darkMode: false,
   mutedMode: false,
   highContrast: false,
   reducedMotion: false,
@@ -376,6 +378,7 @@ export function getDesignCssVariables(
 ): DesignCssVariables {
   const elevationScale = values.elevation / 100;
   const brandTokens = generateBrandThemeTokens(getDesignBrandSeeds(values), {
+    darkMode: values.darkMode,
     elevationScale,
     highContrast: values.highContrast,
     mutedMode: values.mutedMode,

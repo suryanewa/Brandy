@@ -21,13 +21,9 @@ import { BRAND_GENERATED_TOKEN_NAMES } from "../../lib/brandTheme.mjs";
 import { LAYOUT_GENERATED_TOKEN_NAMES } from "../../lib/layoutTheme.mjs";
 import { TYPOGRAPHY_GENERATED_TOKEN_NAMES } from "../../lib/typographyTheme.mjs";
 import {
-  ACCENT_PRESETS,
   DEFAULT_DESIGN_OVERLAY_VALUES,
   DESIGN_CSS_VARIABLE_NAMES,
   DESIGN_OVERLAY_STORAGE_KEY,
-  HIGHLIGHT_PRESETS,
-  PRIMARY_PRESETS,
-  SECONDARY_PRESETS,
   areDesignValuesEqual,
   getDesignBrandSeeds,
   getDesignCssVariables,
@@ -42,9 +38,9 @@ import {
 import {
   ColorControl,
   DerivedColorPreview,
+  SelectControl,
   SegmentedControl,
   SliderControl,
-  SwatchStrip,
   ToggleControl,
 } from "./DesignOverlayControls";
 import {
@@ -84,7 +80,7 @@ type NumberSettingKey =
 type LayoutSelectSettingKey = "gridDensity" | "heroScale" | "pageWidth";
 type TypographySelectSettingKey = "typographyPairing" | "typographyStyle";
 type SelectSettingKey = LayoutSelectSettingKey | TypographySelectSettingKey;
-type BooleanSettingKey = "mutedMode" | "highContrast";
+type BooleanSettingKey = "darkMode" | "mutedMode" | "highContrast";
 type ResetKey = keyof DesignOverlayValues;
 type SliderControlConfig = {
   endLabel?: string;
@@ -104,6 +100,7 @@ type SegmentedControlConfig<Key extends SelectSettingKey> = {
     value: DesignOverlayValues[Key];
   }[];
 };
+type SelectControlConfig<Key extends SelectSettingKey> = SegmentedControlConfig<Key>;
 type ToggleControlConfig = { key: BooleanSettingKey; label: string };
 
 const LAYOUT_SLIDERS: readonly SliderControlConfig[] = [
@@ -232,7 +229,7 @@ const TYPOGRAPHY_SLIDERS: readonly SliderControlConfig[] = [
     step: 1,
   },
 ];
-const TYPOGRAPHY_SEGMENTED_CONTROLS = [
+const TYPOGRAPHY_SELECT_CONTROLS = [
   {
     key: "typographyStyle",
     label: "Type style",
@@ -256,7 +253,7 @@ const TYPOGRAPHY_SEGMENTED_CONTROLS = [
       { label: "Mono accent", value: "mono_accent" },
     ],
   },
-] as const satisfies readonly SegmentedControlConfig<TypographySelectSettingKey>[];
+] as const satisfies readonly SelectControlConfig<TypographySelectSettingKey>[];
 const MODE_TOGGLES: readonly ToggleControlConfig[] = [
   { key: "mutedMode", label: "Muted mode" },
   { key: "highContrast", label: "High contrast" },
@@ -266,6 +263,7 @@ const PALETTE_KEYS = [
   "secondaryColor",
   "accentColor",
   "highlightColor",
+  "darkMode",
 ] as const satisfies readonly ResetKey[];
 const LAYOUT_KEYS = [
   "sectionSpacing",
@@ -463,6 +461,15 @@ export function DesignOverlay({
         return;
       }
 
+      if (isDarkModeShortcut(event)) {
+        event.preventDefault();
+        setValues((current) => ({
+          ...current,
+          darkMode: !current.darkMode,
+        }));
+        return;
+      }
+
       if (open && event.key === "Escape") {
         event.preventDefault();
         closePanel();
@@ -528,6 +535,18 @@ export function DesignOverlay({
       }));
     },
     [markSourceSyncDirty],
+  );
+  const updatePreviewValue = useCallback(
+    <Key extends keyof DesignOverlayValues,>(
+      key: Key,
+      nextValue: DesignOverlayValues[Key],
+    ) => {
+      setValues((current) => ({
+        ...current,
+        [key]: nextValue,
+      }));
+    },
+    [],
   );
 
   const resetAll = useCallback(() => {
@@ -607,6 +626,12 @@ export function DesignOverlay({
             return;
           }
 
+          if (isNetworkSyncError(error)) {
+            setSourceSyncState("idle");
+            setSourceSyncMessage("");
+            return;
+          }
+
           setSourceSyncUserEdited(false);
           setSourceSyncState("error");
           setSourceSyncMessage(
@@ -655,6 +680,20 @@ export function DesignOverlay({
     options,
   }: SegmentedControlConfig<Key>) => (
     <SegmentedControl
+      key={key}
+      id={`${baseId}-${key}`}
+      label={label}
+      value={values[key]}
+      options={options}
+      onChange={(value) => updateValue(key, value)}
+    />
+  );
+  const renderSelectControl = <Key extends SelectSettingKey>({
+    key,
+    label,
+    options,
+  }: SelectControlConfig<Key>) => (
+    <SelectControl
       key={key}
       id={`${baseId}-${key}`}
       label={label}
@@ -736,23 +775,11 @@ export function DesignOverlay({
                 value={values.primaryColor}
                 onChange={(value) => updateValue("primaryColor", value)}
               />
-              <SwatchStrip
-                label="Primary presets"
-                colors={PRIMARY_PRESETS}
-                selectedColor={values.primaryColor}
-                onSelect={(value) => updateValue("primaryColor", value)}
-              />
               <ColorControl
                 id={`${baseId}-secondary-color`}
                 label="Secondary"
                 value={values.secondaryColor}
                 onChange={(value) => updateValue("secondaryColor", value)}
-              />
-              <SwatchStrip
-                label="Secondary presets"
-                colors={SECONDARY_PRESETS}
-                selectedColor={values.secondaryColor}
-                onSelect={(value) => updateValue("secondaryColor", value)}
               />
               <ColorControl
                 id={`${baseId}-accent-color`}
@@ -760,23 +787,17 @@ export function DesignOverlay({
                 value={values.accentColor}
                 onChange={(value) => updateValue("accentColor", value)}
               />
-              <SwatchStrip
-                label="Accent presets"
-                colors={ACCENT_PRESETS}
-                selectedColor={values.accentColor}
-                onSelect={(value) => updateValue("accentColor", value)}
-              />
               <ColorControl
                 id={`${baseId}-highlight-color`}
                 label="Highlight"
                 value={values.highlightColor}
                 onChange={(value) => updateValue("highlightColor", value)}
               />
-              <SwatchStrip
-                label="Highlight presets"
-                colors={HIGHLIGHT_PRESETS}
-                selectedColor={values.highlightColor}
-                onSelect={(value) => updateValue("highlightColor", value)}
+              <ToggleControl
+                id={`${baseId}-dark-mode`}
+                label="Dark mode"
+                checked={values.darkMode}
+                onChange={(checked) => updatePreviewValue("darkMode", checked)}
               />
               <DerivedColorPreview
                 colors={[
@@ -828,7 +849,7 @@ export function DesignOverlay({
               onToggle={() => toggleGroup("typography")}
               onReset={() => resetDefaultKeys(TYPOGRAPHY_KEYS)}
             >
-              {TYPOGRAPHY_SEGMENTED_CONTROLS.map(renderSegmentedControl)}
+              {TYPOGRAPHY_SELECT_CONTROLS.map(renderSelectControl)}
               {TYPOGRAPHY_SLIDERS.map(renderSliderControl)}
             </CollapsibleGroup>
 
@@ -919,4 +940,20 @@ function CollapsibleGroup({
       </div>
     </section>
   );
+}
+
+function isNetworkSyncError(error: unknown): boolean {
+  if (!(error instanceof TypeError)) return false;
+  return /fetch|network/i.test(error.message);
+}
+
+function isDarkModeShortcut(event: KeyboardEvent): boolean {
+  if (event.metaKey || event.ctrlKey || event.altKey) return false;
+  if (event.key.toLowerCase() !== "d") return false;
+
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return true;
+  if (target.isContentEditable) return false;
+
+  return !target.closest("input, select, textarea");
 }

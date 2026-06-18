@@ -584,6 +584,41 @@ html {
   color: var(--color-text);
 }
 
+.design-overlay__select-row {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.design-overlay__select-row > span {
+  color: var(--color-text);
+  font-weight: 680;
+}
+
+.design-overlay__select-row select {
+  -webkit-appearance: none;
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--color-muted) 50%) right
+      0.9rem center / 0.45rem 0.45rem no-repeat,
+    linear-gradient(135deg, var(--color-muted) 50%, transparent 50%) right
+      0.6rem center / 0.45rem 0.45rem no-repeat,
+    var(--color-surface);
+  border: var(--stroke-thin) solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  min-height: 2.25rem;
+  padding: 0 var(--space-7) 0 var(--space-3);
+  width: 100%;
+}
+
+.design-overlay__select-row select:focus {
+  border-color: var(--button-primary-bg);
+  box-shadow: 0 0 0 0.2rem var(--badge-brand-bg);
+  outline: 0;
+}
+
 .design-overlay__range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -669,41 +704,6 @@ html {
 .design-overlay__hex-input:focus {
   color: var(--color-text);
   outline: 0;
-}
-
-.design-overlay__swatch-strip {
-  display: flex;
-  gap: var(--space-2);
-  justify-content: flex-end;
-  margin-top: calc(var(--space-2) * -1);
-}
-
-.design-overlay__swatch {
-  background: transparent;
-  border: var(--stroke-thin) solid transparent;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  display: inline-flex;
-  padding: 0.1875rem;
-  transition:
-    border-color var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
-}
-
-.design-overlay__swatch:hover {
-  transform: translateY(-1px);
-}
-
-.design-overlay__swatch[data-selected="true"] {
-  border-color: var(--color-text);
-}
-
-.design-overlay__swatch span {
-  border: var(--stroke-thin) solid var(--color-border);
-  border-radius: var(--radius-full);
-  display: block;
-  height: 1rem;
-  width: 1rem;
 }
 
 .design-overlay__derived-colors {

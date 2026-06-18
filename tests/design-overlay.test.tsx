@@ -105,12 +105,45 @@ describe("DesignOverlay", () => {
     ).toBe(false);
   });
 
+  it("only adjusts slider values by wheel over the numeric value", () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const spacingValue = screen.getByLabelText(
+      "Spacing value",
+    ) as HTMLInputElement;
+    const spacingRow = spacingValue.closest(".design-overlay__slider-row");
+    const spacingNumber = spacingValue.closest(".design-overlay__number-shell");
+    const dialog = screen.getByRole("dialog", { name: "Design Settings" });
+    const panelWheelSpy = vi.fn();
+
+    expect(spacingRow).toBeTruthy();
+    expect(spacingNumber).toBeTruthy();
+    dialog.addEventListener("wheel", panelWheelSpy);
+
+    fireEvent.wheel(spacingRow as Element, { deltaY: -100 });
+    expect(spacingValue.value).toBe("70");
+    expect(panelWheelSpy).toHaveBeenCalledTimes(1);
+    expect(
+      document.documentElement.style.getPropertyValue("--section-padding-y-md"),
+    ).toBe("");
+
+    fireEvent.wheel(spacingNumber as Element, { deltaY: -100 });
+    expect(spacingValue.value).toBe("71");
+    expect(panelWheelSpy).toHaveBeenCalledTimes(1);
+    expect(
+      document.documentElement.style.getPropertyValue("--section-padding-y-md"),
+    ).toBe("3.55rem");
+  });
+
   it("shows compact typography controls without raw typography token rows", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
-    expect(screen.getByRole("radiogroup", { name: "Type style" })).toBeTruthy();
-    expect(screen.getByRole("radiogroup", { name: "Pairing" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Type style" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Pairing" })).toBeTruthy();
+    expect(screen.queryByRole("radiogroup", { name: "Type style" })).toBeNull();
+    expect(screen.queryByRole("radiogroup", { name: "Pairing" })).toBeNull();
     expect(screen.getByLabelText("Scale value")).toBeTruthy();
     expect(screen.getByLabelText("Density value")).toBeTruthy();
     expect(screen.getByLabelText("Weight value")).toBeTruthy();
@@ -152,6 +185,11 @@ describe("DesignOverlay", () => {
     expect(screen.getByLabelText("Secondary hex color")).toBeTruthy();
     expect(screen.getByLabelText("Accent hex color")).toBeTruthy();
     expect(screen.getByLabelText("Highlight hex color")).toBeTruthy();
+    expect(screen.getByRole("switch", { name: "Dark mode" })).toBeTruthy();
+    expect(screen.queryByLabelText("Primary presets")).toBeNull();
+    expect(screen.queryByLabelText("Secondary presets")).toBeNull();
+    expect(screen.queryByLabelText("Accent presets")).toBeNull();
+    expect(screen.queryByLabelText("Highlight presets")).toBeNull();
     expect(screen.getByText("Primary hover")).toBeTruthy();
     expect(screen.getByText("Secondary surface")).toBeTruthy();
     expect(screen.getByText("Highlight soft")).toBeTruthy();
@@ -184,6 +222,81 @@ describe("DesignOverlay", () => {
     );
   });
 
+  it("toggles dark mode from palette and recalculates semantic colors", () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    fireEvent.click(screen.getByRole("switch", { name: "Dark mode" }));
+
+    expect(document.documentElement.style.getPropertyValue("--color-bg")).toBe(
+      "#080916",
+    );
+    expect(document.documentElement.style.getPropertyValue("--color-surface")).toBe(
+      "#0f0f28",
+    );
+    expect(document.documentElement.style.getPropertyValue("--color-text")).toBe(
+      "#fafaff",
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--button-primary-bg"),
+    ).toBe("#635bff");
+    expect(
+      document.documentElement.style.getPropertyValue("--button-primary-hover"),
+    ).toBe("#958fff");
+    expect(
+      document.documentElement.style.getPropertyValue("--badge-brand-bg"),
+    ).toBe("rgba(149, 143, 255, 0.16)");
+  });
+
+  it("keeps dark mode as a local palette preview without source sync", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, changedCount: 1 }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Dark mode" }));
+
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+    vi.useRealTimers();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(
+      JSON.parse(window.localStorage.getItem(DESIGN_OVERLAY_STORAGE_KEY) ?? "{}"),
+    ).toMatchObject({ darkMode: true });
+  });
+
+  it("toggles dark mode with the D shortcut outside editable fields", () => {
+    render(<DesignOverlay />);
+
+    fireEvent.keyDown(window, { key: "d" });
+
+    expect(document.documentElement.style.getPropertyValue("--color-bg")).toBe(
+      "#080916",
+    );
+
+    fireEvent.keyDown(window, { key: "D" });
+
+    expect(document.documentElement.style.getPropertyValue("--color-bg")).toBe("");
+  });
+
+  it("does not toggle dark mode with D while typing in controls", () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const primaryInput = screen.getByLabelText("Primary hex color");
+    primaryInput.focus();
+    fireEvent.keyDown(primaryInput, { key: "d" });
+
+    expect(document.documentElement.style.getPropertyValue("--color-bg")).toBe("");
+  });
+
   it("persists only changed settings and hydrates stored values", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
@@ -205,7 +318,9 @@ describe("DesignOverlay", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
-    fireEvent.click(screen.getByRole("radio", { name: "Editorial" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Type style" }), {
+      target: { value: "editorial" },
+    });
     fireEvent.change(screen.getByLabelText("Tightness value"), {
       target: { value: "80" },
     });
@@ -292,6 +407,29 @@ describe("DesignOverlay", () => {
     expect(payload.values["--font-weight-heading"]).toBeUndefined();
     await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
     expect(screen.queryByText("Auto-synced to YAML")).toBeNull();
+  });
+
+  it("does not show raw network sync failures in the panel footer", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(
+      new TypeError("Failed to fetch"),
+    );
+
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+    fireEvent.change(screen.getByLabelText("Spacing value"), {
+      target: { value: "110" },
+    });
+    fireEvent.blur(screen.getByLabelText("Spacing value"));
+
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+    vi.useRealTimers();
+
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.queryByText("Failed to fetch")).toBeNull();
   });
 
   it("resets design changes and clears persisted diffs", () => {

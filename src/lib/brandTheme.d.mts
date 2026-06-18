@@ -3,6 +3,7 @@ export type BrandSeedKey = "primary" | "secondary" | "accent" | "highlight";
 export type BrandSeeds = Record<BrandSeedKey, string>;
 
 export type BrandThemeOptions = {
+  darkMode?: boolean;
   elevationScale?: number;
   highContrast?: boolean;
   mutedMode?: boolean;

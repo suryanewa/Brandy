@@ -66,4 +66,30 @@ describe("brand theme generator", () => {
     expect(tokens["--button-primary-text"]).toBe("#111416");
     expect(tokens["--color-on-highlight"]).toBe("#111416");
   });
+
+  it("derives harmonious dark semantic roles from the same seeds", () => {
+    const tokens = generateBrandThemeTokens(DEFAULT_BRAND_SEEDS, {
+      darkMode: true,
+    });
+
+    expect(tokens).toMatchObject({
+      "--color-bg": "#080916",
+      "--color-surface": "#0f0f28",
+      "--color-surface-raised": "#17183b",
+      "--color-text": "#fafaff",
+      "--color-muted": "#dad8ff",
+      "--color-border": "rgba(189, 186, 255, 0.22)",
+      "--button-primary-bg": "#635bff",
+      "--button-primary-hover": "#958fff",
+      "--button-secondary-bg": "rgba(82, 226, 255, 0.14)",
+      "--button-secondary-text": "#dbf9ff",
+      "--badge-brand-bg": "rgba(149, 143, 255, 0.16)",
+      "--badge-brand-text": "#e9e8ff",
+      "--link-color": "#bdbaff",
+      "--focus-ring": "#bdbaff",
+    });
+    expect(tokens["--color-bg"]).toBe(tokens["--dark-color-bg"]);
+    expect(tokens["--color-surface"]).toBe(tokens["--dark-color-surface"]);
+    expect(tokens["--color-text"]).toBe(tokens["--dark-color-text"]);
+  });
 });

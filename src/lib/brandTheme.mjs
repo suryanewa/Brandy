@@ -103,19 +103,52 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
   const accent = generateColorScale(normalizedSeeds.accent);
   const highlight = generateColorScale(normalizedSeeds.highlight);
   const neutral = generateNeutralScale(normalizedSeeds.primary);
-  const background = neutral[50];
-  const surface = mixHex(neutral[50], primary[50], 0.3);
-  const surfaceRaised = "#ffffff";
-  const surfaceStrong = neutral[100];
-  const text = options.highContrast ? neutral[950] : mixHex(neutral[950], "#000000", 0.08);
-  const muted = neutral[600];
-  const subtleText = neutral[500];
-  const border = options.highContrast ? neutral[400] : neutral[200];
-  const primaryAction = options.mutedMode ? mixHex(primary[600], neutral[900], 0.14) : primary[600];
+  const darkMode = options.darkMode === true;
+  const background = darkMode ? neutral[950] : neutral[50];
+  const surface = darkMode
+    ? mixHex(neutral[950], primary[900], 0.24)
+    : mixHex(neutral[50], primary[50], 0.3);
+  const surfaceRaised = darkMode ? mixHex(neutral[900], primary[800], 0.16) : "#ffffff";
+  const surfaceStrong = darkMode ? mixHex(neutral[900], primary[800], 0.28) : neutral[100];
+  const text = darkMode
+    ? neutral[50]
+    : options.highContrast
+      ? neutral[950]
+      : mixHex(neutral[950], "#000000", 0.08);
+  const muted = darkMode ? mixHex(neutral[300], neutral[50], 0.18) : neutral[600];
+  const subtleText = darkMode ? neutral[300] : neutral[500];
+  const border = darkMode
+    ? withAlpha(primary[300], options.highContrast ? 0.36 : 0.22)
+    : options.highContrast
+      ? neutral[400]
+      : neutral[200];
+  const primaryAction = options.mutedMode
+    ? mixHex(primary[600], neutral[900], 0.14)
+    : darkMode
+      ? primary[500]
+      : primary[600];
   const secondaryAction =
-    options.mutedMode ? mixHex(secondary[600], neutral[900], 0.14) : secondary[600];
-  const accentAction = options.mutedMode ? mixHex(accent[600], neutral[900], 0.12) : accent[600];
+    options.mutedMode
+      ? mixHex(secondary[600], neutral[900], 0.14)
+      : darkMode
+        ? secondary[500]
+        : secondary[600];
+  const accentAction = options.mutedMode
+    ? mixHex(accent[600], neutral[900], 0.12)
+    : darkMode
+      ? accent[500]
+      : accent[600];
   const elevationScale = clampNumber(options.elevationScale ?? 1, 0, 2);
+  const primaryHover = darkMode ? primary[400] : primary[700];
+  const secondaryButtonBg = darkMode ? withAlpha(secondary[400], 0.14) : secondary[50];
+  const secondaryButtonHover = darkMode ? withAlpha(secondary[400], 0.22) : secondary[100];
+  const secondaryButtonText = darkMode ? secondary[100] : secondary[800];
+  const secondaryButtonBorder = darkMode ? withAlpha(secondary[300], 0.34) : secondary[200];
+  const brandBadgeBg = darkMode ? withAlpha(primary[400], 0.16) : primary[100];
+  const brandBadgeText = darkMode ? primary[100] : primary[700];
+  const brandBadgeBorder = darkMode ? withAlpha(primary[300], 0.26) : primary[200];
+  const highlightSoft = darkMode ? withAlpha(highlight[300], 0.16) : highlight[100];
+  const highlightText = darkMode ? highlight[100] : highlight[800];
 
   return {
     ...prefixScale("--brand-primary", primary),
@@ -132,10 +165,10 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--mist-200": surfaceStrong,
     "--mist-300": border,
     "--green-600": primaryAction,
-    "--green-700": primary[700],
-    "--green-100": primary[100],
+    "--green-700": primaryHover,
+    "--green-100": brandBadgeBg,
     "--blue-600": secondaryAction,
-    "--blue-100": secondary[100],
+    "--blue-100": secondaryButtonHover,
     "--amber-500": harmonizeSemanticColor(WARNING_BASE, normalizedSeeds.accent),
     "--color-bg": background,
     "--color-surface": surface,
@@ -145,42 +178,45 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--color-muted": muted,
     "--color-border": border,
     "--color-accent": primaryAction,
-    "--color-accent-hover": primary[700],
-    "--color-accent-soft": primary[100],
-    "--color-accent-border": withAlpha(primary[500], options.highContrast ? 0.62 : 0.32),
+    "--color-accent-hover": primaryHover,
+    "--color-accent-soft": brandBadgeBg,
+    "--color-accent-border": withAlpha(
+      primary[500],
+      darkMode ? 0.48 : options.highContrast ? 0.62 : 0.32,
+    ),
     "--color-blue": secondaryAction,
-    "--color-blue-soft": secondary[100],
+    "--color-blue-soft": secondaryButtonHover,
     "--color-on-accent": getContrastText(primaryAction),
-    "--color-highlight": highlight[400],
-    "--color-highlight-soft": highlight[100],
-    "--color-on-highlight": getContrastText(highlight[300]),
+    "--color-highlight": darkMode ? highlight[300] : highlight[400],
+    "--color-highlight-soft": highlightSoft,
+    "--color-on-highlight": darkMode ? getContrastText(highlight[300]) : getContrastText(highlight[300]),
     "--color-warning": "var(--amber-500)",
     "--color-success": harmonizeSemanticColor(SUCCESS_BASE, normalizedSeeds.primary),
     "--color-error": harmonizeSemanticColor(ERROR_BASE, normalizedSeeds.accent),
     "--color-info": harmonizeSemanticColor(INFO_BASE, normalizedSeeds.primary),
     "--button-primary-bg": primaryAction,
-    "--button-primary-hover": primary[700],
+    "--button-primary-hover": primaryHover,
     "--button-primary-text": getContrastText(primaryAction),
-    "--button-secondary-bg": secondary[50],
-    "--button-secondary-hover": secondary[100],
-    "--button-secondary-text": secondary[800],
-    "--button-secondary-border": secondary[200],
-    "--link-color": primary[700],
-    "--link-hover": primary[800],
-    "--focus-ring": primary[400],
-    "--gradient-hero-start": primary[600],
+    "--button-secondary-bg": secondaryButtonBg,
+    "--button-secondary-hover": secondaryButtonHover,
+    "--button-secondary-text": secondaryButtonText,
+    "--button-secondary-border": secondaryButtonBorder,
+    "--link-color": darkMode ? primary[300] : primary[700],
+    "--link-hover": darkMode ? primary[200] : primary[800],
+    "--focus-ring": darkMode ? primary[300] : primary[400],
+    "--gradient-hero-start": darkMode ? primary[700] : primary[600],
     "--gradient-hero-end": secondary[500],
     "--gradient-hero-accent": accentAction,
     "--chart-1": primary[600],
     "--chart-2": secondary[600],
     "--chart-3": accentAction,
     "--chart-4": highlight[500],
-    "--badge-brand-bg": primary[100],
-    "--badge-brand-text": primary[700],
-    "--badge-brand-border": primary[200],
-    "--badge-highlight-bg": highlight[100],
-    "--badge-highlight-text": highlight[800],
-    "--badge-highlight-border": highlight[200],
+    "--badge-brand-bg": brandBadgeBg,
+    "--badge-brand-text": brandBadgeText,
+    "--badge-brand-border": brandBadgeBorder,
+    "--badge-highlight-bg": highlightSoft,
+    "--badge-highlight-text": highlightText,
+    "--badge-highlight-border": darkMode ? withAlpha(highlight[300], 0.24) : highlight[200],
     "--shadow-soft": getShadowValue(neutral[950], 20, 60, 0.08, elevationScale),
     "--shadow-raised": getShadowValue(neutral[950], 32, 100, 0.12, elevationScale),
     "--shadow-brand": getShadowValue(primary[600], 28, 84, 0.18, elevationScale),
@@ -188,7 +224,9 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--dark-color-surface": mixHex(neutral[950], primary[900], 0.24),
     "--dark-color-text": neutral[50],
     "--dark-color-border": withAlpha(primary[300], 0.22),
-    "--color-nav-bg": withAlpha(surfaceRaised, options.highContrast ? 0.96 : 0.9),
+    "--color-nav-bg": darkMode
+      ? withAlpha(surfaceRaised, options.highContrast ? 0.96 : 0.9)
+      : withAlpha(surfaceRaised, options.highContrast ? 0.96 : 0.9),
     "--color-footer-muted": withAlpha(neutral[50], options.highContrast ? 0.9 : 0.76),
   };
 }

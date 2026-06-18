@@ -51,19 +51,23 @@ export function SliderControl({
     setDraft(null);
   };
 
-  const adjustByWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+  const adjustByWheel = (event: React.WheelEvent<HTMLSpanElement>) => {
     if (event.deltaY === 0) return;
 
     event.preventDefault();
+    event.stopPropagation();
     const direction = event.deltaY < 0 ? 1 : -1;
     onChange(snapToStep(value + direction * step, step, min, max));
   };
 
   return (
-    <div className="design-overlay__slider-row" onWheel={adjustByWheel}>
+    <div className="design-overlay__slider-row">
       <div className="design-overlay__row-top">
         <label htmlFor={`${id}-range`}>{label}</label>
-        <span className="design-overlay__number-shell">
+        <span
+          className="design-overlay__number-shell"
+          onWheelCapture={adjustByWheel}
+        >
           <input
             id={`${id}-value`}
             type="text"
@@ -171,42 +175,6 @@ export function ColorControl({ id, label, onChange, value }: ColorControlProps) 
   );
 }
 
-interface SwatchStripProps {
-  colors: readonly string[];
-  label: string;
-  onSelect: (value: string) => void;
-  selectedColor: string;
-}
-
-export function SwatchStrip({
-  colors,
-  label,
-  onSelect,
-  selectedColor,
-}: SwatchStripProps) {
-  const selected = normalizeHexColor(selectedColor);
-
-  return (
-    <div className="design-overlay__swatch-strip" aria-label={label}>
-      {colors.map((color) => {
-        const normalizedColor = normalizeHexColor(color);
-        return (
-          <button
-            key={normalizedColor}
-            type="button"
-            className="design-overlay__swatch"
-            data-selected={normalizedColor === selected}
-            aria-label={`Use ${normalizedColor}`}
-            onClick={() => onSelect(normalizedColor)}
-          >
-            <span style={{ backgroundColor: normalizedColor }} />
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 interface DerivedColorPreviewProps {
   colors: readonly {
     label: string;
@@ -268,6 +236,42 @@ export function SegmentedControl<Value extends string>({
         ))}
       </div>
     </div>
+  );
+}
+
+interface SelectControlProps<Value extends string> {
+  id: string;
+  label: string;
+  onChange: (value: Value) => void;
+  options: readonly {
+    label: string;
+    value: Value;
+  }[];
+  value: Value;
+}
+
+export function SelectControl<Value extends string>({
+  id,
+  label,
+  onChange,
+  options,
+  value,
+}: SelectControlProps<Value>) {
+  return (
+    <label className="design-overlay__select-row" htmlFor={id}>
+      <span>{label}</span>
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value as Value)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
