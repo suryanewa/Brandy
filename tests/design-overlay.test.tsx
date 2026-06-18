@@ -85,12 +85,12 @@ describe("DesignOverlay", () => {
     }
     expect(screen.queryByRole("button", { name: "Demo frames" })).toBeNull();
     expect(screen.getByRole("radiogroup", { name: "Page width" })).toBeTruthy();
-    expect(screen.getByRole("radiogroup", { name: "Hero" })).toBeTruthy();
+    expect(screen.getByRole("radiogroup", { name: "Hero presence" })).toBeTruthy();
     expect(screen.getByRole("radiogroup", { name: "Grid density" })).toBeTruthy();
     expect(screen.getByLabelText("Spacing value")).toBeTruthy();
     expect(screen.getByLabelText("Corners value")).toBeTruthy();
     expect(screen.getByLabelText("Page gutter value")).toBeTruthy();
-    expect(screen.getByLabelText("Hero balance value")).toBeTruthy();
+    expect(screen.getByLabelText("Hero emphasis value")).toBeTruthy();
     expect(screen.getByLabelText("Text width value")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Remix layout" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Motion" })).toBeNull();
@@ -102,10 +102,10 @@ describe("DesignOverlay", () => {
     expect(document.documentElement.style.getPropertyValue("--container-lg")).toBe(
       "1328px",
     );
-    fireEvent.change(screen.getByLabelText("Hero balance value"), {
+    fireEvent.change(screen.getByLabelText("Hero emphasis value"), {
       target: { value: "40" },
     });
-    fireEvent.blur(screen.getByLabelText("Hero balance value"));
+    fireEvent.blur(screen.getByLabelText("Hero emphasis value"));
     expect(document.documentElement.style.getPropertyValue("--hero-grid-text-fr")).toBe(
       "1.2fr",
     );
@@ -767,10 +767,10 @@ describe("DesignOverlay", () => {
       Standard: "standard",
       Wide: "wide",
     });
-    const heroScale = getCheckedRadioValue("Hero", {
-      Balanced: "balanced",
+    const heroScale = getCheckedRadioValue("Hero presence", {
       Compact: "compact",
-      Immersive: "immersive",
+      Roomy: "balanced",
+      Showcase: "immersive",
     });
     const gridDensity = getCheckedRadioValue("Grid density", {
       Balanced: "balanced",
@@ -787,7 +787,7 @@ describe("DesignOverlay", () => {
       (screen.getByLabelText("Page gutter value") as HTMLInputElement).value,
     );
     const heroBalance = Number(
-      (screen.getByLabelText("Hero balance value") as HTMLInputElement).value,
+      (screen.getByLabelText("Hero emphasis value") as HTMLInputElement).value,
     );
     const textWidth = Number(
       (screen.getByLabelText("Text width value") as HTMLInputElement).value,

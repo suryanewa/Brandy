@@ -164,11 +164,11 @@ const LAYOUT_SLIDERS: readonly SliderControlConfig[] = [
   },
   {
     key: "heroBalance",
-    label: "Hero balance",
+    label: "Hero emphasis",
     min: 35,
     max: 65,
-    startLabel: "Text-heavy",
-    endLabel: "Visual-forward",
+    startLabel: "More copy",
+    endLabel: "More interface",
     step: 1,
   },
   {
@@ -195,11 +195,11 @@ const LAYOUT_SEGMENTED_CONTROLS = [
   },
   {
     key: "heroScale",
-    label: "Hero",
+    label: "Hero presence",
     options: [
       { label: "Compact", value: "compact" },
-      { label: "Balanced", value: "balanced" },
-      { label: "Immersive", value: "immersive" },
+      { label: "Roomy", value: "balanced" },
+      { label: "Showcase", value: "immersive" },
     ],
   },
   {
