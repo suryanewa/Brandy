@@ -1,0 +1,144 @@
+@media (max-width: 1100px) {
+  .grid[data-columns="4"],
+  .grid[data-columns="3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero-grid,
+  .split[data-ratio] {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy .text-display {
+    max-width: 11ch;
+  }
+
+  .hero-browser {
+    width: 100%;
+  }
+
+  .footer__inner {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .navbar__links,
+  .navbar__cta {
+    display: none;
+  }
+
+  .navbar__menu-button {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .demo-frame,
+  .demo-frame__canvas {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-frame__sidebar {
+    border-bottom: var(--stroke-thin) solid var(--color-border);
+    border-right: 0;
+  }
+
+  .demo-layer-list {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .demo-layer {
+    justify-content: center;
+  }
+
+  .demo-layer span {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .section[data-size="hero"] {
+    min-height: auto;
+    padding-block: var(--space-8) var(--space-6);
+  }
+
+  .grid[data-columns],
+  .before-after,
+  .starter-list {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-actions .button {
+    width: 100%;
+  }
+
+  .browser-frame__bar {
+    padding-inline: var(--space-4);
+  }
+
+  .browser-frame__bar p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .demo-frame {
+    min-height: auto;
+  }
+
+  .demo-frame__canvas,
+  .demo-frame__sidebar,
+  .demo-preview,
+  .demo-inspector {
+    padding: var(--space-4);
+  }
+
+  .demo-preview__hero strong {
+    font-size: var(--font-size-h4);
+  }
+
+  .hero-browser .demo-frame {
+    display: block;
+    min-height: 0;
+  }
+
+  .hero-browser .browser-frame__content {
+    height: 6rem;
+  }
+
+  .hero-browser .demo-frame__sidebar,
+  .hero-browser .demo-inspector {
+    display: none;
+  }
+
+  .hero-browser .demo-frame__canvas {
+    display: block;
+    padding: var(--space-3);
+  }
+
+  .hero-browser .demo-preview {
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .hero-browser .demo-preview__hero {
+    padding: var(--space-3);
+  }
+
+  .hero-browser .demo-preview__hero p {
+    display: none;
+  }
+
+  .hero-browser .demo-preview__stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer__links {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "brandy",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint . --max-warnings=0",
+    "preview": "vite preview",
+    "sync:sources": "node scripts/sync-sources.mjs",
+    "sync:sources:check": "node scripts/sync-sources.mjs --check",
+    "sync:sources:init-design": "node scripts/sync-sources.mjs --init-design",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
+    "verify": "npm run sync:sources:check && npm run lint && npm test && npm run typecheck && npm audit --audit-level=high"
+  },
+  "dependencies": {
+    "lucide-react": "^1.20.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "eslint": "^10.5.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.6.0",
+    "jsdom": "^29.1.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.61.1",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9",
+    "yaml": "^2.9.0"
+  }
+}

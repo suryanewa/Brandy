@@ -1,0 +1,191 @@
+:root {
+  --white: #fefefe;
+  --ink-950: #050708;
+  --ink-800: #191b1c;
+  --ink-600: #4b4c4d;
+  --ink-500: #5f6061;
+  --mist-100: #fafafa;
+  --mist-200: #cecece;
+  --mist-300: #8f8f90;
+  --green-600: #0d845c;
+  --green-700: #095f42;
+  --green-100: #bbdcd1;
+  --blue-600: #2054c7;
+  --blue-100: #c0ceef;
+  --amber-500: #bf7a18;
+
+  --color-bg: #ffffff;
+  --color-surface: #fafafa;
+  --color-surface-raised: #fefefe;
+  --color-surface-strong: #cecece;
+  --color-text: #050708;
+  --color-muted: #4b4c4d;
+  --color-border: #8f8f90;
+  --color-accent: #0d845c;
+  --color-accent-hover: #095f42;
+  --color-accent-soft: #bbdcd1;
+  --color-accent-border: rgba(13, 132, 92, 0.62);
+  --color-blue: #2054c7;
+  --color-blue-soft: #c0ceef;
+  --color-warning: var(--amber-500);
+  --color-nav-bg: rgba(254, 254, 254, 0.94);
+  --color-footer-muted: rgba(255, 255, 255, 0.86);
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  --section-padding-x: clamp(1rem, 2.8vw, 2.1rem);
+  --section-padding-y-sm: 2.1rem;
+  --section-padding-y-md: 3.5rem;
+  --section-padding-y-lg: 4.2rem;
+  --section-hero-min-height: 78svh;
+  --brandy-section-default-padding-y: var(--section-padding-y-md);
+
+  --container-sm: 683px;
+  --container-md: 907px;
+  --container-lg: 1120px;
+  --container-xl: 1328px;
+  --content-readable-max: calc(var(--container-sm) + 40px);
+  --brandy-container-default-max-width: var(--container-lg);
+  --brandy-grid-default-columns: repeat(3, minmax(0, 1fr));
+  --brandy-split-default-columns: minmax(0, 1fr) minmax(0, 1fr);
+  --brandy-cluster-default-justify: center;
+  --brandy-cluster-default-gap: var(--space-5);
+  --brandy-stack-default-gap: var(--space-6);
+  --hero-grid-text-fr: 0.86fr;
+  --hero-grid-visual-fr: 1.14fr;
+  --hero-grid-visual-min: 28rem;
+  --hero-copy-max-width: 9ch;
+  --hero-description-max-width: 38rem;
+  --footer-copy-max-width: 26rem;
+  --footer-columns: 1.2fr 1fr auto;
+
+  --button-height-sm: calc(2rem + 0.25rem);
+  --button-height-md: calc(2.5rem + 0.25rem);
+  --button-height-lg: calc(3rem + 0.25rem);
+  --button-font-size: 0.875rem;
+  --button-font-weight: 720;
+  --button-hover-lift: -1px;
+  --button-padding-sm: var(--space-4);
+  --button-padding-md: var(--space-5);
+  --button-padding-lg: var(--space-6);
+  --badge-font-weight: 720;
+  --card-padding: var(--space-6);
+  --navbar-min-height: 4.25rem;
+  --navbar-link-font-size: 0.875rem;
+  --navbar-brand-mark-size: 1.2rem;
+  --navbar-menu-button-size: 2.5rem;
+
+  --browser-bar-height: 60px;
+  --browser-content-min-height: 360px;
+  --browser-dot-size: 0.625rem;
+  --demo-frame-min-height: 480px;
+  --demo-preview-nav-height: 52px;
+  --hero-demo-height: 360px;
+  --demo-sidebar-width: 14rem;
+  --demo-canvas-left-fr: 1.2fr;
+  --demo-canvas-min-column: 16rem;
+  --demo-canvas-right-fr: 0.8fr;
+  --demo-layer-font-size: 0.875rem;
+  --demo-layer-min-height: 2.5rem;
+  --demo-accent-bar-height: 0.5rem;
+  --demo-accent-bar-width: 5rem;
+  --feature-card-min-height: 14rem;
+  --step-card-min-height: 16rem;
+  --faq-trigger-min-height: 4.5rem;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 2px;
+  --radius-full: 999px;
+
+  --stroke-thin: 1px;
+  --stroke-medium: 2px;
+
+  --shadow-soft: 0 20px 60px rgba(17, 20, 22, 0.08);
+  --shadow-raised: 0 32px 100px rgba(17, 20, 22, 0.12);
+  --navbar-blur: 28px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 161ms;
+  --duration-base: 260ms;
+  --duration-slow: 499ms;
+  --brandy-scroll-behavior: smooth;
+  --brandy-marquee-duration: 28s;
+  --brandy-animation-play-state: running;
+
+  --z-base: 0;
+  --z-raised: 10;
+  --z-header: 50;
+  --z-modal: 100;
+
+  --font-family-heading: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-family-body: Roboto, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-size-display: 5.5225rem;
+  --font-size-h1: 3.4662rem;
+  --font-size-h2: 2.7612rem;
+  --font-size-h3: 1.9387rem;
+  --font-size-h4: 1.41rem;
+  --font-size-body-lg: 1.175rem;
+  --font-size-body: 0.94rem;
+  --font-size-caption: 0.705rem;
+  --font-size-eyebrow: 0.5875rem;
+  --line-height-root: 1.5;
+  --line-height-display: 1.02;
+  --line-height-h1: 1.05;
+  --line-height-h2: 1.08;
+  --line-height-h3: 1.15;
+  --line-height-h4: 1.33;
+  --line-height-body-lg: 1.6;
+  --line-height-body: 1.5;
+  --line-height-caption: 1.5;
+  --line-height-eyebrow: 1.6;
+  --font-weight-heading: 760;
+  --font-weight-body: 400;
+  --font-weight-strong: 800;
+  --font-weight-label: 760;
+  --letter-spacing-heading: 0em;
+  --letter-spacing-eyebrow: 0em;
+  --text-transform-eyebrow: uppercase;
+  --section-header-align: center;
+  --section-header-left-align: left;
+  --final-cta-align: center;
+  --demo-inspector-top-justify: flex-start;
+}
+
+@media (max-width: 1100px) {
+  :root {
+    --font-size-display: 4.625rem;
+    --font-size-h1: 3.125rem;
+    --font-size-h2: 2.5rem;
+    --font-size-h3: 1.875rem;
+    --section-padding-y-lg: var(--space-20);
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --font-size-display: 3.5rem;
+    --font-size-h1: 2.75rem;
+    --font-size-h2: 2.25rem;
+    --font-size-h3: 1.75rem;
+    --font-size-body-lg: 1.125rem;
+    --section-padding-y-sm: var(--space-10);
+    --section-padding-y-md: var(--space-14);
+    --section-padding-y-lg: var(--space-16);
+  }
+}
