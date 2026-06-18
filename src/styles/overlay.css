@@ -128,6 +128,7 @@ html {
 }
 
 .design-overlay__icon-button,
+.design-overlay__group-action,
 .design-overlay__group-reset {
   align-items: center;
   background: transparent;
@@ -146,12 +147,14 @@ html {
 }
 
 .design-overlay__icon-button:hover,
+.design-overlay__group-action:hover,
 .design-overlay__group-reset:hover {
   background: var(--color-surface);
   color: var(--color-text);
 }
 
 .design-overlay__icon-button svg,
+.design-overlay__group-action svg,
 .design-overlay__group-reset svg,
 .design-overlay__reset-all svg {
   height: 1rem;
@@ -191,6 +194,12 @@ html {
   display: grid;
   gap: var(--space-2);
   grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.design-overlay__group-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.125rem;
 }
 
 .design-overlay__group-toggle {
@@ -713,17 +722,37 @@ html {
 }
 
 .design-overlay__derived-color {
-  align-items: center;
   background: var(--color-surface);
   border: var(--stroke-thin) solid var(--color-border);
   border-radius: var(--radius-md);
   display: grid;
+  gap: var(--space-2);
+  padding: 0;
+}
+
+.design-overlay__derived-color[data-active="true"] {
+  border-color: var(--button-primary-bg);
+}
+
+.design-overlay__derived-color-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
   gap: 0 var(--space-2);
   grid-template-columns: auto minmax(0, 1fr);
   padding: var(--space-2);
+  text-align: left;
+  width: 100%;
 }
 
-.design-overlay__derived-color span {
+.design-overlay__derived-color-button:hover {
+  background: var(--color-surface-raised);
+}
+
+.design-overlay__derived-color-button span {
   border: var(--stroke-thin) solid var(--color-border);
   border-radius: var(--radius-sm);
   grid-row: span 2;
@@ -731,26 +760,30 @@ html {
   width: 1.45rem;
 }
 
-.design-overlay__derived-color small,
-.design-overlay__derived-color code {
+.design-overlay__derived-color-button small,
+.design-overlay__derived-color-button code {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.design-overlay__derived-color small {
+.design-overlay__derived-color-button small {
   color: var(--color-text);
   font-size: 0.74rem;
   font-weight: var(--font-weight-label);
 }
 
-.design-overlay__derived-color code {
+.design-overlay__derived-color-button code {
   color: var(--color-muted);
   font-family:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     monospace;
   font-size: 0.68rem;
+}
+
+.design-overlay__derived-adjustment {
+  padding: 0 var(--space-2) var(--space-2);
 }
 
 .design-overlay__toggle-row {

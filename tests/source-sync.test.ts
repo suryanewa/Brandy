@@ -7,8 +7,10 @@ import landingCopyMarkdown from "../content/landing-copy.md?raw";
 import { landingPage } from "../src/content/landing";
 import {
   BRAND_GENERATED_TOKEN_NAMES,
+  DEFAULT_BRAND_DERIVATION_CONTROLS,
   BRAND_SEED_KEYS,
   generateBrandThemeTokens,
+  type BrandDerivationControls,
   type BrandSeeds,
 } from "../src/lib/brandTheme.mjs";
 import {
@@ -82,11 +84,16 @@ describe("source sync files", () => {
     for (const value of Object.values(source.creativeSeeds.color)) {
       expect(value).toMatch(/^#[0-9a-f]{6}$/);
     }
+    expect(source.creativeSeeds.colorDerivation).toEqual(
+      DEFAULT_BRAND_DERIVATION_CONTROLS,
+    );
   });
 
   it("keeps generated brand tokens in sync with brand seeds", () => {
     const source = readDesignTokenYaml();
-    const generatedTokens = generateBrandThemeTokens(source.creativeSeeds.color);
+    const generatedTokens = generateBrandThemeTokens(source.creativeSeeds.color, {
+      derivation: source.creativeSeeds.colorDerivation,
+    });
 
     for (const name of BRAND_GENERATED_TOKEN_NAMES) {
       expect(source.root[name]).toBe(generatedTokens[name]);
@@ -231,6 +238,7 @@ function readDesignTokenYaml(): {
   };
   creativeSeeds: {
     color: BrandSeeds;
+    colorDerivation: BrandDerivationControls;
     layout: LayoutSeeds;
     typography: TypographySeeds;
   };
@@ -263,6 +271,7 @@ function readDesignTokenYaml(): {
     };
     creative_seeds?: {
       color?: BrandSeeds;
+      color_derivation?: BrandDerivationControls;
       layout?: LayoutSeeds;
       typography?: TypographySeeds;
     };
@@ -312,6 +321,9 @@ function readDesignTokenYaml(): {
         primary: "",
         secondary: "",
       },
+      colorDerivation:
+        parsed.creative_seeds?.color_derivation ??
+        DEFAULT_BRAND_DERIVATION_CONTROLS,
       layout: parsed.creative_seeds?.layout ?? {
         gridDensity: "balanced",
         heroBalance: 0,

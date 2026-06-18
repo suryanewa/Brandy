@@ -4,6 +4,7 @@ import {
   Palette,
   RotateCcw,
   Settings,
+  Shuffle,
   SlidersHorizontal,
   Type,
   X,
@@ -17,7 +18,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { BRAND_GENERATED_TOKEN_NAMES } from "../../lib/brandTheme.mjs";
+import {
+  BRAND_GENERATED_TOKEN_NAMES,
+  generateBrandDerivationRemix,
+  generatePaletteRemix,
+} from "../../lib/brandTheme.mjs";
 import { LAYOUT_GENERATED_TOKEN_NAMES } from "../../lib/layoutTheme.mjs";
 import { TYPOGRAPHY_GENERATED_TOKEN_NAMES } from "../../lib/typographyTheme.mjs";
 import {
@@ -25,6 +30,7 @@ import {
   DESIGN_CSS_VARIABLE_NAMES,
   DESIGN_OVERLAY_STORAGE_KEY,
   areDesignValuesEqual,
+  getDesignBrandDerivation,
   getDesignBrandSeeds,
   getDesignCssVariables,
   getDesignLayoutSeeds,
@@ -67,10 +73,24 @@ type InlineRestore = {
 };
 type SourceSyncState = "idle" | "syncing" | "synced" | "error";
 type NumberSettingKey =
+  | "accentMomentDistancePercent"
+  | "backgroundDistancePercent"
+  | "borderDistancePercent"
+  | "buttonPrimaryBgDistancePercent"
+  | "buttonSecondaryBorderDistancePercent"
+  | "buttonSecondaryHoverDistancePercent"
+  | "highlightSoftDistancePercent"
+  | "linkColorDistancePercent"
+  | "linkHoverDistancePercent"
+  | "neutralSurfaceDistancePercent"
   | "sectionSpacing"
   | "radius"
   | "pageGutter"
   | "heroBalance"
+  | "primaryHoverDistancePercent"
+  | "readableTextDistancePercent"
+  | "secondaryTextDistancePercent"
+  | "secondarySurfaceDistancePercent"
   | "textWidth"
   | "typographyScale"
   | "typographyDensity"
@@ -263,6 +283,20 @@ const PALETTE_KEYS = [
   "secondaryColor",
   "accentColor",
   "highlightColor",
+  "backgroundDistancePercent",
+  "borderDistancePercent",
+  "buttonPrimaryBgDistancePercent",
+  "buttonSecondaryBorderDistancePercent",
+  "buttonSecondaryHoverDistancePercent",
+  "linkColorDistancePercent",
+  "linkHoverDistancePercent",
+  "primaryHoverDistancePercent",
+  "secondarySurfaceDistancePercent",
+  "accentMomentDistancePercent",
+  "highlightSoftDistancePercent",
+  "neutralSurfaceDistancePercent",
+  "readableTextDistancePercent",
+  "secondaryTextDistancePercent",
   "darkMode",
 ] as const satisfies readonly ResetKey[];
 const LAYOUT_KEYS = [
@@ -314,6 +348,114 @@ const SOURCE_GENERATED_TOKEN_NAMES = new Set<`--${string}`>([
   ...TYPOGRAPHY_GENERATED_TOKEN_NAMES,
 ]);
 const SOURCE_SYNC_DEBOUNCE_MS = 650;
+const PALETTE_REMIX_SALT_RANGE = 4096;
+const DERIVED_COLOR_CONTROLS = [
+  {
+    id: "background",
+    key: "backgroundDistancePercent",
+    label: "Background",
+    sourceLabel: "Page base",
+    token: "--color-bg",
+  },
+  {
+    id: "primary-hover",
+    key: "primaryHoverDistancePercent",
+    label: "Primary hover",
+    sourceLabel: "Primary",
+    token: "--button-primary-hover",
+  },
+  {
+    id: "primary-button",
+    key: "buttonPrimaryBgDistancePercent",
+    label: "Primary button",
+    sourceLabel: "Primary",
+    token: "--button-primary-bg",
+  },
+  {
+    id: "secondary-surface",
+    key: "secondarySurfaceDistancePercent",
+    label: "Secondary surface",
+    sourceLabel: "Secondary",
+    token: "--button-secondary-bg",
+  },
+  {
+    id: "secondary-border",
+    key: "buttonSecondaryBorderDistancePercent",
+    label: "Secondary border",
+    sourceLabel: "Secondary",
+    token: "--button-secondary-border",
+  },
+  {
+    id: "secondary-hover",
+    key: "buttonSecondaryHoverDistancePercent",
+    label: "Secondary hover",
+    sourceLabel: "Secondary",
+    token: "--button-secondary-hover",
+  },
+  {
+    id: "link-color",
+    key: "linkColorDistancePercent",
+    label: "Link",
+    sourceLabel: "Primary",
+    token: "--link-color",
+  },
+  {
+    id: "link-hover",
+    key: "linkHoverDistancePercent",
+    label: "Link hover",
+    sourceLabel: "Link",
+    token: "--link-hover",
+  },
+  {
+    id: "border",
+    key: "borderDistancePercent",
+    label: "Border",
+    sourceLabel: "Surface",
+    token: "--color-border",
+  },
+  {
+    id: "accent-moment",
+    key: "accentMomentDistancePercent",
+    label: "Accent moment",
+    sourceLabel: "Accent",
+    token: "--gradient-hero-accent",
+  },
+  {
+    id: "highlight-soft",
+    key: "highlightSoftDistancePercent",
+    label: "Highlight soft",
+    sourceLabel: "Highlight",
+    token: "--color-highlight-soft",
+  },
+  {
+    id: "neutral-surface",
+    key: "neutralSurfaceDistancePercent",
+    label: "Neutral surface",
+    sourceLabel: "Neutral base",
+    token: "--color-surface",
+  },
+  {
+    id: "readable-text",
+    key: "readableTextDistancePercent",
+    label: "Primary text",
+    sourceLabel: "Text base",
+    token: "--color-text",
+  },
+  {
+    id: "secondary-text",
+    key: "secondaryTextDistancePercent",
+    label: "Secondary text",
+    sourceLabel: "Primary text",
+    token: "--color-muted",
+  },
+] as const satisfies readonly {
+  id: string;
+  key: NumberSettingKey;
+  label: string;
+  sourceLabel: string;
+  token: DesignCssVariableName;
+}[];
+type DerivedColorControlId = (typeof DERIVED_COLOR_CONTROLS)[number]["id"];
 
 export function DesignOverlay({
   className,
@@ -331,6 +473,11 @@ export function DesignOverlay({
   const restoreRef = useRef<InlineRestore | null>(null);
   const lastSyncedSourcePayloadRef = useRef("");
   const latestSourceSyncPayloadRef = useRef("");
+  const paletteRemixBaseRef = useRef<ReturnType<typeof getDesignBrandSeeds> | null>(
+    null,
+  );
+  const paletteRemixSaltRef = useRef(getPaletteRemixSalt());
+  const paletteRemixStepRef = useRef(0);
   const [open, setOpen] = useState(initialOpen);
   const [expandedGroups, setExpandedGroups] =
     useState<Record<DesignOverlayGroupKey, boolean>>(INITIAL_GROUP_STATE);
@@ -353,6 +500,8 @@ export function DesignOverlay({
     useState<SourceSyncState>("idle");
   const [sourceSyncMessage, setSourceSyncMessage] = useState("");
   const [sourceSyncUserEdited, setSourceSyncUserEdited] = useState(false);
+  const [activeDerivedColor, setActiveDerivedColor] =
+    useState<DerivedColorControlId | null>(null);
 
   const resolveTargetRoot = useCallback((): HTMLElement | null => {
     if (targetRoot) return targetRoot;
@@ -509,6 +658,7 @@ export function DesignOverlay({
     () =>
       JSON.stringify({
         brand: getDesignBrandSeeds(values),
+        brandDerivation: getDesignBrandDerivation(values),
         layout: getDesignLayoutSeeds(values),
         reload: false,
         typography: getDesignTypographySeeds(values),
@@ -548,16 +698,67 @@ export function DesignOverlay({
     },
     [],
   );
+  const updateBrandColorValue = useCallback(
+    (key: "primaryColor" | "secondaryColor" | "accentColor" | "highlightColor", value: string) => {
+      paletteRemixBaseRef.current = null;
+      paletteRemixSaltRef.current = getPaletteRemixSalt();
+      paletteRemixStepRef.current = 0;
+      updateValue(key, value);
+    },
+    [updateValue],
+  );
+
+  const remixPalette = useCallback(() => {
+    markSourceSyncDirty();
+    const remixStep = paletteRemixStepRef.current;
+    paletteRemixStepRef.current += 1;
+    setValues((current) => {
+      const remixBase = paletteRemixBaseRef.current ?? getDesignBrandSeeds(current);
+      paletteRemixBaseRef.current = remixBase;
+      const remix = generatePaletteRemix(remixBase, {
+        salt: paletteRemixSaltRef.current,
+        step: remixStep,
+      });
+
+      return {
+        ...current,
+        ...generateBrandDerivationRemix({ step: remixStep }),
+        primaryColor: remix.palette.primary,
+        secondaryColor: remix.palette.secondary,
+        accentColor: remix.palette.accent,
+        highlightColor: remix.palette.highlight,
+      };
+    });
+  }, [markSourceSyncDirty]);
+
+  useEffect(() => {
+    const handlePaletteRemixShortcut = (event: KeyboardEvent) => {
+      if (!isPaletteRemixShortcut(event)) return;
+      event.preventDefault();
+      remixPalette();
+    };
+
+    window.addEventListener("keydown", handlePaletteRemixShortcut);
+    return () => window.removeEventListener("keydown", handlePaletteRemixShortcut);
+  }, [remixPalette]);
 
   const resetAll = useCallback(() => {
     markSourceSyncDirty();
     setValues({ ...resolvedDefaults });
     setTokenValues({});
+    paletteRemixBaseRef.current = null;
+    paletteRemixSaltRef.current = getPaletteRemixSalt();
+    paletteRemixStepRef.current = 0;
   }, [markSourceSyncDirty, resolvedDefaults]);
 
   const resetDefaultKeys = useCallback(
     (keys: readonly ResetKey[]) => {
       markSourceSyncDirty();
+      if (keys === PALETTE_KEYS) {
+        paletteRemixBaseRef.current = null;
+        paletteRemixSaltRef.current = getPaletteRemixSalt();
+        paletteRemixStepRef.current = 0;
+      }
       setValues((current) => {
         const next = { ...current };
         for (const key of keys) {
@@ -768,30 +969,40 @@ export function DesignOverlay({
               open={expandedGroups.palette}
               onToggle={() => toggleGroup("palette")}
               onReset={() => resetDefaultKeys(PALETTE_KEYS)}
+              actions={
+                <button
+                  type="button"
+                  className="design-overlay__group-action"
+                  aria-label="Remix palette"
+                  onClick={remixPalette}
+                >
+                  <Shuffle aria-hidden="true" />
+                </button>
+              }
             >
               <ColorControl
                 id={`${baseId}-primary-color`}
                 label="Primary"
                 value={values.primaryColor}
-                onChange={(value) => updateValue("primaryColor", value)}
+                onChange={(value) => updateBrandColorValue("primaryColor", value)}
               />
               <ColorControl
                 id={`${baseId}-secondary-color`}
                 label="Secondary"
                 value={values.secondaryColor}
-                onChange={(value) => updateValue("secondaryColor", value)}
+                onChange={(value) => updateBrandColorValue("secondaryColor", value)}
               />
               <ColorControl
                 id={`${baseId}-accent-color`}
                 label="Accent"
                 value={values.accentColor}
-                onChange={(value) => updateValue("accentColor", value)}
+                onChange={(value) => updateBrandColorValue("accentColor", value)}
               />
               <ColorControl
                 id={`${baseId}-highlight-color`}
                 label="Highlight"
                 value={values.highlightColor}
-                onChange={(value) => updateValue("highlightColor", value)}
+                onChange={(value) => updateBrandColorValue("highlightColor", value)}
               />
               <ToggleControl
                 id={`${baseId}-dark-mode`}
@@ -800,32 +1011,24 @@ export function DesignOverlay({
                 onChange={(checked) => updatePreviewValue("darkMode", checked)}
               />
               <DerivedColorPreview
-                colors={[
-                  {
-                    label: "Primary hover",
-                    value: derivedPaletteValues["--button-primary-hover"],
+                activeColorId={activeDerivedColor}
+                colors={DERIVED_COLOR_CONTROLS.map((control) => ({
+                  id: control.id,
+                  label: control.label,
+                  value: derivedPaletteValues[control.token],
+                  adjustment: {
+                    id: `${baseId}-${control.id}-distance`,
+                    label: `${control.label} distance`,
+                    sourceLabel: control.sourceLabel,
+                    value: values[control.key],
+                    onChange: (value) => updateValue(control.key, value),
                   },
-                  {
-                    label: "Secondary surface",
-                    value: derivedPaletteValues["--button-secondary-bg"],
-                  },
-                  {
-                    label: "Accent moment",
-                    value: derivedPaletteValues["--gradient-hero-accent"],
-                  },
-                  {
-                    label: "Highlight soft",
-                    value: derivedPaletteValues["--color-highlight-soft"],
-                  },
-                  {
-                    label: "Neutral surface",
-                    value: derivedPaletteValues["--color-surface"],
-                  },
-                  {
-                    label: "Readable text",
-                    value: derivedPaletteValues["--color-text"],
-                  },
-                ]}
+                }))}
+                onColorSelect={(id) =>
+                  setActiveDerivedColor((current) =>
+                    current === id ? null : (id as DerivedColorControlId),
+                  )
+                }
               />
             </CollapsibleGroup>
 
@@ -892,6 +1095,7 @@ export function DesignOverlay({
 }
 
 interface CollapsibleGroupProps {
+  actions?: ReactNode;
   children: ReactNode;
   icon: ReactNode;
   id: string;
@@ -902,6 +1106,7 @@ interface CollapsibleGroupProps {
 }
 
 function CollapsibleGroup({
+  actions,
   children,
   icon,
   id,
@@ -926,14 +1131,17 @@ function CollapsibleGroup({
           <span>{title}</span>
           <ChevronDown aria-hidden="true" />
         </button>
-        <button
-          type="button"
-          className="design-overlay__group-reset"
-          aria-label={`Reset ${title}`}
-          onClick={onReset}
-        >
-          <RotateCcw aria-hidden="true" />
-        </button>
+        <div className="design-overlay__group-actions">
+          {actions}
+          <button
+            type="button"
+            className="design-overlay__group-reset"
+            aria-label={`Reset ${title}`}
+            onClick={onReset}
+          >
+            <RotateCcw aria-hidden="true" />
+          </button>
+        </div>
       </div>
       <div id={contentId} className="design-overlay__group-content" hidden={!open}>
         {open ? children : null}
@@ -956,4 +1164,20 @@ function isDarkModeShortcut(event: KeyboardEvent): boolean {
   if (target.isContentEditable) return false;
 
   return !target.closest("input, select, textarea");
+}
+
+function isPaletteRemixShortcut(event: KeyboardEvent): boolean {
+  if (event.key !== "Tab") return false;
+  if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return false;
+
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return true;
+  if (target.isContentEditable) return false;
+  if (target.closest(".design-overlay")) return false;
+
+  return !target.closest("input, select, textarea");
+}
+
+function getPaletteRemixSalt(): number {
+  return Math.floor(Math.random() * PALETTE_REMIX_SALT_RANGE);
 }

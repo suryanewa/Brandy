@@ -4,9 +4,11 @@ import path from "node:path";
 import { parse, stringify } from "yaml";
 import {
   BRAND_GENERATED_TOKEN_NAMES,
+  DEFAULT_BRAND_DERIVATION_CONTROLS,
   DEFAULT_BRAND_SEEDS,
   BRAND_SEED_KEYS,
   generateBrandThemeTokens,
+  sanitizeBrandDerivationControls,
   sanitizeBrandSeeds,
 } from "../src/lib/brandTheme.mjs";
 import {
@@ -84,12 +86,15 @@ const DEFAULT_VOICE_SEEDS = {
 
 export async function syncDesignTokensFromValues(values, options = {}) {
   const brand = options.brand ? sanitizeSourceBrandSeeds(options.brand) : null;
+  const brandDerivation = options.brandDerivation
+    ? sanitizeSourceBrandDerivationControls(options.brandDerivation)
+    : null;
   const layout = options.layout ? sanitizeSourceLayoutSeeds(options.layout) : null;
   const typography = options.typography
     ? sanitizeSourceTypographySeeds(options.typography)
     : null;
   const tokenValues = sanitizeTokenValuePatch(values, {
-    skipGeneratedBrandTokens: brand != null,
+    skipGeneratedBrandTokens: brand != null || brandDerivation != null,
     skipGeneratedLayoutTokens: layout != null,
     skipGeneratedTypographyTokens: typography != null,
   });
@@ -101,6 +106,13 @@ export async function syncDesignTokensFromValues(values, options = {}) {
       if (source.color[key] !== brand[key]) changedCount += 1;
     }
     source.color = brand;
+  }
+
+  if (brandDerivation) {
+    for (const key of Object.keys(DEFAULT_BRAND_DERIVATION_CONTROLS)) {
+      if (source.colorDerivation[key] !== brandDerivation[key]) changedCount += 1;
+    }
+    source.colorDerivation = brandDerivation;
   }
 
   if (layout) {
@@ -191,6 +203,9 @@ function readTokenDefaults(css) {
     meta: sanitizeBrandMeta(),
     strategy: sanitizeBrandStrategy(),
     color: sanitizeBrandSeeds(DEFAULT_BRAND_SEEDS),
+    colorDerivation: sanitizeBrandDerivationControls(
+      DEFAULT_BRAND_DERIVATION_CONTROLS,
+    ),
     layout: sanitizeLayoutSeeds(DEFAULT_LAYOUT_SEEDS),
     typography: sanitizeTypographySeeds(DEFAULT_TYPOGRAPHY_SEEDS),
     motion: sanitizeMotionSeeds(),
@@ -229,6 +244,9 @@ async function readDesignTokenSource() {
   const color = sanitizeSourceBrandSeeds(
     brandSource.seeds.color ?? DEFAULT_BRAND_SEEDS,
   );
+  const colorDerivation = sanitizeSourceBrandDerivationControls(
+    brandSource.seeds.color_derivation ?? DEFAULT_BRAND_DERIVATION_CONTROLS,
+  );
   const layout = sanitizeSourceLayoutSeeds(
     brandSource.seeds.layout ?? DEFAULT_LAYOUT_SEEDS,
   );
@@ -239,6 +257,7 @@ async function readDesignTokenSource() {
   if ("root" in tokens || "media" in tokens) {
     const source = {
       color,
+      colorDerivation,
       imagery: brandSource.seeds.imagery,
       layout,
       meta: brandSource.meta,
@@ -257,6 +276,7 @@ async function readDesignTokenSource() {
 
   const source = {
     color,
+    colorDerivation,
     imagery: brandSource.seeds.imagery,
     layout,
     meta: brandSource.meta,
@@ -351,6 +371,7 @@ function serializeDesignTokenSource(source) {
       },
       creative_seeds: {
         color: source.color,
+        color_derivation: source.colorDerivation,
         typography: source.typography,
         layout: source.layout,
       },
@@ -524,6 +545,26 @@ function sanitizeSourceBrandSeeds(brand) {
   return sanitizeBrandSeeds(brand);
 }
 
+function sanitizeSourceBrandDerivationControls(controls) {
+  if (!controls || typeof controls !== "object" || Array.isArray(controls)) {
+    throw new Error("Brand derivation controls must contain the supported distance sliders.");
+  }
+
+  const keys = Object.keys(controls).sort();
+  const expectedKeys = Object.keys(DEFAULT_BRAND_DERIVATION_CONTROLS).sort();
+  if (keys.join(",") !== expectedKeys.join(",")) {
+    throw new Error("Brand derivation controls must contain only the supported distance sliders.");
+  }
+
+  for (const key of Object.keys(DEFAULT_BRAND_DERIVATION_CONTROLS)) {
+    if (typeof controls[key] !== "number") {
+      throw new Error(`Brand derivation control ${key} must be a number.`);
+    }
+  }
+
+  return sanitizeBrandDerivationControls(controls);
+}
+
 function sanitizeSourceLayoutSeeds(layout) {
   if (!layout || typeof layout !== "object" || Array.isArray(layout)) {
     throw new Error("Layout seeds must contain spacing, radius, width, pageGutter, heroScale, heroBalance, textWidth, and gridDensity.");
@@ -585,7 +626,9 @@ function sanitizeSourceTypographySeeds(typography) {
 }
 
 function applyGeneratedBrandTokens(source) {
-  const generatedTokens = generateBrandThemeTokens(source.color);
+  const generatedTokens = generateBrandThemeTokens(source.color, {
+    derivation: source.colorDerivation,
+  });
   for (const name of BRAND_GENERATED_TOKEN_NAMES) {
     source.root.set(name, generatedTokens[name]);
   }

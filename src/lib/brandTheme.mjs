@@ -7,11 +7,192 @@ export const DEFAULT_BRAND_SEEDS = {
   highlight: "#fde68a",
 };
 
+export const BRAND_DERIVATION_KEYS = [
+  "backgroundDistancePercent",
+  "borderDistancePercent",
+  "buttonPrimaryBgDistancePercent",
+  "buttonSecondaryBorderDistancePercent",
+  "buttonSecondaryHoverDistancePercent",
+  "linkColorDistancePercent",
+  "linkHoverDistancePercent",
+  "primaryHoverDistancePercent",
+  "secondarySurfaceDistancePercent",
+  "accentMomentDistancePercent",
+  "highlightSoftDistancePercent",
+  "neutralSurfaceDistancePercent",
+  "readableTextDistancePercent",
+  "secondaryTextDistancePercent",
+];
+
+export const DEFAULT_BRAND_DERIVATION_CONTROLS = {
+  backgroundDistancePercent: 100,
+  borderDistancePercent: 100,
+  buttonPrimaryBgDistancePercent: 100,
+  buttonSecondaryBorderDistancePercent: 100,
+  buttonSecondaryHoverDistancePercent: 100,
+  linkColorDistancePercent: 100,
+  linkHoverDistancePercent: 100,
+  primaryHoverDistancePercent: 100,
+  secondarySurfaceDistancePercent: 100,
+  accentMomentDistancePercent: 100,
+  highlightSoftDistancePercent: 100,
+  neutralSurfaceDistancePercent: 100,
+  readableTextDistancePercent: 100,
+  secondaryTextDistancePercent: 100,
+};
+
+const DERIVATION_REMIX_RANGES = {
+  accentMomentDistancePercent: [70, 145],
+  backgroundDistancePercent: [76, 116],
+  borderDistancePercent: [55, 142],
+  buttonPrimaryBgDistancePercent: [78, 126],
+  buttonSecondaryBorderDistancePercent: [52, 132],
+  buttonSecondaryHoverDistancePercent: [58, 136],
+  highlightSoftDistancePercent: [48, 126],
+  linkColorDistancePercent: [82, 138],
+  linkHoverDistancePercent: [88, 150],
+  neutralSurfaceDistancePercent: [52, 126],
+  primaryHoverDistancePercent: [88, 148],
+  readableTextDistancePercent: [96, 132],
+  secondarySurfaceDistancePercent: [46, 126],
+  secondaryTextDistancePercent: [82, 128],
+};
+
 const SCALE_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 const SUCCESS_BASE = "#16a34a";
 const WARNING_BASE = "#d97706";
 const ERROR_BASE = "#dc2626";
 const INFO_BASE = "#2563eb";
+const GOLDEN_ANGLE = 137.508;
+const REMIX_HUE_SHIFTS = [
+  150, 0, 210, 60, 270, 120, 330, 30, 240, 90, 300, 180,
+];
+const PALETTE_REMIX_PROFILES = [
+  {
+    id: "vivid",
+    saturation: [86, 78, 90, 58],
+    lightness: [58, 60, 61, 84],
+    saturationJitter: 14,
+    lightnessJitter: 8,
+  },
+  {
+    id: "pastel",
+    saturation: [54, 48, 58, 34],
+    lightness: [76, 74, 72, 88],
+    saturationJitter: 12,
+    lightnessJitter: 6,
+  },
+  {
+    id: "deep",
+    saturation: [70, 58, 74, 42],
+    lightness: [30, 34, 38, 68],
+    saturationJitter: 12,
+    lightnessJitter: 8,
+  },
+  {
+    id: "muted",
+    saturation: [36, 32, 40, 26],
+    lightness: [48, 52, 46, 78],
+    saturationJitter: 10,
+    lightnessJitter: 8,
+  },
+  {
+    id: "earthy",
+    hueOffset: [8, -12, 18, 24],
+    saturation: [48, 40, 56, 32],
+    lightness: [42, 46, 40, 76],
+    saturationJitter: 10,
+    lightnessJitter: 8,
+  },
+  {
+    id: "neon",
+    saturation: [96, 92, 98, 70],
+    lightness: [56, 54, 58, 82],
+    saturationJitter: 8,
+    lightnessJitter: 6,
+  },
+  {
+    id: "luxury",
+    hueOffset: [0, 18, -12, 30],
+    saturation: [52, 42, 60, 24],
+    lightness: [24, 30, 36, 82],
+    saturationJitter: 10,
+    lightnessJitter: 8,
+  },
+  {
+    id: "soft",
+    saturation: [44, 38, 46, 30],
+    lightness: [64, 66, 62, 86],
+    saturationJitter: 10,
+    lightnessJitter: 6,
+  },
+  {
+    id: "dark-pop",
+    saturation: [82, 72, 90, 50],
+    lightness: [26, 32, 44, 80],
+    saturationJitter: 10,
+    lightnessJitter: 8,
+  },
+];
+
+export const PALETTE_REMIX_SCHEMES = [
+  {
+    id: "analogous",
+    label: "Analogous",
+    offsets: [0, 30, -28, 58],
+    saturation: [1.02, 0.92, 1.1, 0.86],
+    lightness: [0.96, 1, 1.04, 1.24],
+  },
+  {
+    id: "complementary",
+    label: "Complementary",
+    offsets: [0, 180, 150, 36],
+    saturation: [1, 0.92, 1.08, 0.82],
+    lightness: [0.96, 0.98, 1.04, 1.24],
+  },
+  {
+    id: "split-complementary",
+    label: "Split complementary",
+    offsets: [0, 150, 210, 38],
+    saturation: [1, 0.96, 1.05, 0.86],
+    lightness: [0.96, 1, 1.04, 1.24],
+  },
+  {
+    id: "triadic",
+    label: "Triadic",
+    offsets: [0, 120, 240, 48],
+    saturation: [1, 0.94, 1.06, 0.84],
+    lightness: [0.96, 1, 1.04, 1.24],
+  },
+  {
+    id: "tetradic",
+    label: "Tetradic",
+    offsets: [0, 72, 180, 252],
+    saturation: [1, 0.92, 1.04, 0.86],
+    lightness: [0.96, 0.98, 1.04, 1.22],
+  },
+  {
+    id: "square",
+    label: "Square",
+    offsets: [0, 90, 180, 270],
+    saturation: [1, 0.94, 1.06, 0.86],
+    lightness: [0.96, 1, 1.04, 1.22],
+  },
+  {
+    id: "monochrome",
+    label: "Monochrome",
+    offsets: [0, 0, 0, 0],
+    saturation: [1, 0.7, 1.12, 0.48],
+    lightness: [0.9, 1.08, 0.72, 1.28],
+  },
+  {
+    id: "compound",
+    label: "Compound",
+    offsets: [0, 42, 180, 222],
+    saturation: [1, 0.84, 1.08, 0.78],
+    lightness: [0.96, 1.04, 1.02, 1.24],
+  },
+];
 
 export const BRAND_GENERATED_TOKEN_NAMES = [
   ...["primary", "secondary", "accent", "highlight"].flatMap((name) =>
@@ -96,28 +277,66 @@ export function sanitizeBrandSeeds(seeds = {}) {
   };
 }
 
+export function sanitizeBrandDerivationControls(controls = {}) {
+  return Object.fromEntries(
+    BRAND_DERIVATION_KEYS.map((key) => [
+      key,
+      clampNumber(
+        Number.isFinite(controls[key])
+          ? Number(controls[key])
+          : DEFAULT_BRAND_DERIVATION_CONTROLS[key],
+        0,
+        160,
+      ),
+    ]),
+  );
+}
+
 export function generateBrandThemeTokens(seeds = {}, options = {}) {
   const normalizedSeeds = sanitizeBrandSeeds(seeds);
+  const derivation = sanitizeBrandDerivationControls(options.derivation);
   const primary = generateColorScale(normalizedSeeds.primary);
   const secondary = generateColorScale(normalizedSeeds.secondary);
   const accent = generateColorScale(normalizedSeeds.accent);
   const highlight = generateColorScale(normalizedSeeds.highlight);
   const neutral = generateNeutralScale(normalizedSeeds.primary);
   const darkMode = options.darkMode === true;
-  const background = darkMode ? neutral[950] : neutral[50];
-  const surface = darkMode
+  const background = adjustDerivedColorDistance(
+    darkMode ? "#000000" : "#ffffff",
+    darkMode ? neutral[950] : neutral[50],
+    derivation.backgroundDistancePercent,
+    darkMode ? primary[950] : primary[50],
+  );
+  const surfaceTarget = darkMode
     ? mixHex(neutral[950], primary[900], 0.24)
     : mixHex(neutral[50], primary[50], 0.3);
+  const surface = adjustDerivedColorDistance(
+    darkMode ? neutral[950] : neutral[50],
+    surfaceTarget,
+    derivation.neutralSurfaceDistancePercent,
+    darkMode ? primary[900] : primary[50],
+  );
   const surfaceRaised = darkMode ? mixHex(neutral[900], primary[800], 0.16) : "#ffffff";
   const surfaceStrong = darkMode ? mixHex(neutral[900], primary[800], 0.28) : neutral[100];
-  const text = darkMode
+  const textTarget = darkMode
     ? neutral[50]
     : options.highContrast
       ? neutral[950]
       : mixHex(neutral[950], "#000000", 0.08);
-  const muted = darkMode ? mixHex(neutral[300], neutral[50], 0.18) : neutral[600];
+  const text = ensureContrastColor(adjustDerivedColorDistance(
+    darkMode ? neutral[50] : neutral[950],
+    textTarget,
+    derivation.readableTextDistancePercent,
+  ), background);
+  const mutedTarget = darkMode ? mixHex(neutral[300], neutral[50], 0.18) : neutral[600];
+  const muted = ensureContrastColor(adjustDerivedColorDistance(
+    text,
+    mutedTarget,
+    derivation.secondaryTextDistancePercent,
+    darkMode ? neutral[500] : neutral[700],
+  ), background);
   const subtleText = darkMode ? neutral[300] : neutral[500];
-  const border = darkMode
+  const borderTarget = darkMode
     ? withAlpha(primary[300], options.highContrast ? 0.36 : 0.22)
     : options.highContrast
       ? neutral[400]
@@ -139,16 +358,93 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
       ? accent[500]
       : accent[600];
   const elevationScale = clampNumber(options.elevationScale ?? 1, 0, 2);
-  const primaryHover = darkMode ? primary[400] : primary[700];
-  const secondaryButtonBg = darkMode ? withAlpha(secondary[400], 0.14) : secondary[50];
-  const secondaryButtonHover = darkMode ? withAlpha(secondary[400], 0.22) : secondary[100];
+  const border = darkMode
+    ? withAlpha(
+        primary[300],
+        scaleAlphaDistance(
+          options.highContrast ? 0.36 : 0.22,
+          derivation.borderDistancePercent,
+        ),
+      )
+    : adjustDerivedColorDistance(
+        neutral[50],
+        borderTarget,
+        derivation.borderDistancePercent,
+        options.highContrast ? neutral[600] : neutral[400],
+      );
+  const primaryButtonBg = adjustDerivedColorDistance(
+    primary[500],
+    primaryAction,
+    derivation.buttonPrimaryBgDistancePercent,
+    darkMode ? primary[300] : primary[900],
+  );
+  const primaryHover = adjustDerivedColorDistance(
+    primaryButtonBg,
+    darkMode ? primary[400] : primary[700],
+    derivation.primaryHoverDistancePercent,
+  );
+  const secondaryButtonBg = darkMode
+    ? withAlpha(secondary[400], scaleAlphaDistance(0.14, derivation.secondarySurfaceDistancePercent))
+    : adjustDerivedColorDistance(
+        secondary[500],
+        secondary[50],
+        derivation.secondarySurfaceDistancePercent,
+        "#ffffff",
+      );
+  const secondaryButtonHover = darkMode
+    ? withAlpha(
+        secondary[400],
+        scaleAlphaDistance(0.22, derivation.buttonSecondaryHoverDistancePercent),
+      )
+    : adjustDerivedColorDistance(
+        secondary[500],
+        secondary[100],
+        derivation.buttonSecondaryHoverDistancePercent,
+        "#ffffff",
+      );
   const secondaryButtonText = darkMode ? secondary[100] : secondary[800];
-  const secondaryButtonBorder = darkMode ? withAlpha(secondary[300], 0.34) : secondary[200];
+  const secondaryButtonBorder = darkMode
+    ? withAlpha(
+        secondary[300],
+        scaleAlphaDistance(0.34, derivation.buttonSecondaryBorderDistancePercent),
+      )
+    : adjustDerivedColorDistance(
+        secondary[500],
+        secondary[200],
+        derivation.buttonSecondaryBorderDistancePercent,
+        "#ffffff",
+      );
   const brandBadgeBg = darkMode ? withAlpha(primary[400], 0.16) : primary[100];
   const brandBadgeText = darkMode ? primary[100] : primary[700];
   const brandBadgeBorder = darkMode ? withAlpha(primary[300], 0.26) : primary[200];
-  const highlightSoft = darkMode ? withAlpha(highlight[300], 0.16) : highlight[100];
+  const accentMoment = adjustDerivedColorDistance(
+    accent[500],
+    accentAction,
+    derivation.accentMomentDistancePercent,
+  );
+  const highlightSoft = darkMode
+    ? withAlpha(highlight[300], scaleAlphaDistance(0.16, derivation.highlightSoftDistancePercent))
+    : adjustDerivedColorDistance(
+        highlight[500],
+        highlight[100],
+        derivation.highlightSoftDistancePercent,
+        "#ffffff",
+      );
   const highlightText = darkMode ? highlight[100] : highlight[800];
+  const linkColor = ensureContrastColor(adjustDerivedColorDistance(
+    primary[500],
+    darkMode ? primary[300] : primary[700],
+    derivation.linkColorDistancePercent,
+    darkMode ? primary[100] : primary[900],
+  ), background);
+  const linkHover = ensureContrastColor(adjustDerivedColorDistance(
+    linkColor,
+    darkMode ? primary[200] : primary[800],
+    derivation.linkHoverDistancePercent,
+    darkMode ? primary[50] : primary[950],
+  ), background);
+  const secondaryButtonTextSafe = ensureContrastColor(secondaryButtonText, secondaryButtonBg);
+  const highlightTextSafe = ensureContrastColor(highlightText, highlightSoft);
 
   return {
     ...prefixScale("--brand-primary", primary),
@@ -164,7 +460,7 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--mist-100": surface,
     "--mist-200": surfaceStrong,
     "--mist-300": border,
-    "--green-600": primaryAction,
+    "--green-600": primaryButtonBg,
     "--green-700": primaryHover,
     "--green-100": brandBadgeBg,
     "--blue-600": secondaryAction,
@@ -177,7 +473,7 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--color-text": text,
     "--color-muted": muted,
     "--color-border": border,
-    "--color-accent": primaryAction,
+    "--color-accent": primaryButtonBg,
     "--color-accent-hover": primaryHover,
     "--color-accent-soft": brandBadgeBg,
     "--color-accent-border": withAlpha(
@@ -186,7 +482,7 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     ),
     "--color-blue": secondaryAction,
     "--color-blue-soft": secondaryButtonHover,
-    "--color-on-accent": getContrastText(primaryAction),
+    "--color-on-accent": getContrastText(primaryButtonBg),
     "--color-highlight": darkMode ? highlight[300] : highlight[400],
     "--color-highlight-soft": highlightSoft,
     "--color-on-highlight": darkMode ? getContrastText(highlight[300]) : getContrastText(highlight[300]),
@@ -194,34 +490,44 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--color-success": harmonizeSemanticColor(SUCCESS_BASE, normalizedSeeds.primary),
     "--color-error": harmonizeSemanticColor(ERROR_BASE, normalizedSeeds.accent),
     "--color-info": harmonizeSemanticColor(INFO_BASE, normalizedSeeds.primary),
-    "--button-primary-bg": primaryAction,
+    "--button-primary-bg": primaryButtonBg,
     "--button-primary-hover": primaryHover,
-    "--button-primary-text": getContrastText(primaryAction),
+    "--button-primary-text": getContrastText(primaryButtonBg),
     "--button-secondary-bg": secondaryButtonBg,
     "--button-secondary-hover": secondaryButtonHover,
-    "--button-secondary-text": secondaryButtonText,
+    "--button-secondary-text": secondaryButtonTextSafe,
     "--button-secondary-border": secondaryButtonBorder,
-    "--link-color": darkMode ? primary[300] : primary[700],
-    "--link-hover": darkMode ? primary[200] : primary[800],
+    "--link-color": linkColor,
+    "--link-hover": linkHover,
     "--focus-ring": darkMode ? primary[300] : primary[400],
     "--gradient-hero-start": darkMode ? primary[700] : primary[600],
     "--gradient-hero-end": secondary[500],
-    "--gradient-hero-accent": accentAction,
+    "--gradient-hero-accent": accentMoment,
     "--chart-1": primary[600],
     "--chart-2": secondary[600],
-    "--chart-3": accentAction,
+    "--chart-3": accentMoment,
     "--chart-4": highlight[500],
     "--badge-brand-bg": brandBadgeBg,
     "--badge-brand-text": brandBadgeText,
     "--badge-brand-border": brandBadgeBorder,
     "--badge-highlight-bg": highlightSoft,
-    "--badge-highlight-text": highlightText,
+    "--badge-highlight-text": highlightTextSafe,
     "--badge-highlight-border": darkMode ? withAlpha(highlight[300], 0.24) : highlight[200],
     "--shadow-soft": getShadowValue(neutral[950], 20, 60, 0.08, elevationScale),
     "--shadow-raised": getShadowValue(neutral[950], 32, 100, 0.12, elevationScale),
     "--shadow-brand": getShadowValue(primary[600], 28, 84, 0.18, elevationScale),
-    "--dark-color-bg": neutral[950],
-    "--dark-color-surface": mixHex(neutral[950], primary[900], 0.24),
+    "--dark-color-bg": adjustDerivedColorDistance(
+      "#000000",
+      neutral[950],
+      derivation.backgroundDistancePercent,
+      primary[950],
+    ),
+    "--dark-color-surface": adjustDerivedColorDistance(
+      neutral[950],
+      mixHex(neutral[950], primary[900], 0.24),
+      derivation.neutralSurfaceDistancePercent,
+      primary[900],
+    ),
     "--dark-color-text": neutral[50],
     "--dark-color-border": withAlpha(primary[300], 0.22),
     "--color-nav-bg": darkMode
@@ -229,6 +535,89 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
       : withAlpha(surfaceRaised, options.highContrast ? 0.96 : 0.9),
     "--color-footer-muted": withAlpha(neutral[50], options.highContrast ? 0.9 : 0.76),
   };
+}
+
+export function generatePaletteRemix(seeds = {}, options = {}) {
+  const normalizedSeeds = sanitizeBrandSeeds(seeds);
+  const requestedScheme = PALETTE_REMIX_SCHEMES.find(
+    (scheme) => scheme.id === options.scheme,
+  );
+  const step = Number.isFinite(options.step) ? Math.max(0, Math.floor(options.step)) : 0;
+  const salt = Number.isFinite(options.salt) ? Math.max(0, Math.floor(options.salt)) : 0;
+  const remixStep = step + salt;
+  const scheme = requestedScheme ?? PALETTE_REMIX_SCHEMES[remixStep % PALETTE_REMIX_SCHEMES.length];
+  const profile = requestedScheme
+    ? null
+    : PALETTE_REMIX_PROFILES[remixStep % PALETTE_REMIX_PROFILES.length];
+  const base = rgbToHsl(hexToRgb(normalizedSeeds.primary));
+  const hueStep = requestedScheme ? 0 : remixStep;
+  const hueCycle = Math.floor(hueStep / REMIX_HUE_SHIFTS.length);
+  const primaryShift = requestedScheme
+    ? 0
+    : REMIX_HUE_SHIFTS[hueStep % REMIX_HUE_SHIFTS.length] +
+      hueCycle * (GOLDEN_ANGLE / 3);
+  const baseHue = wrapHue(base.h + primaryShift);
+  const baseSaturation = clampNumber(base.s || 72, 46, 88);
+  const baseLightness = clampNumber(base.l || 54, 42, 66);
+  const [primary, secondary, accent, highlight] = BRAND_SEED_KEYS.map((key, index) => {
+    const saturationJitter = requestedScheme
+      ? 0
+      : (getDeterministicRemixRatio(remixStep, index + 11) - 0.5) *
+        profile.saturationJitter;
+    const lightnessJitter = requestedScheme
+      ? 0
+      : (getDeterministicRemixRatio(remixStep, index + 23) - 0.5) *
+        profile.lightnessJitter;
+    const hue = wrapHue(baseHue + scheme.offsets[index] + (profile?.hueOffset?.[index] ?? 0));
+    const saturation = profile
+      ? clampNumber(
+          profile.saturation[index] +
+            saturationJitter +
+            (baseSaturation - 72) * 0.1,
+          index === 3 ? 18 : 22,
+          index === 3 ? 84 : 98,
+        )
+      : clampNumber(
+          baseSaturation * scheme.saturation[index] + (index === 3 ? -6 : 0),
+          index === 3 ? 42 : 48,
+          index === 3 ? 82 : 92,
+        );
+    const lightness = profile
+      ? clampNumber(
+          profile.lightness[index] +
+            lightnessJitter +
+            (baseLightness - 54) * 0.08,
+          index === 3 ? 58 : 20,
+          index === 3 ? 92 : 82,
+        )
+      : clampNumber(
+          baseLightness * scheme.lightness[index] + (index === 3 ? 8 : 0),
+          index === 3 ? 62 : 42,
+          index === 3 ? 84 : 64,
+        );
+
+    return [key, hslToHex({ h: hue, s: saturation, l: lightness })];
+  }).map(([, value]) => value);
+
+  return {
+    palette: { primary, secondary, accent, highlight },
+    scheme: scheme.id,
+    schemeLabel: scheme.label,
+  };
+}
+
+export function generateBrandDerivationRemix(options = {}) {
+  const step = Number.isFinite(options.step) ? Math.max(0, Math.floor(options.step)) : 0;
+
+  return sanitizeBrandDerivationControls(
+    Object.fromEntries(
+      BRAND_DERIVATION_KEYS.map((key, index) => {
+        const [min, max] = DERIVATION_REMIX_RANGES[key];
+        const ratio = getDeterministicRemixRatio(step, index);
+        return [key, Math.round(min + (max - min) * ratio)];
+      }),
+    ),
+  );
 }
 
 export function normalizeHexColor(value) {
@@ -303,7 +692,8 @@ function harmonizeSemanticColor(base, seed) {
 }
 
 function getContrastText(background) {
-  return getContrastRatio("#ffffff", background) >= 4.5 ? "#ffffff" : "#111416";
+  if (getContrastRatio("#ffffff", background) >= 4.5) return "#ffffff";
+  return getContrastRatio("#111416", background) >= 4.5 ? "#111416" : "#000000";
 }
 
 function getShadowValue(color, y, blur, alpha, scale) {
@@ -356,6 +746,14 @@ function getRelativeLuminance(hex) {
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
 
+function ensureContrastColor(foreground, background, minimumRatio = 4.5) {
+  if (getContrastRatio(foreground, background) >= minimumRatio) return foreground;
+  if (getContrastRatio("#111416", background) >= minimumRatio) return "#111416";
+  const blackRatio = getContrastRatio("#000000", background);
+  const whiteRatio = getContrastRatio("#ffffff", background);
+  return blackRatio >= whiteRatio ? "#000000" : "#ffffff";
+}
+
 function hexToRgb(hex) {
   const normalized = normalizeHexColor(hex).slice(1);
   return [
@@ -369,6 +767,88 @@ function rgbToHex([red, green, blue]) {
   return `#${[red, green, blue]
     .map((channel) => clampNumber(channel, 0, 255).toString(16).padStart(2, "0"))
     .join("")}`;
+}
+
+function adjustDerivedColorDistance(origin, target, distance, extensionColor) {
+  const factor = clampNumber(distance, 0, 160) / 100;
+  if (factor <= 1) return mixHex(origin, target, factor);
+
+  const extension =
+    extensionColor ??
+    (getRelativeLuminance(target) >= getRelativeLuminance(origin)
+      ? "#ffffff"
+      : "#000000");
+  return mixHex(target, extension, factor - 1);
+}
+
+function scaleAlphaDistance(alpha, distance) {
+  return clampNumber(alpha * (clampNumber(distance, 0, 160) / 100), 0.02, 0.42);
+}
+
+function rgbToHsl([red, green, blue]) {
+  const r = red / 255;
+  const g = green / 255;
+  const b = blue / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  const lightness = (max + min) / 2;
+  const saturation =
+    delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
+  let hue = 0;
+
+  if (delta !== 0) {
+    if (max === r) {
+      hue = ((g - b) / delta) % 6;
+    } else if (max === g) {
+      hue = (b - r) / delta + 2;
+    } else {
+      hue = (r - g) / delta + 4;
+    }
+  }
+
+  return {
+    h: wrapHue(hue * 60),
+    s: saturation * 100,
+    l: lightness * 100,
+  };
+}
+
+function hslToHex({ h, s, l }) {
+  const hue = wrapHue(h);
+  const saturation = clampNumber(s, 0, 100) / 100;
+  const lightness = clampNumber(l, 0, 100) / 100;
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = lightness - chroma / 2;
+  const sector = Math.floor(hue / 60);
+  const [r, g, b] =
+    sector === 0
+      ? [chroma, x, 0]
+      : sector === 1
+        ? [x, chroma, 0]
+        : sector === 2
+          ? [0, chroma, x]
+          : sector === 3
+            ? [0, x, chroma]
+            : sector === 4
+              ? [x, 0, chroma]
+              : [chroma, 0, x];
+
+  return rgbToHex([
+    Math.round((r + m) * 255),
+    Math.round((g + m) * 255),
+    Math.round((b + m) * 255),
+  ]);
+}
+
+function wrapHue(hue) {
+  return ((hue % 360) + 360) % 360;
+}
+
+function getDeterministicRemixRatio(step, index) {
+  const seed = Math.sin((step + 1) * (index + 3) * 12.9898) * 43758.5453;
+  return seed - Math.floor(seed);
 }
 
 function clampNumber(value, min, max) {

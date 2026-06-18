@@ -176,22 +176,68 @@ export function ColorControl({ id, label, onChange, value }: ColorControlProps) 
 }
 
 interface DerivedColorPreviewProps {
+  activeColorId: string | null;
   colors: readonly {
+    adjustment: {
+      id: string;
+      label: string;
+      onChange: (value: number) => void;
+      sourceLabel: string;
+      value: number;
+    };
+    id: string;
     label: string;
     value: string;
   }[];
+  onColorSelect: (id: string) => void;
 }
 
-export function DerivedColorPreview({ colors }: DerivedColorPreviewProps) {
+export function DerivedColorPreview({
+  activeColorId,
+  colors,
+  onColorSelect,
+}: DerivedColorPreviewProps) {
   return (
     <div className="design-overlay__derived-colors" aria-label="Derived colors">
-      {colors.map((color) => (
-        <div key={color.label} className="design-overlay__derived-color">
-          <span style={{ backgroundColor: color.value }} />
-          <small>{color.label}</small>
-          <code>{color.value}</code>
-        </div>
-      ))}
+      {colors.map((color) => {
+        const isActive = activeColorId === color.id;
+
+        return (
+          <div
+            key={color.id}
+            className="design-overlay__derived-color"
+            data-active={isActive}
+          >
+            <button
+              type="button"
+              className="design-overlay__derived-color-button"
+              aria-expanded={isActive}
+              aria-label={`Adjust ${color.label} derivation`}
+              onClick={() => onColorSelect(color.id)}
+            >
+              <span style={{ backgroundColor: color.value }} />
+              <small>{color.label}</small>
+              <code>{color.value}</code>
+            </button>
+            {isActive ? (
+              <div className="design-overlay__derived-adjustment">
+                <SliderControl
+                  id={color.adjustment.id}
+                  label={color.adjustment.label}
+                  value={color.adjustment.value}
+                  min={0}
+                  max={160}
+                  step={1}
+                  suffix="%"
+                  startLabel={`Near ${color.adjustment.sourceLabel}`}
+                  endLabel="Far"
+                  onChange={color.adjustment.onChange}
+                />
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

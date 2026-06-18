@@ -1,8 +1,11 @@
 import {
+  DEFAULT_BRAND_DERIVATION_CONTROLS,
   generateBrandThemeTokens,
   isHexColor,
   normalizeHexColor,
+  sanitizeBrandDerivationControls,
   sanitizeBrandSeeds,
+  type BrandDerivationControls,
   type BrandSeeds,
 } from "../../lib/brandTheme.mjs";
 import {
@@ -28,6 +31,20 @@ export interface DesignOverlayValues {
   secondaryColor: string;
   accentColor: string;
   highlightColor: string;
+  backgroundDistancePercent: number;
+  borderDistancePercent: number;
+  buttonPrimaryBgDistancePercent: number;
+  buttonSecondaryBorderDistancePercent: number;
+  buttonSecondaryHoverDistancePercent: number;
+  linkColorDistancePercent: number;
+  linkHoverDistancePercent: number;
+  primaryHoverDistancePercent: number;
+  secondarySurfaceDistancePercent: number;
+  accentMomentDistancePercent: number;
+  highlightSoftDistancePercent: number;
+  neutralSurfaceDistancePercent: number;
+  readableTextDistancePercent: number;
+  secondaryTextDistancePercent: number;
   sectionSpacing: number;
   radius: number;
   pageWidth: LayoutWidth;
@@ -67,6 +84,24 @@ export const DEFAULT_DESIGN_OVERLAY_VALUES: DesignOverlayValues = {
   secondaryColor: "#00d4ff",
   accentColor: "#ff6b35",
   highlightColor: "#fde68a",
+  backgroundDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.backgroundDistancePercent,
+  borderDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.borderDistancePercent,
+  buttonPrimaryBgDistancePercent:
+    DEFAULT_BRAND_DERIVATION_CONTROLS.buttonPrimaryBgDistancePercent,
+  buttonSecondaryBorderDistancePercent:
+    DEFAULT_BRAND_DERIVATION_CONTROLS.buttonSecondaryBorderDistancePercent,
+  buttonSecondaryHoverDistancePercent:
+    DEFAULT_BRAND_DERIVATION_CONTROLS.buttonSecondaryHoverDistancePercent,
+  linkColorDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.linkColorDistancePercent,
+  linkHoverDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.linkHoverDistancePercent,
+  primaryHoverDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.primaryHoverDistancePercent,
+  secondarySurfaceDistancePercent:
+    DEFAULT_BRAND_DERIVATION_CONTROLS.secondarySurfaceDistancePercent,
+  accentMomentDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.accentMomentDistancePercent,
+  highlightSoftDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.highlightSoftDistancePercent,
+  neutralSurfaceDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.neutralSurfaceDistancePercent,
+  readableTextDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.readableTextDistancePercent,
+  secondaryTextDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.secondaryTextDistancePercent,
   sectionSpacing: 70,
   radius: 2,
   pageWidth: "standard",
@@ -346,6 +381,28 @@ export function getDesignBrandSeeds(values: DesignOverlayValues): BrandSeeds {
   });
 }
 
+export function getDesignBrandDerivation(
+  values: DesignOverlayValues,
+): BrandDerivationControls {
+  return sanitizeBrandDerivationControls({
+    accentMomentDistancePercent: values.accentMomentDistancePercent,
+    backgroundDistancePercent: values.backgroundDistancePercent,
+    borderDistancePercent: values.borderDistancePercent,
+    buttonPrimaryBgDistancePercent: values.buttonPrimaryBgDistancePercent,
+    buttonSecondaryBorderDistancePercent:
+      values.buttonSecondaryBorderDistancePercent,
+    buttonSecondaryHoverDistancePercent: values.buttonSecondaryHoverDistancePercent,
+    highlightSoftDistancePercent: values.highlightSoftDistancePercent,
+    linkColorDistancePercent: values.linkColorDistancePercent,
+    linkHoverDistancePercent: values.linkHoverDistancePercent,
+    neutralSurfaceDistancePercent: values.neutralSurfaceDistancePercent,
+    primaryHoverDistancePercent: values.primaryHoverDistancePercent,
+    readableTextDistancePercent: values.readableTextDistancePercent,
+    secondaryTextDistancePercent: values.secondaryTextDistancePercent,
+    secondarySurfaceDistancePercent: values.secondarySurfaceDistancePercent,
+  });
+}
+
 export function getDesignLayoutSeeds(values: DesignOverlayValues): LayoutSeeds {
   return sanitizeLayoutSeeds({
     gridDensity: values.gridDensity,
@@ -379,6 +436,7 @@ export function getDesignCssVariables(
   const elevationScale = values.elevation / 100;
   const brandTokens = generateBrandThemeTokens(getDesignBrandSeeds(values), {
     darkMode: values.darkMode,
+    derivation: getDesignBrandDerivation(values),
     elevationScale,
     highContrast: values.highContrast,
     mutedMode: values.mutedMode,

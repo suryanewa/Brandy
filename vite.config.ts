@@ -79,11 +79,12 @@ async function handleDesignSyncRequest(
 
   try {
     const payload = await readJsonBody(request);
-    const { brand, layout, reload, typography, values } =
+    const { brand, brandDerivation, layout, reload, typography, values } =
       getValidatedDesignSyncPayload(payload);
     const result = await syncOverlayDesignTokens(
       values,
       brand,
+      brandDerivation,
       layout,
       typography,
     );
@@ -141,6 +142,7 @@ async function syncOverlayDesignTokens(
     primary: string;
     secondary: string;
   },
+  brandDerivation?: BrandDerivationSyncPayload,
   layout?: LayoutSyncPayload,
   typography?: TypographySyncPayload,
 ) {
@@ -150,6 +152,7 @@ async function syncOverlayDesignTokens(
   try {
     return await syncDesignTokensFromValues(values, {
       brand,
+      brandDerivation,
       layout,
       typography,
     });
@@ -193,6 +196,7 @@ function getValidatedDesignSyncPayload(payload: unknown): {
     primary: string;
     secondary: string;
   };
+  brandDerivation?: BrandDerivationSyncPayload;
   layout?: LayoutSyncPayload;
   reload: boolean;
   typography?: TypographySyncPayload;
@@ -223,6 +227,7 @@ function getValidatedDesignSyncPayload(payload: unknown): {
 
   return {
     brand: getValidatedBrandPayload(payload.brand),
+    brandDerivation: getValidatedBrandDerivationPayload(payload.brandDerivation),
     layout: getValidatedLayoutPayload(payload.layout),
     reload: payload.reload === true,
     typography: getValidatedTypographyPayload(payload.typography),
@@ -273,6 +278,101 @@ function getValidatedBrandPayload(value: unknown):
   };
 }
 
+function getValidatedBrandDerivationPayload(
+  value: unknown,
+): BrandDerivationSyncPayload | undefined {
+  if (value == null) return undefined;
+  if (!isObjectRecord(value)) {
+    throw new SyncRequestError(
+      400,
+      "Design sync brand derivation controls must be an object.",
+    );
+  }
+
+  const allowedKeys = [
+    "accentMomentDistancePercent",
+    "backgroundDistancePercent",
+    "borderDistancePercent",
+    "buttonPrimaryBgDistancePercent",
+    "buttonSecondaryBorderDistancePercent",
+    "buttonSecondaryHoverDistancePercent",
+    "highlightSoftDistancePercent",
+    "linkColorDistancePercent",
+    "linkHoverDistancePercent",
+    "neutralSurfaceDistancePercent",
+    "primaryHoverDistancePercent",
+    "readableTextDistancePercent",
+    "secondaryTextDistancePercent",
+    "secondarySurfaceDistancePercent",
+  ].sort();
+  const keys = Object.keys(value).sort();
+  if (keys.join(",") !== allowedKeys.join(",")) {
+    throw new SyncRequestError(
+      400,
+      "Design sync brand derivation controls must contain the supported distance sliders.",
+    );
+  }
+
+  return {
+    accentMomentDistancePercent: getNumberValue(
+      value.accentMomentDistancePercent,
+      "accentMomentDistancePercent",
+    ),
+    backgroundDistancePercent: getNumberValue(
+      value.backgroundDistancePercent,
+      "backgroundDistancePercent",
+    ),
+    borderDistancePercent: getNumberValue(
+      value.borderDistancePercent,
+      "borderDistancePercent",
+    ),
+    buttonPrimaryBgDistancePercent: getNumberValue(
+      value.buttonPrimaryBgDistancePercent,
+      "buttonPrimaryBgDistancePercent",
+    ),
+    buttonSecondaryBorderDistancePercent: getNumberValue(
+      value.buttonSecondaryBorderDistancePercent,
+      "buttonSecondaryBorderDistancePercent",
+    ),
+    buttonSecondaryHoverDistancePercent: getNumberValue(
+      value.buttonSecondaryHoverDistancePercent,
+      "buttonSecondaryHoverDistancePercent",
+    ),
+    highlightSoftDistancePercent: getNumberValue(
+      value.highlightSoftDistancePercent,
+      "highlightSoftDistancePercent",
+    ),
+    linkColorDistancePercent: getNumberValue(
+      value.linkColorDistancePercent,
+      "linkColorDistancePercent",
+    ),
+    linkHoverDistancePercent: getNumberValue(
+      value.linkHoverDistancePercent,
+      "linkHoverDistancePercent",
+    ),
+    neutralSurfaceDistancePercent: getNumberValue(
+      value.neutralSurfaceDistancePercent,
+      "neutralSurfaceDistancePercent",
+    ),
+    primaryHoverDistancePercent: getNumberValue(
+      value.primaryHoverDistancePercent,
+      "primaryHoverDistancePercent",
+    ),
+    readableTextDistancePercent: getNumberValue(
+      value.readableTextDistancePercent,
+      "readableTextDistancePercent",
+    ),
+    secondaryTextDistancePercent: getNumberValue(
+      value.secondaryTextDistancePercent,
+      "secondaryTextDistancePercent",
+    ),
+    secondarySurfaceDistancePercent: getNumberValue(
+      value.secondarySurfaceDistancePercent,
+      "secondarySurfaceDistancePercent",
+    ),
+  };
+}
+
 type LayoutSyncPayload = {
   gridDensity: "sparse" | "balanced" | "dense";
   heroBalance: number;
@@ -282,6 +382,23 @@ type LayoutSyncPayload = {
   spacing: number;
   textWidth: number;
   width: "narrow" | "standard" | "wide" | "full";
+};
+
+type BrandDerivationSyncPayload = {
+  accentMomentDistancePercent: number;
+  backgroundDistancePercent: number;
+  borderDistancePercent: number;
+  buttonPrimaryBgDistancePercent: number;
+  buttonSecondaryBorderDistancePercent: number;
+  buttonSecondaryHoverDistancePercent: number;
+  highlightSoftDistancePercent: number;
+  linkColorDistancePercent: number;
+  linkHoverDistancePercent: number;
+  neutralSurfaceDistancePercent: number;
+  primaryHoverDistancePercent: number;
+  readableTextDistancePercent: number;
+  secondaryTextDistancePercent: number;
+  secondarySurfaceDistancePercent: number;
 };
 
 type TypographySyncPayload = {

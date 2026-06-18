@@ -181,6 +181,7 @@ describe("DesignOverlay", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
+    expect(screen.getByRole("button", { name: "Remix palette" })).toBeTruthy();
     expect(screen.getByLabelText("Primary hex color")).toBeTruthy();
     expect(screen.getByLabelText("Secondary hex color")).toBeTruthy();
     expect(screen.getByLabelText("Accent hex color")).toBeTruthy();
@@ -191,7 +192,16 @@ describe("DesignOverlay", () => {
     expect(screen.queryByLabelText("Accent presets")).toBeNull();
     expect(screen.queryByLabelText("Highlight presets")).toBeNull();
     expect(screen.getByText("Primary hover")).toBeTruthy();
+    expect(screen.getByText("Primary button")).toBeTruthy();
     expect(screen.getByText("Secondary surface")).toBeTruthy();
+    expect(screen.getByText("Secondary border")).toBeTruthy();
+    expect(screen.getByText("Secondary hover")).toBeTruthy();
+    expect(screen.getByText("Link")).toBeTruthy();
+    expect(screen.getByText("Link hover")).toBeTruthy();
+    expect(screen.getByText("Border")).toBeTruthy();
+    expect(screen.getByText("Primary text")).toBeTruthy();
+    expect(screen.getByText("Secondary text")).toBeTruthy();
+    expect(screen.queryByText("Readable text")).toBeNull();
     expect(screen.getByText("Highlight soft")).toBeTruthy();
     expect(screen.queryByLabelText("Page hex color")).toBeNull();
     expect(screen.queryByLabelText("Surface hex color")).toBeNull();
@@ -219,6 +229,250 @@ describe("DesignOverlay", () => {
     );
     expect(document.documentElement.style.getPropertyValue("--color-on-highlight")).toBe(
       "#111416",
+    );
+  });
+
+  it("opens derived color distance sliders from calculated palette colors", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, changedCount: 1 }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    expect(screen.getByText("Background")).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adjust Background derivation" }),
+    );
+
+    const backgroundDistancePercent = screen.getByLabelText(
+      "Background distance value",
+    ) as HTMLInputElement;
+    expect(backgroundDistancePercent.value).toBe("100");
+    expect(screen.getByText("%")).toBeTruthy();
+
+    fireEvent.change(backgroundDistancePercent, { target: { value: "0" } });
+    fireEvent.blur(backgroundDistancePercent);
+
+    expect(document.documentElement.style.getPropertyValue("--color-bg")).toBe(
+      "#ffffff",
+    );
+
+    expect(screen.queryByLabelText("Primary hover distance value")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adjust Primary hover derivation" }),
+    );
+
+    const primaryHoverDistancePercent = screen.getByLabelText(
+      "Primary hover distance value",
+    ) as HTMLInputElement;
+    expect(primaryHoverDistancePercent.value).toBe("100");
+
+    fireEvent.change(primaryHoverDistancePercent, { target: { value: "50" } });
+    fireEvent.blur(primaryHoverDistancePercent);
+
+    expect(document.documentElement.style.getPropertyValue("--button-primary-hover")).toBe(
+      "#504acf",
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adjust Primary button derivation" }),
+    );
+
+    const buttonPrimaryBgDistancePercent = screen.getByLabelText(
+      "Primary button distance value",
+    ) as HTMLInputElement;
+    expect(buttonPrimaryBgDistancePercent.value).toBe("100");
+
+    fireEvent.change(buttonPrimaryBgDistancePercent, { target: { value: "50" } });
+    fireEvent.blur(buttonPrimaryBgDistancePercent);
+
+    expect(document.documentElement.style.getPropertyValue("--button-primary-bg")).toBe(
+      "#5d56f0",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Adjust Link derivation" }));
+    expect(screen.getByLabelText("Link distance value")).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adjust Link hover derivation" }),
+    );
+    expect(screen.getByLabelText("Link hover distance value")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Adjust Border derivation" }));
+    expect(screen.getByLabelText("Border distance value")).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adjust Secondary text derivation" }),
+    );
+    const secondaryTextDistancePercent = screen.getByLabelText(
+      "Secondary text distance value",
+    ) as HTMLInputElement;
+    expect(secondaryTextDistancePercent.value).toBe("100");
+    fireEvent.change(secondaryTextDistancePercent, { target: { value: "50" } });
+    fireEvent.blur(secondaryTextDistancePercent);
+    expect(document.documentElement.style.getPropertyValue("--color-muted")).toBe(
+      "#1b1e3c",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adjust Secondary border derivation" }),
+    );
+    expect(screen.getByLabelText("Secondary border distance value")).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adjust Secondary hover derivation" }),
+    );
+    expect(screen.getByLabelText("Secondary hover distance value")).toBeTruthy();
+
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+    vi.useRealTimers();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
+    const payload = JSON.parse(String(requestInit.body)) as {
+      brandDerivation: Record<string, number>;
+      values: Record<string, string>;
+    };
+
+    expect(payload.brandDerivation).toMatchObject({
+      accentMomentDistancePercent: 100,
+      backgroundDistancePercent: 0,
+      borderDistancePercent: 100,
+      buttonPrimaryBgDistancePercent: 50,
+      buttonSecondaryBorderDistancePercent: 100,
+      buttonSecondaryHoverDistancePercent: 100,
+      highlightSoftDistancePercent: 100,
+      linkColorDistancePercent: 100,
+      linkHoverDistancePercent: 100,
+      neutralSurfaceDistancePercent: 100,
+      primaryHoverDistancePercent: 50,
+      readableTextDistancePercent: 100,
+      secondaryTextDistancePercent: 50,
+      secondarySurfaceDistancePercent: 100,
+    });
+    expect(payload.values["--button-primary-hover"]).toBeUndefined();
+  });
+
+  it("remixes palette seeds and syncs the source brand colors", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, changedCount: 1 }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
+
+    expect((screen.getByLabelText("Primary hex color") as HTMLInputElement).value).toBe(
+      "#f7a036",
+    );
+    expect((screen.getByLabelText("Secondary hex color") as HTMLInputElement).value).toBe(
+      "#dfe83b",
+    );
+    expect((screen.getByLabelText("Accent hex color") as HTMLInputElement).value).toBe(
+      "#fc4232",
+    );
+    expect((screen.getByLabelText("Highlight hex color") as HTMLInputElement).value).toBe(
+      "#d6eec0",
+    );
+    expect((screen.getByRole("switch", { name: "Dark mode" }) as HTMLInputElement).checked).toBe(
+      false,
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--brand-primary-500"),
+    ).toBe("#f7a036");
+    expect(
+      document.documentElement.style.getPropertyValue("--gradient-hero-accent"),
+    ).toBe("#e33b2d");
+    expect(
+      document.documentElement.style.getPropertyValue("--color-bg"),
+    ).toBe("#fffcf9");
+    expect(
+      document.documentElement.style.getPropertyValue("--color-muted"),
+    ).toBe("#4a3e34");
+
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+    vi.useRealTimers();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
+    const payload = JSON.parse(String(requestInit.body)) as {
+      brand: Record<string, string>;
+      brandDerivation: Record<string, number>;
+      values: Record<string, string>;
+    };
+
+    expect(payload.brand).toEqual({
+      accent: "#fc4232",
+      highlight: "#d6eec0",
+      primary: "#f7a036",
+      secondary: "#dfe83b",
+    });
+    expect(payload.brandDerivation).toMatchObject({
+      backgroundDistancePercent: 98,
+      buttonPrimaryBgDistancePercent: 100,
+      linkHoverDistancePercent: 121,
+      primaryHoverDistancePercent: 146,
+      secondaryTextDistancePercent: 125,
+    });
+    expect(payload.values["--brand-primary-500"]).toBeUndefined();
+    expect(payload.values["--gradient-hero-accent"]).toBeUndefined();
+  });
+
+  it("remixes palette and derived colors with the Tab shortcut", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<DesignOverlay />);
+
+    fireEvent.keyDown(window, { key: "Tab" });
+
+    expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
+      "#f7a036",
+    );
+    expect(document.documentElement.style.getPropertyValue("--gradient-hero-accent")).toBe(
+      "#e33b2d",
+    );
+    expect(document.documentElement.style.getPropertyValue("--color-muted")).toBe(
+      "#4a3e34",
+    );
+  });
+
+  it("keeps sequential remixes anchored to the starting seed palette", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
+
+    expect((screen.getByLabelText("Primary hex color") as HTMLInputElement).value).toBe(
+      "#b0ade5",
+    );
+    expect((screen.getByLabelText("Secondary hex color") as HTMLInputElement).value).toBe(
+      "#dee299",
+    );
+  });
+
+  it("does not remix with Tab while typing in controls", () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const primaryInput = screen.getByLabelText("Primary hex color");
+    primaryInput.focus();
+    fireEvent.keyDown(primaryInput, { key: "Tab" });
+
+    expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
+      "",
     );
   });
 
@@ -367,6 +621,7 @@ describe("DesignOverlay", () => {
     const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
     const payload = JSON.parse(String(requestInit.body)) as {
       brand: Record<string, string>;
+      brandDerivation: Record<string, number>;
       layout: Record<string, string | number>;
       reload: boolean;
       typography: Record<string, string | number>;
@@ -381,6 +636,22 @@ describe("DesignOverlay", () => {
       highlight: "#fde68a",
       primary: "#635bff",
       secondary: "#00d4ff",
+    });
+    expect(payload.brandDerivation).toEqual({
+      accentMomentDistancePercent: 100,
+      backgroundDistancePercent: 100,
+      borderDistancePercent: 100,
+      buttonPrimaryBgDistancePercent: 100,
+      buttonSecondaryBorderDistancePercent: 100,
+      buttonSecondaryHoverDistancePercent: 100,
+      highlightSoftDistancePercent: 100,
+      linkColorDistancePercent: 100,
+      linkHoverDistancePercent: 100,
+      neutralSurfaceDistancePercent: 100,
+      primaryHoverDistancePercent: 100,
+      readableTextDistancePercent: 100,
+      secondaryTextDistancePercent: 100,
+      secondarySurfaceDistancePercent: 100,
     });
     expect(payload.reload).toBe(false);
     expect(payload.layout).toEqual({

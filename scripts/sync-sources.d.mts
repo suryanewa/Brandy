@@ -1,5 +1,22 @@
 export function syncDesignTokens(options?: { check?: boolean }): Promise<void>;
 
+type BrandDerivationControls = {
+  accentMomentDistancePercent: number;
+  backgroundDistancePercent: number;
+  borderDistancePercent: number;
+  buttonPrimaryBgDistancePercent: number;
+  buttonSecondaryBorderDistancePercent: number;
+  buttonSecondaryHoverDistancePercent: number;
+  highlightSoftDistancePercent: number;
+  linkColorDistancePercent: number;
+  linkHoverDistancePercent: number;
+  neutralSurfaceDistancePercent: number;
+  primaryHoverDistancePercent: number;
+  readableTextDistancePercent: number;
+  secondaryTextDistancePercent: number;
+  secondarySurfaceDistancePercent: number;
+};
+
 export function syncDesignTokensFromValues(
   values: Record<string, unknown>,
   options?: {
@@ -9,6 +26,7 @@ export function syncDesignTokensFromValues(
       primary: string;
       secondary: string;
     };
+    brandDerivation?: BrandDerivationControls;
     check?: boolean;
     layout?: {
       gridDensity: "sparse" | "balanced" | "dense";
