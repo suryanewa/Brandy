@@ -26,7 +26,7 @@ describe("interactive semantics", () => {
       />,
     );
 
-    const tokenLayer = screen.getByRole("button", { name: "Tokens" });
+    const tokenLayer = screen.getByRole("button", { name: "Generated tokens" });
     const heroModule = screen.getByRole("button", { name: "Hero" });
 
     expect(tokenLayer.getAttribute("aria-pressed")).toBe("true");

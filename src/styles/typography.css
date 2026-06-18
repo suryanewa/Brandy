@@ -98,7 +98,7 @@ h4 {
 }
 
 .text-eyebrow {
-  color: var(--color-accent-hover);
+  color: var(--link-color);
   font-size: var(--font-size-eyebrow);
   font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-eyebrow);

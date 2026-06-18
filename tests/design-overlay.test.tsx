@@ -4,7 +4,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DesignOverlay } from "../src/components/overlay";
@@ -65,28 +64,62 @@ describe("DesignOverlay", () => {
       expect(screen.queryByLabelText(hiddenControl)).toBeNull();
     }
     expect(screen.queryByRole("button", { name: "Demo frames" })).toBeNull();
+    expect(screen.getByRole("radiogroup", { name: "Page width" })).toBeTruthy();
+    expect(screen.getByRole("radiogroup", { name: "Hero" })).toBeTruthy();
+    expect(screen.getByRole("radiogroup", { name: "Grid density" })).toBeTruthy();
+    expect(screen.getByLabelText("Spacing value")).toBeTruthy();
+    expect(screen.getByLabelText("Corners value")).toBeTruthy();
+    expect(screen.getByLabelText("Page gutter value")).toBeTruthy();
+    expect(screen.getByLabelText("Hero balance value")).toBeTruthy();
+    expect(screen.getByLabelText("Text width value")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Motion" })).toBeNull();
 
-    fireEvent.change(screen.getByLabelText("Accent hex color"), {
+    fireEvent.click(screen.getByRole("radio", { name: "Wide" }));
+    expect(document.documentElement.style.getPropertyValue("--container-lg")).toBe(
+      "1328px",
+    );
+    fireEvent.change(screen.getByLabelText("Hero balance value"), {
+      target: { value: "40" },
+    });
+    fireEvent.blur(screen.getByLabelText("Hero balance value"));
+    expect(document.documentElement.style.getPropertyValue("--hero-grid-text-fr")).toBe(
+      "1.2fr",
+    );
+
+    fireEvent.change(screen.getByLabelText("Primary hex color"), {
       target: { value: "#2563eb" },
     });
-    fireEvent.blur(screen.getByLabelText("Accent hex color"));
+    fireEvent.blur(screen.getByLabelText("Primary hex color"));
 
     expect(
       document.documentElement.style.getPropertyValue("--color-accent"),
+    ).toBe("#2157cf");
+    expect(
+      document.documentElement.style.getPropertyValue("--brand-primary-500"),
     ).toBe("#2563eb");
     expect(
-      document.documentElement.style.getPropertyValue("--green-700"),
+      document.documentElement.style.getPropertyValue("--button-primary-hover"),
     ).not.toBe("");
     expect(
       screen.getByRole("button", { name: "Reset design" }).hasAttribute("disabled"),
     ).toBe(false);
   });
 
-  it("searches visible token sections without group filter chips", () => {
+  it("shows compact typography controls without raw typography token rows", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
-    expect(document.querySelector('[aria-label="Body font size value"]')).toBeTruthy();
+    expect(screen.getByRole("radiogroup", { name: "Type style" })).toBeTruthy();
+    expect(screen.getByRole("radiogroup", { name: "Pairing" })).toBeTruthy();
+    expect(screen.getByLabelText("Scale value")).toBeTruthy();
+    expect(screen.getByLabelText("Density value")).toBeTruthy();
+    expect(screen.getByLabelText("Weight value")).toBeTruthy();
+    expect(screen.getByLabelText("Headline style value")).toBeTruthy();
+    expect(screen.getByLabelText("Tightness value")).toBeTruthy();
+    expect(screen.queryByLabelText("Body font size value")).toBeNull();
+    expect(screen.queryByLabelText("Root line height value")).toBeNull();
+    expect(screen.queryByLabelText("Heading letter spacing value")).toBeNull();
+    expect(screen.queryByPlaceholderText("Search tokens")).toBeNull();
     expect(screen.queryByLabelText("Token group filters")).toBeNull();
     expect(screen.queryByText(/tokens shown/)).toBeNull();
     for (const hiddenGroup of [
@@ -105,117 +138,85 @@ describe("DesignOverlay", () => {
         screen.queryByLabelText(`Toggle ${hiddenGroup} token group`),
       ).toBeNull();
     }
-    expect(screen.getByLabelText("Reset Layout tokens")).toBeTruthy();
-    expect(screen.getByLabelText("Reset Typography tokens")).toBeTruthy();
-
-    fireEvent.change(screen.getByPlaceholderText("Search tokens"), {
-      target: { value: "Space 4" },
-    });
-
+    expect(screen.queryByLabelText("Reset Layout tokens")).toBeNull();
+    expect(screen.queryByLabelText("Reset Typography tokens")).toBeNull();
+    expect(screen.queryByText("Token values")).toBeNull();
     expect(screen.queryByText("No tokens match the filters.")).toBeNull();
-
-    fireEvent.change(screen.getByPlaceholderText("Search tokens"), {
-      target: { value: "" },
-    });
-
-    expect(document.querySelector('[aria-label="Body font size value"]')).toBeTruthy();
   });
 
-  it("keeps quick palette controls minimal when color variants are automatic", () => {
+  it("uses four brand seeds and derives the palette utility system", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
-    expect(screen.getByText("Accent soft")).toBeTruthy();
+    expect(screen.getByLabelText("Primary hex color")).toBeTruthy();
+    expect(screen.getByLabelText("Secondary hex color")).toBeTruthy();
+    expect(screen.getByLabelText("Accent hex color")).toBeTruthy();
+    expect(screen.getByLabelText("Highlight hex color")).toBeTruthy();
+    expect(screen.getByText("Primary hover")).toBeTruthy();
+    expect(screen.getByText("Secondary surface")).toBeTruthy();
+    expect(screen.getByText("Highlight soft")).toBeTruthy();
+    expect(screen.queryByLabelText("Page hex color")).toBeNull();
     expect(screen.queryByLabelText("Surface hex color")).toBeNull();
     expect(screen.queryByLabelText("Raised hex color")).toBeNull();
+    expect(screen.queryByLabelText("Text hex color")).toBeNull();
+    expect(screen.queryByRole("switch", { name: "Auto variants" })).toBeNull();
     expect(screen.queryByLabelText("Base palette")).toBeNull();
     expect(screen.queryByLabelText("Semantic colors")).toBeNull();
-    const paletteTokens = screen.getByLabelText("Palette token values");
+    expect(screen.queryByLabelText("Palette token values")).toBeNull();
 
-    expect(within(paletteTokens).getByLabelText("White")).toBeTruthy();
-    expect(within(paletteTokens).getByLabelText("Green 600")).toBeTruthy();
-    expect(within(paletteTokens).getByLabelText("Page background")).toBeTruthy();
-
-    fireEvent.change(within(paletteTokens).getByLabelText("White"), {
-      target: { value: "#ffffff" },
+    fireEvent.change(screen.getByLabelText("Highlight hex color"), {
+      target: { value: "#fef08a" },
     });
-    fireEvent.change(within(paletteTokens).getByLabelText("Page background"), {
-      target: { value: "var(--white)" },
+    fireEvent.blur(screen.getByLabelText("Highlight hex color"));
+    fireEvent.change(screen.getByLabelText("Accent hex color"), {
+      target: { value: "#dc2626" },
     });
+    fireEvent.blur(screen.getByLabelText("Accent hex color"));
 
-    expect(document.documentElement.style.getPropertyValue("--white")).toBe(
-      "#ffffff",
+    expect(document.documentElement.style.getPropertyValue("--brand-highlight-500")).toBe(
+      "#fef08a",
     );
-    expect(document.documentElement.style.getPropertyValue("--color-bg")).toBe(
-      "var(--white)",
+    expect(document.documentElement.style.getPropertyValue("--gradient-hero-accent")).toBe(
+      "#c22121",
     );
-
-    fireEvent.click(screen.getByLabelText("Reset Palette tokens"));
-
-    expect(document.documentElement.style.getPropertyValue("--white")).toBe("");
-    expect(document.documentElement.style.getPropertyValue("--color-bg")).toBe("");
-
-    fireEvent.click(screen.getByRole("switch", { name: "Auto variants" }));
-
-    expect(screen.getByLabelText("Surface hex color")).toBeTruthy();
-    expect(screen.getByLabelText("Raised hex color")).toBeTruthy();
+    expect(document.documentElement.style.getPropertyValue("--color-on-highlight")).toBe(
+      "#111416",
+    );
   });
 
   it("persists only changed settings and hydrates stored values", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
-    fireEvent.change(screen.getByLabelText("Type scale value"), {
-      target: { value: "111" },
+    fireEvent.change(screen.getByLabelText("Scale value"), {
+      target: { value: "82" },
     });
-    fireEvent.blur(screen.getByLabelText("Type scale value"));
+    fireEvent.blur(screen.getByLabelText("Scale value"));
 
     expect(JSON.parse(window.localStorage.getItem(DESIGN_OVERLAY_STORAGE_KEY) ?? "{}")).toEqual({
-      typeScale: 111,
+      typographyScale: 82,
     });
     expect(
-      readStoredDesignValues(DEFAULT_DESIGN_OVERLAY_VALUES).typeScale,
-    ).toBe(111);
+      readStoredDesignValues(DEFAULT_DESIGN_OVERLAY_VALUES).typographyScale,
+    ).toBe(82);
   });
 
-  it("edits individual design tokens directly", () => {
+  it("derives typography tokens from compact typography controls", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
-    fireEvent.change(screen.getByLabelText("Body font size value"), {
-      target: { value: "1.25rem" },
+    fireEvent.click(screen.getByRole("radio", { name: "Editorial" }));
+    fireEvent.change(screen.getByLabelText("Tightness value"), {
+      target: { value: "80" },
     });
-    fireEvent.blur(screen.getByLabelText("Body font size value"));
+    fireEvent.blur(screen.getByLabelText("Tightness value"));
 
     expect(
-      document.documentElement.style.getPropertyValue("--font-size-body"),
-    ).toBe("1.25rem");
-    expect(JSON.parse(window.localStorage.getItem(DESIGN_TOKEN_STORAGE_KEY) ?? "{}")).toEqual({
-      "--font-size-body": "1.25rem",
-    });
-  });
-
-  it("edits CSS variable references from token dropdowns", () => {
-    render(<DesignOverlay />);
-    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
-
-    const paletteTokens = screen.getByLabelText("Palette token values");
-    const warningColor = within(paletteTokens).getByLabelText("Warning");
-
-    expect(within(warningColor).getByRole("option", {
-      name: "Mist 100 (--mist-100)",
-    })).toBeTruthy();
-
-    fireEvent.change(warningColor, {
-      target: { value: "var(--mist-100)" },
-    });
-
-    expect(document.documentElement.style.getPropertyValue("--color-warning")).toBe(
-      "var(--mist-100)",
-    );
-    expect(JSON.parse(window.localStorage.getItem(DESIGN_TOKEN_STORAGE_KEY) ?? "{}")).toEqual({
-      "--color-warning": "var(--mist-100)",
-    });
+      document.documentElement.style.getPropertyValue("--font-family-heading"),
+    ).toContain("Georgia");
+    expect(
+      document.documentElement.style.getPropertyValue("--letter-spacing-heading"),
+    ).toBe("-0.042em");
   });
 
   it("automatically debounces source sync updates without forcing a reload", async () => {
@@ -230,17 +231,14 @@ describe("DesignOverlay", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
-    fireEvent.change(screen.getByLabelText("Section spacing value"), {
+    fireEvent.change(screen.getByLabelText("Spacing value"), {
       target: { value: "110" },
     });
-    fireEvent.blur(screen.getByLabelText("Section spacing value"));
-    fireEvent.change(screen.getByLabelText("Body font size value"), {
-      target: { value: "1.2rem" },
+    fireEvent.blur(screen.getByLabelText("Spacing value"));
+    fireEvent.change(screen.getByLabelText("Weight value"), {
+      target: { value: "85" },
     });
-    fireEvent.change(screen.getByLabelText("Body font size value"), {
-      target: { value: "1.25rem" },
-    });
-    fireEvent.blur(screen.getByLabelText("Body font size value"));
+    fireEvent.blur(screen.getByLabelText("Weight value"));
 
     expect(fetchMock).not.toHaveBeenCalled();
 
@@ -253,16 +251,45 @@ describe("DesignOverlay", () => {
 
     const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
     const payload = JSON.parse(String(requestInit.body)) as {
+      brand: Record<string, string>;
+      layout: Record<string, string | number>;
       reload: boolean;
+      typography: Record<string, string | number>;
       values: Record<string, string>;
     };
 
     expect(screen.queryByRole("button", { name: "Sync YAML" })).toBeNull();
     expect(fetchMock.mock.calls[0][0]).toBe("/__brandy/sync/design");
     expect(requestInit.method).toBe("POST");
+    expect(payload.brand).toEqual({
+      accent: "#ff6b35",
+      highlight: "#fde68a",
+      primary: "#635bff",
+      secondary: "#00d4ff",
+    });
     expect(payload.reload).toBe(false);
-    expect(payload.values["--section-padding-y-md"]).toBe("5.5rem");
-    expect(payload.values["--font-size-body"]).toBe("1.25rem");
+    expect(payload.layout).toEqual({
+      gridDensity: "balanced",
+      heroBalance: 57,
+      heroScale: "immersive",
+      pageGutter: 70,
+      radius: 2,
+      spacing: 110,
+      textWidth: 38,
+      width: "standard",
+    });
+    expect(payload.typography).toEqual({
+      density: 60,
+      headlineStyle: 60,
+      pairing: "display_plus_text",
+      scale: 70,
+      style: "geometric",
+      tightness: 50,
+      weight: 85,
+    });
+    expect(payload.values["--section-padding-y-md"]).toBeUndefined();
+    expect(payload.values["--font-size-body"]).toBeUndefined();
+    expect(payload.values["--font-weight-heading"]).toBeUndefined();
     await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
     expect(screen.queryByText("Auto-synced to YAML")).toBeNull();
   });
@@ -271,10 +298,10 @@ describe("DesignOverlay", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
-    fireEvent.change(screen.getByLabelText("Section spacing value"), {
+    fireEvent.change(screen.getByLabelText("Spacing value"), {
       target: { value: "110" },
     });
-    fireEvent.blur(screen.getByLabelText("Section spacing value"));
+    fireEvent.blur(screen.getByLabelText("Spacing value"));
     fireEvent.click(
       document.querySelector(".design-overlay__reset-all") as HTMLButtonElement,
     );
@@ -297,26 +324,45 @@ describe("design overlay model", () => {
   it("maps defaults to known Brandy CSS variables", () => {
     const variables = getDesignCssVariables(DEFAULT_DESIGN_OVERLAY_VALUES);
 
-    expect(variables["--color-accent"]).toBe("#0f9f6e");
+    expect(variables["--brand-primary-500"]).toBe("#635bff");
+    expect(variables["--brand-secondary-500"]).toBe("#00d4ff");
+    expect(variables["--brand-accent-500"]).toBe("#ff6b35");
+    expect(variables["--brand-highlight-500"]).toBe("#fde68a");
+    expect(variables["--color-accent"]).toBe("#5750e0");
     expect(variables["--green-600"]).toBe(variables["--color-accent"]);
     expect(variables["--green-700"]).toBe(variables["--color-accent-hover"]);
     expect(variables["--green-100"]).toBe(variables["--color-accent-soft"]);
-    expect(variables["--container-lg"]).toBe("1180px");
+    expect(variables["--button-primary-text"]).toBe("#ffffff");
+    expect(variables["--chart-4"]).toBe("#fde68a");
+    expect(variables["--section-padding-y-md"]).toBe("3.5rem");
+    expect(variables["--container-lg"]).toBe("1120px");
+    expect(variables["--hero-grid-visual-fr"]).toBe("1.14fr");
+    expect(variables["--hero-headline-max-width"]).toBe("9ch");
+    expect(variables["--content-readable-max"]).toBe("38rem");
+    expect(variables["--font-family-heading"]).toContain("Inter");
+    expect(variables["--font-family-body"]).toContain("Roboto");
+    expect(variables["--font-size-display"]).toBe("5.875rem");
+    expect(variables["--line-height-display"]).toBe("1.02");
+    expect(variables["--font-weight-heading"]).toBe("760");
+    expect(variables["--letter-spacing-heading"]).toBe("0em");
     expect(variables["--duration-base"]).toBe("260ms");
   });
 
-  it("derives readable colors and lighter variants from fewer base colors", () => {
+  it("derives surfaces, readable text, and interaction states from brand seeds", () => {
     const variables = getDesignCssVariables({
       ...DEFAULT_DESIGN_OVERLAY_VALUES,
       accentColor: "#dc2626",
-      backgroundColor: "#111416",
-      brandColor: "#4f46e5",
+      highlightColor: "#facc15",
+      primaryColor: "#4f46e5",
+      secondaryColor: "#0891b2",
     });
 
-    expect(variables["--color-accent"]).toBe("#dc2626");
-    expect(variables["--color-accent-hover"]).not.toBe("#dc2626");
-    expect(variables["--color-accent-soft"]).not.toBe("#dc2626");
-    expect(variables["--color-blue-soft"]).not.toBe("#4f46e5");
-    expect(variables["--color-text"]).not.toBe("#111416");
+    expect(variables["--brand-primary-500"]).toBe("#4f46e5");
+    expect(variables["--color-accent"]).toBe("#463eca");
+    expect(variables["--button-primary-hover"]).toBe("#3a34a9");
+    expect(variables["--gradient-hero-accent"]).toBe("#c22121");
+    expect(variables["--color-highlight-soft"]).toBe("#fef8de");
+    expect(variables["--color-text"]).toBe("#060712");
+    expect(variables["--color-bg"]).toBe("#faf9fe");
   });
 });

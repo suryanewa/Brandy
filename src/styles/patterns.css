@@ -115,15 +115,15 @@
 
 .demo-layer:focus-visible,
 .demo-module:focus-visible {
-  outline: var(--stroke-medium) solid var(--color-blue);
+  outline: var(--stroke-medium) solid var(--focus-ring);
   outline-offset: var(--space-1);
 }
 
 .demo-layer[data-active="true"],
 .demo-module[data-selected="true"] {
-  background: var(--color-accent-soft);
+  background: var(--badge-brand-bg);
   border-color: transparent;
-  color: var(--color-accent-hover);
+  color: var(--badge-brand-text);
 }
 
 .demo-frame__canvas {
@@ -164,7 +164,7 @@
 }
 
 .demo-preview__hero span {
-  background: var(--color-accent);
+  background: var(--gradient-hero-accent);
   border-radius: var(--radius-sm);
   height: var(--demo-accent-bar-height);
   width: var(--demo-accent-bar-width);
@@ -221,7 +221,7 @@
 }
 
 .demo-code code {
-  color: var(--green-100);
+  color: var(--color-highlight);
   font-size: var(--font-size-caption);
 }
 
@@ -245,7 +245,7 @@
 }
 
 .token-row__swatch[data-swatch="green"] {
-  background: var(--color-accent);
+  background: var(--chart-1);
 }
 
 .token-row__swatch[data-swatch="white"] {
@@ -253,7 +253,7 @@
 }
 
 .token-row__swatch[data-swatch="radius"] {
-  background: var(--color-blue-soft);
+  background: var(--color-highlight-soft);
   border-radius: var(--radius-lg);
 }
 
@@ -298,7 +298,7 @@
 
 .starter-list svg,
 .before-after__pane svg {
-  color: var(--color-accent);
+  color: var(--color-success);
   flex: 0 0 auto;
 }
 
@@ -312,7 +312,7 @@
 }
 
 .before-after__pane[data-tone="after"] {
-  border-color: var(--color-accent-border);
+  border-color: var(--badge-brand-border);
 }
 
 .starter-card {
@@ -350,7 +350,7 @@
 }
 
 .faq-item__trigger:focus-visible {
-  outline: var(--stroke-medium) solid var(--color-blue);
+  outline: var(--stroke-medium) solid var(--focus-ring);
   outline-offset: var(--space-1);
 }
 

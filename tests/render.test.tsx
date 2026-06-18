@@ -12,7 +12,7 @@ describe("App", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Landing pages, built from a system.",
+        name: "Brand surfaces, generated from seeds.",
       }),
     ).toBeTruthy();
     expect(

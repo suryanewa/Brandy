@@ -4,7 +4,7 @@ import type { LandingPageContent } from "../types/landing";
 export const landingPage = {
   brand: {
     name: "Brandy",
-    description: "A modular landing page starter for React teams who want reusable design rules, clean section architecture, and editable content.",
+    description: "A brand surface testing tool for React teams who want tiny creative inputs, generated design tokens, and reusable landing page sections.",
   },
   nav: {
     links: [
@@ -31,8 +31,8 @@ export const landingPage = {
     },
   },
   hero: {
-    title: "Landing pages, built from a system.",
-    description: "Compose launch-ready pages from tokens, primitives, patterns, and sections without letting one-off styles leak into production.",
+    title: "Brand surfaces, generated from seeds.",
+    description: "Choose the brand DNA, then preview launch-ready pages built from generated tokens, primitives, patterns, and sections.",
     primaryCta: {
       label: "View system",
       href: "#system",
@@ -44,8 +44,8 @@ export const landingPage = {
   },
   layers: [
     {
-      title: "Tokens",
-      description: "Semantic color, type, spacing, radius, stroke, shadow, motion, and container values.",
+      title: "Generated tokens",
+      description: "Semantic color, type, spacing, radius, stroke, shadow, motion, and container values derived from creative seeds.",
     },
     {
       title: "Primitives",
@@ -66,7 +66,7 @@ export const landingPage = {
   ],
   systemMap: {
     title: "One page. Five reusable layers.",
-    description: "Brand decisions live in tokens. Layout lives in primitives. Marketing pages become composition, not reinvention.",
+    description: "Brand decisions live in a brief and creative seeds. Tokens are generated. Marketing pages become composition, not reinvention.",
   },
   problem: {
     title: "One-off sections turn launch pages brittle.",
@@ -81,7 +81,7 @@ export const landingPage = {
     title: "A strict design grammar keeps storytelling flexible.",
     description: "Brandy separates design decisions from section implementation, so each section can choose content, layout, emphasis, media, and CTA without creating a new system.",
     checks: [
-      "Sections choose from tokens.",
+      "Creative seeds generate tokens.",
       "Repeated layouts use primitives.",
       "Copy lives in structured content.",
       "The page stays composition-only.",
@@ -90,8 +90,8 @@ export const landingPage = {
   howItWorks: [
     {
       layer: "01",
-      title: "Define the system",
-      description: "Lock brand taste into semantic tokens, shared type styles, and motion presets.",
+      title: "Define the brief",
+      description: "Set the brand strategy, voice, imagery direction, and compact creative seeds.",
     },
     {
       layer: "02",
@@ -111,7 +111,7 @@ export const landingPage = {
   features: [
     {
       title: "No random values",
-      description: "Colors, spacing, radii, shadows, type, and motion come from named tokens.",
+      description: "Colors, spacing, radii, shadows, type, and motion come from generated tokens.",
     },
     {
       title: "Slot-based sections",
@@ -128,7 +128,7 @@ export const landingPage = {
   ],
   demo: {
     title: "Compose before you customize.",
-    description: "Select a module, inspect the contract, and see how the same tokens keep every layer aligned.",
+    description: "Select a module, inspect the contract, and see how the same generated tokens keep every layer aligned.",
     modules: [
       "Navbar",
       "Hero",
@@ -198,7 +198,9 @@ export const landingPage = {
     description: "Use the starter as a launch page, a section library, or the foundation for campaign variants.",
     planName: "Brandy starter",
     items: [
-      "Design tokens",
+      "Brand brief",
+      "Creative seeds",
+      "Generated tokens",
       "Primitive components",
       "Pattern components",
       "Section modules",
@@ -229,11 +231,11 @@ export const landingPage = {
   faq: [
     {
       question: "Is Brandy a template or a component system?",
-      answer: "Both. It includes a demo landing page, but the reusable system underneath it is the real product: tokens, primitives, patterns, sections, and content contracts.",
+      answer: "Both. It includes a demo landing page, but the reusable system underneath it is the real product: brand brief, creative seeds, generated tokens, primitives, patterns, sections, and content contracts.",
     },
     {
       question: "Can the visual style change?",
-      answer: "Yes. Brand decisions live in semantic tokens, so style changes happen in the system layer instead of inside every section.",
+      answer: "Yes. Brand decisions live in editable seeds, so generated token changes happen in the system layer instead of inside every section.",
     },
     {
       question: "Does it require a CMS?",

@@ -28,8 +28,8 @@
 .navbar__brand span,
 .footer__brand span {
   background:
-    linear-gradient(135deg, var(--color-accent) 0 50%, transparent 50%),
-    linear-gradient(45deg, var(--color-blue) 0 50%, var(--color-accent-soft) 50%);
+    linear-gradient(135deg, var(--gradient-hero-accent) 0 50%, transparent 50%),
+    linear-gradient(45deg, var(--gradient-hero-start) 0 50%, var(--gradient-hero-end) 50%);
   border: var(--stroke-thin) solid var(--color-border);
   border-radius: var(--radius-sm);
   height: var(--navbar-brand-mark-size);
@@ -64,7 +64,7 @@
 }
 
 .navbar__menu-button:focus-visible {
-  outline: var(--stroke-medium) solid var(--color-blue);
+  outline: var(--stroke-medium) solid var(--focus-ring);
   outline-offset: var(--space-1);
 }
 
@@ -91,7 +91,7 @@
 }
 
 .hero-copy .text-display {
-  max-width: var(--hero-copy-max-width);
+  max-width: var(--hero-headline-max-width);
 }
 
 .hero-copy__description {
@@ -155,7 +155,7 @@
 }
 
 .solution-checks svg {
-  color: var(--color-accent);
+  color: var(--color-success);
   flex: 0 0 auto;
 }
 
@@ -164,7 +164,7 @@
 }
 
 .step-card__index {
-  color: var(--color-accent);
+  color: var(--link-color);
   font-size: var(--font-size-caption);
   font-weight: 800;
 }

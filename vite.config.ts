@@ -79,8 +79,14 @@ async function handleDesignSyncRequest(
 
   try {
     const payload = await readJsonBody(request);
-    const { reload, values } = getValidatedDesignSyncPayload(payload);
-    const result = await syncOverlayDesignTokens(values);
+    const { brand, layout, reload, typography, values } =
+      getValidatedDesignSyncPayload(payload);
+    const result = await syncOverlayDesignTokens(
+      values,
+      brand,
+      layout,
+      typography,
+    );
 
     if (reload) sendFullReload(server);
     writeJson(response, 200, { ok: true, changedCount: result.changedCount });
@@ -127,12 +133,26 @@ function readJsonBody(request: IncomingMessage): Promise<unknown> {
   });
 }
 
-async function syncOverlayDesignTokens(values: Record<string, string>) {
+async function syncOverlayDesignTokens(
+  values: Record<string, string>,
+  brand?: {
+    accent: string;
+    highlight: string;
+    primary: string;
+    secondary: string;
+  },
+  layout?: LayoutSyncPayload,
+  typography?: TypographySyncPayload,
+) {
   const finishSuppressingSourceReload =
     beginSuppressingSourceReload(DESIGN_SOURCE_PATH);
 
   try {
-    return await syncDesignTokensFromValues(values);
+    return await syncDesignTokensFromValues(values, {
+      brand,
+      layout,
+      typography,
+    });
   } finally {
     finishSuppressingSourceReload();
   }
@@ -167,7 +187,15 @@ async function syncWatchedSource(sourceKind: WatchedSourceKind) {
 }
 
 function getValidatedDesignSyncPayload(payload: unknown): {
+  brand?: {
+    accent: string;
+    highlight: string;
+    primary: string;
+    secondary: string;
+  };
+  layout?: LayoutSyncPayload;
   reload: boolean;
+  typography?: TypographySyncPayload;
   values: Record<string, string>;
 } {
   if (!isObjectRecord(payload) || !isObjectRecord(payload.values)) {
@@ -193,7 +221,215 @@ function getValidatedDesignSyncPayload(payload: unknown): {
     values[name] = value.trim();
   }
 
-  return { reload: payload.reload === true, values };
+  return {
+    brand: getValidatedBrandPayload(payload.brand),
+    layout: getValidatedLayoutPayload(payload.layout),
+    reload: payload.reload === true,
+    typography: getValidatedTypographyPayload(payload.typography),
+    values,
+  };
+}
+
+function getValidatedBrandPayload(value: unknown):
+  | {
+      accent: string;
+      highlight: string;
+      primary: string;
+      secondary: string;
+    }
+  | undefined {
+  if (value == null) return undefined;
+  if (!isObjectRecord(value)) {
+    throw new SyncRequestError(400, "Design sync brand seeds must be an object.");
+  }
+
+  const allowedKeys = ["accent", "highlight", "primary", "secondary"].sort();
+  const keys = Object.keys(value).sort();
+  if (keys.join(",") !== allowedKeys.join(",")) {
+    throw new SyncRequestError(
+      400,
+      "Design sync brand seeds must contain primary, secondary, accent, and highlight.",
+    );
+  }
+
+  const brand = {
+    accent: value.accent,
+    highlight: value.highlight,
+    primary: value.primary,
+    secondary: value.secondary,
+  };
+
+  for (const [key, seed] of Object.entries(brand)) {
+    if (typeof seed !== "string" || !/^#?[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(seed)) {
+      throw new SyncRequestError(400, `Invalid brand seed for ${key}.`);
+    }
+  }
+
+  return brand as {
+    accent: string;
+    highlight: string;
+    primary: string;
+    secondary: string;
+  };
+}
+
+type LayoutSyncPayload = {
+  gridDensity: "sparse" | "balanced" | "dense";
+  heroBalance: number;
+  heroScale: "compact" | "balanced" | "immersive";
+  pageGutter: number;
+  radius: number;
+  spacing: number;
+  textWidth: number;
+  width: "narrow" | "standard" | "wide" | "full";
+};
+
+type TypographySyncPayload = {
+  density: number;
+  headlineStyle: number;
+  pairing:
+    | "single_family"
+    | "display_plus_text"
+    | "editorial_contrast"
+    | "mono_accent";
+  scale: number;
+  style:
+    | "geometric"
+    | "grotesk"
+    | "humanist"
+    | "editorial"
+    | "mono_tech"
+    | "playful"
+    | "luxury";
+  tightness: number;
+  weight: number;
+};
+
+function getValidatedLayoutPayload(value: unknown): LayoutSyncPayload | undefined {
+  if (value == null) return undefined;
+  if (!isObjectRecord(value)) {
+    throw new SyncRequestError(400, "Design sync layout seeds must be an object.");
+  }
+
+  const allowedKeys = [
+    "gridDensity",
+    "heroBalance",
+    "heroScale",
+    "pageGutter",
+    "radius",
+    "spacing",
+    "textWidth",
+    "width",
+  ].sort();
+  const keys = Object.keys(value).sort();
+  if (keys.join(",") !== allowedKeys.join(",")) {
+    throw new SyncRequestError(
+      400,
+      "Design sync layout seeds must contain the supported layout controls.",
+    );
+  }
+
+  const layout = {
+    gridDensity: getStringEnumValue(
+      value.gridDensity,
+      ["sparse", "balanced", "dense"],
+      "gridDensity",
+    ),
+    heroBalance: getNumberValue(value.heroBalance, "heroBalance"),
+    heroScale: getStringEnumValue(
+      value.heroScale,
+      ["compact", "balanced", "immersive"],
+      "heroScale",
+    ),
+    pageGutter: getNumberValue(value.pageGutter, "pageGutter"),
+    radius: getNumberValue(value.radius, "radius"),
+    spacing: getNumberValue(value.spacing, "spacing"),
+    textWidth: getNumberValue(value.textWidth, "textWidth"),
+    width: getStringEnumValue(
+      value.width,
+      ["narrow", "standard", "wide", "full"],
+      "width",
+    ),
+  };
+
+  return layout as LayoutSyncPayload;
+}
+
+function getValidatedTypographyPayload(
+  value: unknown,
+): TypographySyncPayload | undefined {
+  if (value == null) return undefined;
+  if (!isObjectRecord(value)) {
+    throw new SyncRequestError(
+      400,
+      "Design sync typography seeds must be an object.",
+    );
+  }
+
+  const allowedKeys = [
+    "density",
+    "headlineStyle",
+    "pairing",
+    "scale",
+    "style",
+    "tightness",
+    "weight",
+  ].sort();
+  const keys = Object.keys(value).sort();
+  if (keys.join(",") !== allowedKeys.join(",")) {
+    throw new SyncRequestError(
+      400,
+      "Design sync typography seeds must contain the supported typography controls.",
+    );
+  }
+
+  const typography = {
+    density: getNumberValue(value.density, "density"),
+    headlineStyle: getNumberValue(value.headlineStyle, "headlineStyle"),
+    pairing: getStringEnumValue(
+      value.pairing,
+      ["single_family", "display_plus_text", "editorial_contrast", "mono_accent"],
+      "pairing",
+    ),
+    scale: getNumberValue(value.scale, "scale"),
+    style: getStringEnumValue(
+      value.style,
+      [
+        "geometric",
+        "grotesk",
+        "humanist",
+        "editorial",
+        "mono_tech",
+        "playful",
+        "luxury",
+      ],
+      "style",
+    ),
+    tightness: getNumberValue(value.tightness, "tightness"),
+    weight: getNumberValue(value.weight, "weight"),
+  };
+
+  return typography as TypographySyncPayload;
+}
+
+function getNumberValue(value: unknown, key: string): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new SyncRequestError(400, `Invalid design seed for ${key}.`);
+  }
+
+  return value;
+}
+
+function getStringEnumValue<Value extends string>(
+  value: unknown,
+  options: readonly Value[],
+  key: string,
+): Value {
+  if (typeof value !== "string" || !options.includes(value as Value)) {
+    throw new SyncRequestError(400, `Invalid layout seed for ${key}.`);
+  }
+
+  return value as Value;
 }
 
 function writeJson(
@@ -216,10 +452,19 @@ function loadKnownDesignTokenNames(): Set<string> {
     "utf8",
   );
   const parsed = parse(raw) as {
+    generated_tokens?: { root?: Record<string, unknown> };
+    generated?: { tokens?: { root?: Record<string, unknown> } };
     tokens?: { root?: Record<string, unknown> };
   };
 
-  return new Set(Object.keys(parsed.tokens?.root ?? {}));
+  return new Set(
+    Object.keys(
+      parsed.generated_tokens?.root ??
+        parsed.generated?.tokens?.root ??
+        parsed.tokens?.root ??
+        {},
+    ),
+  );
 }
 
 function sendFullReload(server: ViteDevServer) {

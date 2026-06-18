@@ -1,7 +1,6 @@
 import {
   Accessibility,
   ChevronDown,
-  Gauge,
   Palette,
   RotateCcw,
   Settings,
@@ -18,14 +17,22 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { BRAND_GENERATED_TOKEN_NAMES } from "../../lib/brandTheme.mjs";
+import { LAYOUT_GENERATED_TOKEN_NAMES } from "../../lib/layoutTheme.mjs";
+import { TYPOGRAPHY_GENERATED_TOKEN_NAMES } from "../../lib/typographyTheme.mjs";
 import {
   ACCENT_PRESETS,
-  BRAND_PRESETS,
   DEFAULT_DESIGN_OVERLAY_VALUES,
   DESIGN_CSS_VARIABLE_NAMES,
   DESIGN_OVERLAY_STORAGE_KEY,
+  HIGHLIGHT_PRESETS,
+  PRIMARY_PRESETS,
+  SECONDARY_PRESETS,
   areDesignValuesEqual,
+  getDesignBrandSeeds,
   getDesignCssVariables,
+  getDesignLayoutSeeds,
+  getDesignTypographySeeds,
   persistDesignValueDiff,
   readStoredDesignValues,
   type DesignCssVariableName,
@@ -35,20 +42,17 @@ import {
 import {
   ColorControl,
   DerivedColorPreview,
+  SegmentedControl,
   SliderControl,
   SwatchStrip,
   ToggleControl,
 } from "./DesignOverlayControls";
-import { DesignTokenControlRow, DesignTokenEditor } from "./DesignTokenEditor";
 import {
-  DESIGN_TOKEN_CONTROLS,
   DESIGN_TOKEN_CSS_VARIABLE_NAMES,
   DESIGN_TOKEN_STORAGE_KEY,
-  getDesignTokenControlValue,
   getDesignTokenCssVariables,
   persistDesignTokenValueDiff,
   readStoredDesignTokenValues,
-  type DesignTokenGroupKey,
   type DesignTokenValueMap,
   type DesignTokenVariableName,
 } from "./designTokenCatalog";
@@ -66,120 +70,221 @@ type InlineRestore = {
   target: HTMLElement;
 };
 type SourceSyncState = "idle" | "syncing" | "synced" | "error";
-type ColorSettingKey =
-  | "brandColor"
-  | "accentColor"
-  | "backgroundColor"
-  | "surfaceColor"
-  | "surfaceRaisedColor"
-  | "textColor";
 type NumberSettingKey =
   | "sectionSpacing"
   | "radius"
-  | "typeScale"
-  | "elevation"
-  | "containerWidth"
-  | "animationDuration"
-  | "navbarBlur"
-  | "browserHeight"
-  | "demoHeight"
-  | "browserChromeHeight";
-type BooleanSettingKey = "mutedMode" | "highContrast" | "reducedMotion";
-type PaletteBooleanSettingKey = "autoColorVariants";
+  | "pageGutter"
+  | "heroBalance"
+  | "textWidth"
+  | "typographyScale"
+  | "typographyDensity"
+  | "typographyWeight"
+  | "headlineStyle"
+  | "typographyTightness";
+type LayoutSelectSettingKey = "gridDensity" | "heroScale" | "pageWidth";
+type TypographySelectSettingKey = "typographyPairing" | "typographyStyle";
+type SelectSettingKey = LayoutSelectSettingKey | TypographySelectSettingKey;
+type BooleanSettingKey = "mutedMode" | "highContrast";
 type ResetKey = keyof DesignOverlayValues;
-type ColorControlConfig = { key: ColorSettingKey; label: string };
 type SliderControlConfig = {
+  endLabel?: string;
   key: NumberSettingKey;
   label: string;
   max: number;
   min: number;
+  startLabel?: string;
   step: number;
   suffix?: string;
 };
-type ToggleControlConfig = { key: BooleanSettingKey; label: string };
-type PaletteToggleControlConfig = {
-  key: PaletteBooleanSettingKey;
+type SegmentedControlConfig<Key extends SelectSettingKey> = {
+  key: Key;
   label: string;
+  options: readonly {
+    label: string;
+    value: DesignOverlayValues[Key];
+  }[];
 };
+type ToggleControlConfig = { key: BooleanSettingKey; label: string };
 
-const SURFACE_VARIANT_CONTROLS: readonly ColorControlConfig[] = [
-  { key: "textColor", label: "Text" },
-  { key: "surfaceColor", label: "Surface" },
-  { key: "surfaceRaisedColor", label: "Raised" },
-];
-const BASE_SURFACE_COLOR_CONTROLS: readonly ColorControlConfig[] = [
-  { key: "backgroundColor", label: "Page" },
-];
-const PALETTE_TOGGLES: readonly PaletteToggleControlConfig[] = [
-  { key: "autoColorVariants", label: "Auto variants" },
-];
 const LAYOUT_SLIDERS: readonly SliderControlConfig[] = [
-  { key: "sectionSpacing", label: "Section spacing", min: 70, max: 145, step: 5, suffix: "%" },
-  { key: "radius", label: "Radii", min: 2, max: 20, step: 1, suffix: "px" },
+  {
+    key: "sectionSpacing",
+    label: "Spacing",
+    min: 50,
+    max: 130,
+    startLabel: "Compact",
+    endLabel: "Airy",
+    step: 1,
+  },
+  {
+    key: "radius",
+    label: "Corners",
+    min: 0,
+    max: 24,
+    startLabel: "Sharp",
+    endLabel: "Pillowy",
+    step: 1,
+    suffix: "px",
+  },
+  {
+    key: "pageGutter",
+    label: "Page gutter",
+    min: 50,
+    max: 130,
+    startLabel: "Tight",
+    endLabel: "Open",
+    step: 1,
+  },
+  {
+    key: "heroBalance",
+    label: "Hero balance",
+    min: 35,
+    max: 65,
+    startLabel: "Text-heavy",
+    endLabel: "Visual-forward",
+    step: 1,
+  },
+  {
+    key: "textWidth",
+    label: "Text width",
+    min: 28,
+    max: 52,
+    startLabel: "Focused",
+    endLabel: "Expanded",
+    step: 1,
+    suffix: "rem",
+  },
 ];
+const LAYOUT_SEGMENTED_CONTROLS = [
+  {
+    key: "pageWidth",
+    label: "Page width",
+    options: [
+      { label: "Narrow", value: "narrow" },
+      { label: "Standard", value: "standard" },
+      { label: "Wide", value: "wide" },
+      { label: "Full", value: "full" },
+    ],
+  },
+  {
+    key: "heroScale",
+    label: "Hero",
+    options: [
+      { label: "Compact", value: "compact" },
+      { label: "Balanced", value: "balanced" },
+      { label: "Immersive", value: "immersive" },
+    ],
+  },
+  {
+    key: "gridDensity",
+    label: "Grid density",
+    options: [
+      { label: "Sparse", value: "sparse" },
+      { label: "Balanced", value: "balanced" },
+      { label: "Dense", value: "dense" },
+    ],
+  },
+] as const satisfies readonly SegmentedControlConfig<LayoutSelectSettingKey>[];
 const TYPOGRAPHY_SLIDERS: readonly SliderControlConfig[] = [
-  { key: "typeScale", label: "Type scale", min: 85, max: 118, step: 1, suffix: "%" },
+  {
+    key: "typographyScale",
+    label: "Scale",
+    min: 0,
+    max: 100,
+    startLabel: "Subtle",
+    endLabel: "Dramatic",
+    step: 1,
+  },
+  {
+    key: "typographyDensity",
+    label: "Density",
+    min: 0,
+    max: 100,
+    startLabel: "Compact",
+    endLabel: "Airy",
+    step: 1,
+  },
+  {
+    key: "typographyWeight",
+    label: "Weight",
+    min: 0,
+    max: 100,
+    startLabel: "Light",
+    endLabel: "Bold",
+    step: 1,
+  },
+  {
+    key: "headlineStyle",
+    label: "Headline style",
+    min: 0,
+    max: 100,
+    startLabel: "Quiet",
+    endLabel: "Expressive",
+    step: 1,
+  },
+  {
+    key: "typographyTightness",
+    label: "Tightness",
+    min: 0,
+    max: 100,
+    startLabel: "Loose",
+    endLabel: "Tight",
+    step: 1,
+  },
 ];
-const MOTION_SLIDERS: readonly SliderControlConfig[] = [
-  { key: "animationDuration", label: "Duration", min: 80, max: 800, step: 20, suffix: "ms" },
-];
+const TYPOGRAPHY_SEGMENTED_CONTROLS = [
+  {
+    key: "typographyStyle",
+    label: "Type style",
+    options: [
+      { label: "Geometric", value: "geometric" },
+      { label: "Grotesk", value: "grotesk" },
+      { label: "Humanist", value: "humanist" },
+      { label: "Editorial", value: "editorial" },
+      { label: "Mono tech", value: "mono_tech" },
+      { label: "Playful", value: "playful" },
+      { label: "Luxury", value: "luxury" },
+    ],
+  },
+  {
+    key: "typographyPairing",
+    label: "Pairing",
+    options: [
+      { label: "Single family", value: "single_family" },
+      { label: "Display + text", value: "display_plus_text" },
+      { label: "Editorial contrast", value: "editorial_contrast" },
+      { label: "Mono accent", value: "mono_accent" },
+    ],
+  },
+] as const satisfies readonly SegmentedControlConfig<TypographySelectSettingKey>[];
 const MODE_TOGGLES: readonly ToggleControlConfig[] = [
   { key: "mutedMode", label: "Muted mode" },
   { key: "highContrast", label: "High contrast" },
 ];
-const PALETTE_TOKEN_SECTIONS = [
-  {
-    ariaLabel: "Palette token values",
-    groups: ["base", "semantic"],
-    resetLabel: "Reset Palette tokens",
-    title: "Token values",
-  },
-] as const satisfies readonly {
-  ariaLabel: string;
-  groups: readonly DesignTokenGroupKey[];
-  resetLabel: string;
-  title: string;
-}[];
-const LAYOUT_TOKEN_SECTIONS = [
-  {
-    groups: ["layout"],
-    resetLabel: "Reset Layout tokens",
-    title: "Token values",
-  },
-] as const satisfies readonly {
-  groups: readonly DesignTokenGroupKey[];
-  resetLabel: string;
-  title: string;
-}[];
-const TYPOGRAPHY_TOKEN_SECTIONS = [
-  {
-    groups: ["typography"],
-    resetLabel: "Reset Typography tokens",
-    title: "Token values",
-  },
-] as const satisfies readonly {
-  groups: readonly DesignTokenGroupKey[];
-  resetLabel: string;
-  title: string;
-}[];
-
 const PALETTE_KEYS = [
-  "autoColorVariants",
-  "brandColor",
+  "primaryColor",
+  "secondaryColor",
   "accentColor",
-  "backgroundColor",
-  "surfaceColor",
-  "surfaceRaisedColor",
-  "textColor",
+  "highlightColor",
 ] as const satisfies readonly ResetKey[];
 const LAYOUT_KEYS = [
   "sectionSpacing",
   "radius",
+  "pageWidth",
+  "pageGutter",
+  "heroScale",
+  "heroBalance",
+  "textWidth",
+  "gridDensity",
 ] as const satisfies readonly ResetKey[];
-const TYPOGRAPHY_KEYS = ["typeScale"] as const satisfies readonly ResetKey[];
-const MOTION_KEYS = [
-  "animationDuration",
-  "reducedMotion",
+const TYPOGRAPHY_KEYS = [
+  "typographyStyle",
+  "typographyPairing",
+  "typographyScale",
+  "typographyDensity",
+  "typographyWeight",
+  "headlineStyle",
+  "typographyTightness",
 ] as const satisfies readonly ResetKey[];
 const MODE_KEYS = [
   "mutedMode",
@@ -205,6 +310,11 @@ const FOCUSABLE_PANEL_SELECTOR = [
 const TRACKED_CSS_VARIABLE_NAMES = Array.from(
   new Set([...DESIGN_CSS_VARIABLE_NAMES, ...DESIGN_TOKEN_CSS_VARIABLE_NAMES]),
 ) as Array<`--${string}`>;
+const SOURCE_GENERATED_TOKEN_NAMES = new Set<`--${string}`>([
+  ...BRAND_GENERATED_TOKEN_NAMES,
+  ...LAYOUT_GENERATED_TOKEN_NAMES,
+  ...TYPOGRAPHY_GENERATED_TOKEN_NAMES,
+]);
 const SOURCE_SYNC_DEBOUNCE_MS = 650;
 
 export function DesignOverlay({
@@ -244,6 +354,7 @@ export function DesignOverlay({
   const [sourceSyncState, setSourceSyncState] =
     useState<SourceSyncState>("idle");
   const [sourceSyncMessage, setSourceSyncMessage] = useState("");
+  const [sourceSyncUserEdited, setSourceSyncUserEdited] = useState(false);
 
   const resolveTargetRoot = useCallback((): HTMLElement | null => {
     if (targetRoot) return targetRoot;
@@ -368,56 +479,39 @@ export function DesignOverlay({
   }, [open]);
 
   const tokenIsDirty = Object.keys(tokenValues).length > 0;
-  const isDirty = !areDesignValuesEqual(values, resolvedDefaults) || tokenIsDirty;
+  const designIsDirty = !areDesignValuesEqual(values, resolvedDefaults);
+  const isDirty = designIsDirty || tokenIsDirty;
   const sourceSyncValues = useMemo<DesignTokenValueMap>(() => {
     const next: DesignTokenValueMap = {};
 
-    if (!areDesignValuesEqual(values, resolvedDefaults)) {
-      Object.assign(next, getDesignCssVariables(values));
+    if (designIsDirty) {
+      for (const [name, value] of Object.entries(getDesignCssVariables(values))) {
+        const variable = name as `--${string}`;
+        if (SOURCE_GENERATED_TOKEN_NAMES.has(variable)) continue;
+        next[variable] = value;
+      }
     }
 
     Object.assign(next, tokenValues);
     return next;
-  }, [resolvedDefaults, tokenValues, values]);
+  }, [designIsDirty, tokenValues, values]);
   const derivedPaletteValues = useMemo(() => getDesignCssVariables(values), [values]);
-  const sourceSyncDirty = Object.keys(sourceSyncValues).length > 0;
+  const sourceSyncDirty = sourceSyncUserEdited;
   const sourceSyncAvailable = import.meta.env.DEV;
   const sourceSyncPayload = useMemo(
-    () => JSON.stringify({ reload: false, values: sourceSyncValues }),
-    [sourceSyncValues],
-  );
-  const paletteTokenControls = useMemo(
     () =>
-      PALETTE_TOKEN_SECTIONS.map((section) => ({
-        ...section,
-        controls: DESIGN_TOKEN_CONTROLS.filter(
-          (control) => section.groups.some((group) => group === control.group),
-        ),
-      })),
-    [],
-  );
-  const layoutTokenControls = useMemo(
-    () =>
-      LAYOUT_TOKEN_SECTIONS.map((section) => ({
-        ...section,
-        controls: DESIGN_TOKEN_CONTROLS.filter(
-          (control) => section.groups.some((group) => group === control.group),
-        ),
-      })),
-    [],
-  );
-  const typographyTokenControls = useMemo(
-    () =>
-      TYPOGRAPHY_TOKEN_SECTIONS.map((section) => ({
-        ...section,
-        controls: DESIGN_TOKEN_CONTROLS.filter(
-          (control) => section.groups.some((group) => group === control.group),
-        ),
-      })),
-    [],
+      JSON.stringify({
+        brand: getDesignBrandSeeds(values),
+        layout: getDesignLayoutSeeds(values),
+        reload: false,
+        typography: getDesignTypographySeeds(values),
+        values: sourceSyncValues,
+      }),
+    [sourceSyncValues, values],
   );
 
   const markSourceSyncDirty = useCallback(() => {
+    setSourceSyncUserEdited(true);
     setSourceSyncState("idle");
     setSourceSyncMessage("");
   }, []);
@@ -463,45 +557,6 @@ export function DesignOverlay({
     }));
   }, []);
 
-  const updateTokenValue = useCallback(
-    (variable: DesignTokenVariableName, nextValue: string) => {
-      markSourceSyncDirty();
-      setTokenValues((current) => {
-        const next = { ...current };
-        if (!nextValue.trim()) {
-          delete next[variable];
-          return next;
-        }
-
-        next[variable] = nextValue.trim();
-        return next;
-      });
-    },
-    [markSourceSyncDirty],
-  );
-
-  const resetTokenValue = useCallback((variable: DesignTokenVariableName) => {
-    markSourceSyncDirty();
-    setTokenValues((current) => {
-      const next = { ...current };
-      delete next[variable];
-      return next;
-    });
-  }, [markSourceSyncDirty]);
-
-  const resetTokenGroup = useCallback((group: DesignTokenGroupKey) => {
-    markSourceSyncDirty();
-    setTokenValues((current) => {
-      const next = { ...current };
-      for (const control of DESIGN_TOKEN_CONTROLS) {
-        if (control.group === group && control.variable in next) {
-          delete next[control.variable];
-        }
-      }
-      return next;
-    });
-  }, [markSourceSyncDirty]);
-
   useEffect(() => {
     latestSourceSyncPayloadRef.current = sourceSyncPayload;
   }, [sourceSyncPayload]);
@@ -540,6 +595,7 @@ export function DesignOverlay({
           window.localStorage.removeItem(DESIGN_OVERLAY_STORAGE_KEY);
           window.localStorage.removeItem(DESIGN_TOKEN_STORAGE_KEY);
           lastSyncedSourcePayloadRef.current = sourceSyncPayload;
+          setSourceSyncUserEdited(false);
           setSourceSyncState("synced");
           setSourceSyncMessage("");
         })
@@ -551,6 +607,7 @@ export function DesignOverlay({
             return;
           }
 
+          setSourceSyncUserEdited(false);
           setSourceSyncState("error");
           setSourceSyncMessage(
             error instanceof Error ? error.message : "Unable to sync YAML source.",
@@ -568,20 +625,13 @@ export function DesignOverlay({
     ? `design-overlay ${className}`
     : "design-overlay";
 
-  const renderColorControl = ({ key, label }: ColorControlConfig) => (
-    <ColorControl
-      key={key}
-      id={`${baseId}-${key}`}
-      label={label}
-      value={values[key]}
-      onChange={(value) => updateValue(key, value)}
-    />
-  );
   const renderSliderControl = ({
+    endLabel,
     key,
     label,
     max,
     min,
+    startLabel,
     step,
     suffix,
   }: SliderControlConfig) => (
@@ -594,6 +644,22 @@ export function DesignOverlay({
       max={max}
       step={step}
       suffix={suffix}
+      startLabel={startLabel}
+      endLabel={endLabel}
+      onChange={(value) => updateValue(key, value)}
+    />
+  );
+  const renderSegmentedControl = <Key extends SelectSettingKey>({
+    key,
+    label,
+    options,
+  }: SegmentedControlConfig<Key>) => (
+    <SegmentedControl
+      key={key}
+      id={`${baseId}-${key}`}
+      label={label}
+      value={values[key]}
+      options={options}
       onChange={(value) => updateValue(key, value)}
     />
   );
@@ -606,69 +672,6 @@ export function DesignOverlay({
       onChange={(checked) => updateValue(key, checked)}
     />
   );
-  const renderPaletteToggleControl = ({
-    key,
-    label,
-  }: PaletteToggleControlConfig) => (
-    <ToggleControl
-      key={key}
-      id={`${baseId}-${key}`}
-      label={label}
-      checked={values[key]}
-      onChange={(checked) => updateValue(key, checked)}
-    />
-  );
-  const renderEmbeddedTokenSections = (
-    sections: readonly {
-      ariaLabel?: string;
-      controls: readonly (typeof DESIGN_TOKEN_CONTROLS)[number][];
-      groups: readonly DesignTokenGroupKey[];
-      resetLabel?: string;
-      title: string;
-    }[],
-  ) => (
-    <div className="design-overlay__embedded-token-sections">
-      {sections.map((section) => (
-        <section
-          key={section.ariaLabel ?? section.title}
-          className="design-overlay__embedded-token-section"
-          aria-label={section.ariaLabel ?? section.title}
-        >
-          <div className="design-overlay__embedded-token-header">
-            <span>{section.title}</span>
-            <button
-              type="button"
-              className="design-overlay__group-reset"
-              aria-label={section.resetLabel ?? `Reset ${section.title}`}
-              disabled={!section.controls.some(
-                (control) => tokenValues[control.variable] != null,
-              )}
-              onClick={() => {
-                for (const group of section.groups) {
-                  resetTokenGroup(group);
-                }
-              }}
-            >
-              <RotateCcw aria-hidden="true" />
-            </button>
-          </div>
-          <div className="design-overlay__embedded-token-list">
-            {section.controls.map((control) => (
-              <DesignTokenControlRow
-                key={control.variable}
-                control={control}
-                value={getDesignTokenControlValue(control, tokenValues)}
-                changed={tokenValues[control.variable] != null}
-                onChange={updateTokenValue}
-                onReset={resetTokenValue}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-  );
-
   return (
     <div className={overlayClassName}>
       {open ? (
@@ -719,13 +722,6 @@ export function DesignOverlay({
           </header>
 
           <div className="design-overlay__content">
-            <DesignTokenEditor
-              values={tokenValues}
-              onChange={updateTokenValue}
-              onResetGroup={resetTokenGroup}
-              onResetVariable={resetTokenValue}
-            />
-
             <CollapsibleGroup
               id={`${baseId}-palette`}
               title="Palette"
@@ -735,16 +731,28 @@ export function DesignOverlay({
               onReset={() => resetDefaultKeys(PALETTE_KEYS)}
             >
               <ColorControl
-                id={`${baseId}-brand-color`}
-                label="Brand"
-                value={values.brandColor}
-                onChange={(value) => updateValue("brandColor", value)}
+                id={`${baseId}-primary-color`}
+                label="Primary"
+                value={values.primaryColor}
+                onChange={(value) => updateValue("primaryColor", value)}
               />
               <SwatchStrip
-                label="Brand presets"
-                colors={BRAND_PRESETS}
-                selectedColor={values.brandColor}
-                onSelect={(value) => updateValue("brandColor", value)}
+                label="Primary presets"
+                colors={PRIMARY_PRESETS}
+                selectedColor={values.primaryColor}
+                onSelect={(value) => updateValue("primaryColor", value)}
+              />
+              <ColorControl
+                id={`${baseId}-secondary-color`}
+                label="Secondary"
+                value={values.secondaryColor}
+                onChange={(value) => updateValue("secondaryColor", value)}
+              />
+              <SwatchStrip
+                label="Secondary presets"
+                colors={SECONDARY_PRESETS}
+                selectedColor={values.secondaryColor}
+                onSelect={(value) => updateValue("secondaryColor", value)}
               />
               <ColorControl
                 id={`${baseId}-accent-color`}
@@ -758,37 +766,46 @@ export function DesignOverlay({
                 selectedColor={values.accentColor}
                 onSelect={(value) => updateValue("accentColor", value)}
               />
-              {PALETTE_TOGGLES.map(renderPaletteToggleControl)}
-              {BASE_SURFACE_COLOR_CONTROLS.map(renderColorControl)}
-              {values.autoColorVariants ? (
-                <DerivedColorPreview
-                  colors={[
-                    {
-                      label: "Accent hover",
-                      value: derivedPaletteValues["--color-accent-hover"],
-                    },
-                    {
-                      label: "Accent soft",
-                      value: derivedPaletteValues["--color-accent-soft"],
-                    },
-                    {
-                      label: "Brand soft",
-                      value: derivedPaletteValues["--color-blue-soft"],
-                    },
-                    {
-                      label: "Surface",
-                      value: derivedPaletteValues["--color-surface"],
-                    },
-                    {
-                      label: "Text",
-                      value: derivedPaletteValues["--color-text"],
-                    },
-                  ]}
-                />
-              ) : (
-                SURFACE_VARIANT_CONTROLS.map(renderColorControl)
-              )}
-              {renderEmbeddedTokenSections(paletteTokenControls)}
+              <ColorControl
+                id={`${baseId}-highlight-color`}
+                label="Highlight"
+                value={values.highlightColor}
+                onChange={(value) => updateValue("highlightColor", value)}
+              />
+              <SwatchStrip
+                label="Highlight presets"
+                colors={HIGHLIGHT_PRESETS}
+                selectedColor={values.highlightColor}
+                onSelect={(value) => updateValue("highlightColor", value)}
+              />
+              <DerivedColorPreview
+                colors={[
+                  {
+                    label: "Primary hover",
+                    value: derivedPaletteValues["--button-primary-hover"],
+                  },
+                  {
+                    label: "Secondary surface",
+                    value: derivedPaletteValues["--button-secondary-bg"],
+                  },
+                  {
+                    label: "Accent moment",
+                    value: derivedPaletteValues["--gradient-hero-accent"],
+                  },
+                  {
+                    label: "Highlight soft",
+                    value: derivedPaletteValues["--color-highlight-soft"],
+                  },
+                  {
+                    label: "Neutral surface",
+                    value: derivedPaletteValues["--color-surface"],
+                  },
+                  {
+                    label: "Readable text",
+                    value: derivedPaletteValues["--color-text"],
+                  },
+                ]}
+              />
             </CollapsibleGroup>
 
             <CollapsibleGroup
@@ -799,8 +816,8 @@ export function DesignOverlay({
               onToggle={() => toggleGroup("layout")}
               onReset={() => resetDefaultKeys(LAYOUT_KEYS)}
             >
+              {LAYOUT_SEGMENTED_CONTROLS.map(renderSegmentedControl)}
               {LAYOUT_SLIDERS.map(renderSliderControl)}
-              {renderEmbeddedTokenSections(layoutTokenControls)}
             </CollapsibleGroup>
 
             <CollapsibleGroup
@@ -811,25 +828,8 @@ export function DesignOverlay({
               onToggle={() => toggleGroup("typography")}
               onReset={() => resetDefaultKeys(TYPOGRAPHY_KEYS)}
             >
+              {TYPOGRAPHY_SEGMENTED_CONTROLS.map(renderSegmentedControl)}
               {TYPOGRAPHY_SLIDERS.map(renderSliderControl)}
-              {renderEmbeddedTokenSections(typographyTokenControls)}
-            </CollapsibleGroup>
-
-            <CollapsibleGroup
-              id={`${baseId}-motion`}
-              title="Motion"
-              icon={<Gauge aria-hidden="true" />}
-              open={expandedGroups.motion}
-              onToggle={() => toggleGroup("motion")}
-              onReset={() => resetDefaultKeys(MOTION_KEYS)}
-            >
-              {MOTION_SLIDERS.map(renderSliderControl)}
-              <ToggleControl
-                id={`${baseId}-reduced-motion`}
-                label="Reduced motion preview"
-                checked={values.reducedMotion}
-                onChange={(checked) => updateValue("reducedMotion", checked)}
-              />
             </CollapsibleGroup>
 
             <CollapsibleGroup

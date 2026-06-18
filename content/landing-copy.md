@@ -6,7 +6,7 @@ Edit the YAML block below, then run `npm run sync:sources` to regenerate
 ```yaml
 brand:
   name: "Brandy"
-  description: "A modular landing page starter for React teams who want reusable design rules, clean section architecture, and editable content."
+  description: "A brand surface testing tool for React teams who want tiny creative inputs, generated design tokens, and reusable landing page sections."
 nav:
   links:
     - label: "System"
@@ -21,8 +21,8 @@ nav:
     label: "View system"
     href: "#system"
 hero:
-  title: "Landing pages, built from a system."
-  description: "Compose launch-ready pages from tokens, primitives, patterns, and sections without letting one-off styles leak into production."
+  title: "Brand surfaces, generated from seeds."
+  description: "Choose the brand DNA, then preview launch-ready pages built from generated tokens, primitives, patterns, and sections."
   primaryCta:
     label: "View system"
     href: "#system"
@@ -30,8 +30,8 @@ hero:
     label: "Explore modules"
     href: "#sections"
 layers:
-  - title: "Tokens"
-    description: "Semantic color, type, spacing, radius, stroke, shadow, motion, and container values."
+  - title: "Generated tokens"
+    description: "Semantic color, type, spacing, radius, stroke, shadow, motion, and container values derived from creative seeds."
   - title: "Primitives"
     description: "Section, Container, Stack, Grid, Split, Card, Button, Heading, and Text."
   - title: "Patterns"
@@ -42,7 +42,7 @@ layers:
     description: "A composition file that orders modules instead of inventing layout rules."
 systemMap:
   title: "One page. Five reusable layers."
-  description: "Brand decisions live in tokens. Layout lives in primitives. Marketing pages become composition, not reinvention."
+  description: "Brand decisions live in a brief and creative seeds. Tokens are generated. Marketing pages become composition, not reinvention."
 problem:
   title: "One-off sections turn launch pages brittle."
   description: "When every module invents its own padding, color, card style, and animation, the page becomes harder to reuse, rebrand, test, and ship."
@@ -54,14 +54,14 @@ solution:
   title: "A strict design grammar keeps storytelling flexible."
   description: "Brandy separates design decisions from section implementation, so each section can choose content, layout, emphasis, media, and CTA without creating a new system."
   checks:
-    - "Sections choose from tokens."
+    - "Creative seeds generate tokens."
     - "Repeated layouts use primitives."
     - "Copy lives in structured content."
     - "The page stays composition-only."
 howItWorks:
   - layer: "01"
-    title: "Define the system"
-    description: "Lock brand taste into semantic tokens, shared type styles, and motion presets."
+    title: "Define the brief"
+    description: "Set the brand strategy, voice, imagery direction, and compact creative seeds."
   - layer: "02"
     title: "Compose modules"
     description: "Build sections from primitives and patterns instead of bespoke layout CSS."
@@ -73,7 +73,7 @@ featureOverview:
   description: "Every module can choose content, layout, emphasis, and CTA without inventing new spacing, colors, or motion."
 features:
   - title: "No random values"
-    description: "Colors, spacing, radii, shadows, type, and motion come from named tokens."
+    description: "Colors, spacing, radii, shadows, type, and motion come from generated tokens."
   - title: "Slot-based sections"
     description: "Visuals, actions, and media can change without forking the layout contract."
   - title: "Previewable modules"
@@ -82,7 +82,7 @@ features:
     description: "Repeated copy stays easy to rewrite, localize, test, and later move to a CMS."
 demo:
   title: "Compose before you customize."
-  description: "Select a module, inspect the contract, and see how the same tokens keep every layer aligned."
+  description: "Select a module, inspect the contract, and see how the same generated tokens keep every layer aligned."
   modules:
     - "Navbar"
     - "Hero"
@@ -132,7 +132,9 @@ starter:
   description: "Use the starter as a launch page, a section library, or the foundation for campaign variants."
   planName: "Brandy starter"
   items:
-    - "Design tokens"
+    - "Brand brief"
+    - "Creative seeds"
+    - "Generated tokens"
     - "Primitive components"
     - "Pattern components"
     - "Section modules"
@@ -152,9 +154,9 @@ faqIntro:
   description: "Remove adoption concerns before the final CTA."
 faq:
   - question: "Is Brandy a template or a component system?"
-    answer: "Both. It includes a demo landing page, but the reusable system underneath it is the real product: tokens, primitives, patterns, sections, and content contracts."
+    answer: "Both. It includes a demo landing page, but the reusable system underneath it is the real product: brand brief, creative seeds, generated tokens, primitives, patterns, sections, and content contracts."
   - question: "Can the visual style change?"
-    answer: "Yes. Brand decisions live in semantic tokens, so style changes happen in the system layer instead of inside every section."
+    answer: "Yes. Brand decisions live in editable seeds, so generated token changes happen in the system layer instead of inside every section."
   - question: "Does it require a CMS?"
     answer: "No. Brandy starts from a local content file and can move to a CMS later if the project needs it."
   - question: "Can sections be reordered?"

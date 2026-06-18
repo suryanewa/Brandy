@@ -8,11 +8,13 @@ import {
 } from "./designOverlayModel";
 
 interface SliderControlProps {
+  endLabel?: string;
   id: string;
   label: string;
   max: number;
   min: number;
   onChange: (value: number) => void;
+  startLabel?: string;
   step: number;
   suffix?: string;
   value: number;
@@ -24,6 +26,8 @@ export function SliderControl({
   max,
   min,
   onChange,
+  endLabel,
+  startLabel,
   step,
   suffix = "",
   value,
@@ -96,6 +100,12 @@ export function SliderControl({
           onChange(snapToStep(event.currentTarget.valueAsNumber, step, min, max))
         }
       />
+      {startLabel || endLabel ? (
+        <div className="design-overlay__range-labels">
+          <span>{startLabel}</span>
+          <span>{endLabel}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -214,6 +224,49 @@ export function DerivedColorPreview({ colors }: DerivedColorPreviewProps) {
           <code>{color.value}</code>
         </div>
       ))}
+    </div>
+  );
+}
+
+interface SegmentedControlProps<Value extends string> {
+  id: string;
+  label: string;
+  onChange: (value: Value) => void;
+  options: readonly {
+    label: string;
+    value: Value;
+  }[];
+  value: Value;
+}
+
+export function SegmentedControl<Value extends string>({
+  id,
+  label,
+  onChange,
+  options,
+  value,
+}: SegmentedControlProps<Value>) {
+  return (
+    <div className="design-overlay__segmented-row">
+      <span id={`${id}-label`}>{label}</span>
+      <div
+        className="design-overlay__segmented-control"
+        role="radiogroup"
+        aria-labelledby={`${id}-label`}
+      >
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={option.value === value}
+            data-selected={option.value === value}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

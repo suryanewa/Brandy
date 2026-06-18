@@ -1,21 +1,51 @@
+import {
+  generateBrandThemeTokens,
+  isHexColor,
+  normalizeHexColor,
+  sanitizeBrandSeeds,
+  type BrandSeeds,
+} from "../../lib/brandTheme.mjs";
+import {
+  generateLayoutThemeTokens,
+  sanitizeLayoutSeeds,
+  type GridDensity,
+  type HeroScale,
+  type LayoutSeeds,
+  type LayoutWidth,
+} from "../../lib/layoutTheme.mjs";
+import {
+  generateTypographyThemeTokens,
+  sanitizeTypographySeeds,
+  type TypographyPairing,
+  type TypographySeeds,
+  type TypographyStyle,
+} from "../../lib/typographyTheme.mjs";
+
+export { isHexColor, normalizeHexColor };
+
 export interface DesignOverlayValues {
-  autoColorVariants: boolean;
-  brandColor: string;
+  primaryColor: string;
+  secondaryColor: string;
   accentColor: string;
-  backgroundColor: string;
-  surfaceColor: string;
-  surfaceRaisedColor: string;
-  textColor: string;
+  highlightColor: string;
   sectionSpacing: number;
   radius: number;
-  typeScale: number;
+  pageWidth: LayoutWidth;
+  pageGutter: number;
+  heroScale: HeroScale;
+  heroBalance: number;
+  textWidth: number;
+  gridDensity: GridDensity;
+  typographyStyle: TypographyStyle;
+  typographyPairing: TypographyPairing;
+  typographyScale: number;
+  typographyDensity: number;
+  typographyWeight: number;
+  headlineStyle: number;
+  typographyTightness: number;
   elevation: number;
-  containerWidth: number;
   animationDuration: number;
   navbarBlur: number;
-  browserHeight: number;
-  demoHeight: number;
-  browserChromeHeight: number;
   mutedMode: boolean;
   highContrast: boolean;
   reducedMotion: boolean;
@@ -32,23 +62,28 @@ export type DesignOverlayGroupKey =
 export const DESIGN_OVERLAY_STORAGE_KEY = "brandy:design-overlay:v1";
 
 export const DEFAULT_DESIGN_OVERLAY_VALUES: DesignOverlayValues = {
-  autoColorVariants: true,
-  brandColor: "#2563eb",
-  accentColor: "#0f9f6e",
-  backgroundColor: "#ffffff",
-  surfaceColor: "#f6f8f7",
-  surfaceRaisedColor: "#ffffff",
-  textColor: "#111416",
-  sectionSpacing: 100,
-  radius: 8,
-  typeScale: 100,
+  primaryColor: "#635bff",
+  secondaryColor: "#00d4ff",
+  accentColor: "#ff6b35",
+  highlightColor: "#fde68a",
+  sectionSpacing: 70,
+  radius: 2,
+  pageWidth: "standard",
+  pageGutter: 70,
+  heroScale: "immersive",
+  heroBalance: 57,
+  textWidth: 38,
+  gridDensity: "balanced",
+  typographyStyle: "geometric",
+  typographyPairing: "display_plus_text",
+  typographyScale: 70,
+  typographyDensity: 60,
+  typographyWeight: 60,
+  headlineStyle: 60,
+  typographyTightness: 50,
   elevation: 100,
-  containerWidth: 1180,
   animationDuration: 260,
-  navbarBlur: 16,
-  browserHeight: 496,
-  demoHeight: 432,
-  browserChromeHeight: 44,
+  navbarBlur: 28,
   mutedMode: false,
   highContrast: false,
   reducedMotion: false,
@@ -58,7 +93,66 @@ export const DESIGN_VALUE_KEYS = Object.keys(
   DEFAULT_DESIGN_OVERLAY_VALUES,
 ) as Array<keyof DesignOverlayValues>;
 
+const BRAND_SCALE_VARIABLE_NAMES = [
+  "--brand-primary-50",
+  "--brand-primary-100",
+  "--brand-primary-200",
+  "--brand-primary-300",
+  "--brand-primary-400",
+  "--brand-primary-500",
+  "--brand-primary-600",
+  "--brand-primary-700",
+  "--brand-primary-800",
+  "--brand-primary-900",
+  "--brand-primary-950",
+  "--brand-secondary-50",
+  "--brand-secondary-100",
+  "--brand-secondary-200",
+  "--brand-secondary-300",
+  "--brand-secondary-400",
+  "--brand-secondary-500",
+  "--brand-secondary-600",
+  "--brand-secondary-700",
+  "--brand-secondary-800",
+  "--brand-secondary-900",
+  "--brand-secondary-950",
+  "--brand-accent-50",
+  "--brand-accent-100",
+  "--brand-accent-200",
+  "--brand-accent-300",
+  "--brand-accent-400",
+  "--brand-accent-500",
+  "--brand-accent-600",
+  "--brand-accent-700",
+  "--brand-accent-800",
+  "--brand-accent-900",
+  "--brand-accent-950",
+  "--brand-highlight-50",
+  "--brand-highlight-100",
+  "--brand-highlight-200",
+  "--brand-highlight-300",
+  "--brand-highlight-400",
+  "--brand-highlight-500",
+  "--brand-highlight-600",
+  "--brand-highlight-700",
+  "--brand-highlight-800",
+  "--brand-highlight-900",
+  "--brand-highlight-950",
+  "--neutral-50",
+  "--neutral-100",
+  "--neutral-200",
+  "--neutral-300",
+  "--neutral-400",
+  "--neutral-500",
+  "--neutral-600",
+  "--neutral-700",
+  "--neutral-800",
+  "--neutral-900",
+  "--neutral-950",
+] as const;
+
 export const DESIGN_CSS_VARIABLE_NAMES = [
+  ...BRAND_SCALE_VARIABLE_NAMES,
   "--white",
   "--ink-950",
   "--ink-800",
@@ -72,6 +166,7 @@ export const DESIGN_CSS_VARIABLE_NAMES = [
   "--green-100",
   "--blue-600",
   "--blue-100",
+  "--amber-500",
   "--color-bg",
   "--color-surface",
   "--color-surface-raised",
@@ -85,17 +180,76 @@ export const DESIGN_CSS_VARIABLE_NAMES = [
   "--color-accent-border",
   "--color-blue",
   "--color-blue-soft",
+  "--color-on-accent",
+  "--color-highlight",
+  "--color-highlight-soft",
+  "--color-on-highlight",
+  "--color-warning",
+  "--color-success",
+  "--color-error",
+  "--color-info",
+  "--button-primary-bg",
+  "--button-primary-hover",
+  "--button-primary-text",
+  "--button-secondary-bg",
+  "--button-secondary-hover",
+  "--button-secondary-text",
+  "--button-secondary-border",
+  "--link-color",
+  "--link-hover",
+  "--focus-ring",
+  "--gradient-hero-start",
+  "--gradient-hero-end",
+  "--gradient-hero-accent",
+  "--chart-1",
+  "--chart-2",
+  "--chart-3",
+  "--chart-4",
+  "--badge-brand-bg",
+  "--badge-brand-text",
+  "--badge-brand-border",
+  "--badge-highlight-bg",
+  "--badge-highlight-text",
+  "--badge-highlight-border",
+  "--shadow-brand",
+  "--dark-color-bg",
+  "--dark-color-surface",
+  "--dark-color-text",
+  "--dark-color-border",
   "--color-nav-bg",
   "--color-footer-muted",
   "--section-padding-x",
   "--section-padding-y-sm",
   "--section-padding-y-md",
   "--section-padding-y-lg",
+  "--section-hero-min-height",
+  "--brandy-section-default-padding-y",
   "--container-sm",
   "--container-md",
   "--container-lg",
   "--container-xl",
   "--content-readable-max",
+  "--brandy-container-default-max-width",
+  "--brandy-grid-default-columns",
+  "--brandy-split-default-columns",
+  "--brandy-cluster-default-justify",
+  "--brandy-cluster-default-gap",
+  "--brandy-stack-default-gap",
+  "--hero-grid-text-fr",
+  "--hero-grid-visual-fr",
+  "--hero-grid-visual-min",
+  "--hero-headline-max-width",
+  "--hero-copy-max-width",
+  "--hero-description-max-width",
+  "--footer-copy-max-width",
+  "--footer-columns",
+  "--button-font-size",
+  "--button-font-weight",
+  "--badge-font-weight",
+  "--navbar-link-font-size",
+  "--demo-layer-font-size",
+  "--font-family-heading",
+  "--font-family-body",
   "--font-size-display",
   "--font-size-h1",
   "--font-size-h2",
@@ -105,19 +259,37 @@ export const DESIGN_CSS_VARIABLE_NAMES = [
   "--font-size-body",
   "--font-size-caption",
   "--font-size-eyebrow",
+  "--line-height-root",
+  "--line-height-display",
+  "--line-height-h1",
+  "--line-height-h2",
+  "--line-height-h3",
+  "--line-height-h4",
+  "--line-height-body-lg",
+  "--line-height-body",
+  "--line-height-caption",
+  "--line-height-eyebrow",
+  "--font-weight-heading",
+  "--font-weight-body",
+  "--font-weight-strong",
+  "--font-weight-label",
+  "--letter-spacing-heading",
+  "--letter-spacing-eyebrow",
+  "--text-transform-eyebrow",
   "--radius-sm",
   "--radius-md",
   "--radius-lg",
+  "--card-padding",
   "--shadow-soft",
   "--shadow-raised",
   "--duration-fast",
   "--duration-base",
   "--duration-slow",
-  "--browser-bar-height",
-  "--browser-content-min-height",
-  "--demo-frame-min-height",
-  "--demo-preview-nav-height",
-  "--hero-demo-height",
+  "--demo-canvas-left-fr",
+  "--demo-canvas-right-fr",
+  "--feature-card-min-height",
+  "--step-card-min-height",
+  "--faq-trigger-min-height",
   "--navbar-blur",
   "--brandy-scroll-behavior",
   "--brandy-marquee-duration",
@@ -128,112 +300,109 @@ export type DesignCssVariableName = (typeof DESIGN_CSS_VARIABLE_NAMES)[number];
 export type DesignCssVariables = Record<DesignCssVariableName, string>;
 
 export const ACCENT_PRESETS = [
-  "#0f9f6e",
-  "#2563eb",
-  "#bf7a18",
-  "#dc2626",
-  "#7c3aed",
-  "#111416",
+  "#ff6b35",
+  "#f97316",
+  "#ec4899",
+  "#f43f5e",
+  "#a855f7",
+  "#14b8a6",
 ] as const;
 
-export const BRAND_PRESETS = [
+export const HIGHLIGHT_PRESETS = [
+  "#fde68a",
+  "#fef08a",
+  "#bbf7d0",
+  "#bae6fd",
+  "#ddd6fe",
+  "#fecdd3",
+] as const;
+
+export const PRIMARY_PRESETS = [
+  "#635bff",
   "#2563eb",
   "#0f9f6e",
-  "#0891b2",
-  "#4f46e5",
+  "#7c3aed",
   "#be123c",
   "#111416",
 ] as const;
 
+export const SECONDARY_PRESETS = [
+  "#00d4ff",
+  "#0891b2",
+  "#22c55e",
+  "#f59e0b",
+  "#8b5cf6",
+  "#64748b",
+] as const;
+
+export function getDesignBrandSeeds(values: DesignOverlayValues): BrandSeeds {
+  return sanitizeBrandSeeds({
+    accent: values.accentColor,
+    highlight: values.highlightColor,
+    primary: values.primaryColor,
+    secondary: values.secondaryColor,
+  });
+}
+
+export function getDesignLayoutSeeds(values: DesignOverlayValues): LayoutSeeds {
+  return sanitizeLayoutSeeds({
+    gridDensity: values.gridDensity,
+    heroBalance: values.heroBalance,
+    heroScale: values.heroScale,
+    pageGutter: values.pageGutter,
+    radius: values.radius,
+    spacing: values.sectionSpacing,
+    textWidth: values.textWidth,
+    width: values.pageWidth,
+  });
+}
+
+export function getDesignTypographySeeds(
+  values: DesignOverlayValues,
+): TypographySeeds {
+  return sanitizeTypographySeeds({
+    density: values.typographyDensity,
+    headlineStyle: values.headlineStyle,
+    pairing: values.typographyPairing,
+    scale: values.typographyScale,
+    style: values.typographyStyle,
+    tightness: values.typographyTightness,
+    weight: values.typographyWeight,
+  });
+}
+
 export function getDesignCssVariables(
   values: DesignOverlayValues,
 ): DesignCssVariables {
-  const palette = getRenderedPalette(values);
-  const spacingScale = values.sectionSpacing / 100;
-  const typeScale = values.typeScale / 100;
-  const radius = clampNumber(values.radius, 2, 20);
   const elevationScale = values.elevation / 100;
+  const brandTokens = generateBrandThemeTokens(getDesignBrandSeeds(values), {
+    elevationScale,
+    highContrast: values.highContrast,
+    mutedMode: values.mutedMode,
+  });
+  const layoutTokens = generateLayoutThemeTokens(getDesignLayoutSeeds(values));
+  const typographyTokens = generateTypographyThemeTokens(
+    getDesignTypographySeeds(values),
+  );
   const baseDuration = values.reducedMotion
     ? 1
     : clampNumber(values.animationDuration, 80, 800);
   const marqueeDuration = values.reducedMotion
     ? "1ms"
     : `${roundNumber(28 * (baseDuration / 260), 1)}s`;
-  const containerWidth = clampNumber(values.containerWidth, 960, 1520);
-  const browserChromeHeight = clampNumber(values.browserChromeHeight, 32, 60);
 
   return {
-    "--white": palette.surfaceRaised,
-    "--ink-950": palette.text,
-    "--ink-800": palette.strongText,
-    "--ink-600": palette.muted,
-    "--ink-500": palette.subtleText,
-    "--mist-100": palette.surface,
-    "--mist-200": palette.surfaceStrong,
-    "--mist-300": palette.border,
-    "--green-600": palette.accent,
-    "--green-700": palette.accentHover,
-    "--green-100": palette.accentSoft,
-    "--blue-600": palette.brand,
-    "--blue-100": palette.brandSoft,
-    "--color-bg": palette.background,
-    "--color-surface": palette.surface,
-    "--color-surface-raised": palette.surfaceRaised,
-    "--color-surface-strong": palette.surfaceStrong,
-    "--color-text": palette.text,
-    "--color-muted": palette.muted,
-    "--color-border": palette.border,
-    "--color-accent": palette.accent,
-    "--color-accent-hover": palette.accentHover,
-    "--color-accent-soft": palette.accentSoft,
-    "--color-accent-border": palette.accentBorder,
-    "--color-blue": palette.brand,
-    "--color-blue-soft": palette.brandSoft,
-    "--color-nav-bg": palette.navBackground,
-    "--color-footer-muted": palette.footerMuted,
-    "--section-padding-x": `clamp(1rem, ${roundNumber(
-      4 * spacingScale,
-      2,
-    )}vw, ${roundNumber(3 * spacingScale, 2)}rem)`,
-    "--section-padding-y-sm": `${roundNumber(3 * spacingScale, 2)}rem`,
-    "--section-padding-y-md": `${roundNumber(5 * spacingScale, 2)}rem`,
-    "--section-padding-y-lg": `${roundNumber(6 * spacingScale, 2)}rem`,
-    "--container-sm": `${Math.round(containerWidth * 0.61)}px`,
-    "--container-md": `${Math.round(containerWidth * 0.81)}px`,
-    "--container-lg": `${Math.round(containerWidth)}px`,
-    "--container-xl": `${Math.round(containerWidth * 1.186)}px`,
-    "--content-readable-max": "calc(var(--container-sm) + 40px)",
-    "--font-size-display": `${roundNumber(5.875 * typeScale, 4)}rem`,
-    "--font-size-h1": `${roundNumber(3.6875 * typeScale, 4)}rem`,
-    "--font-size-h2": `${roundNumber(2.9375 * typeScale, 4)}rem`,
-    "--font-size-h3": `${roundNumber(2.0625 * typeScale, 4)}rem`,
-    "--font-size-h4": `${roundNumber(1.5 * typeScale, 4)}rem`,
-    "--font-size-body-lg": `${roundNumber(1.25 * typeScale, 4)}rem`,
-    "--font-size-body": `${roundNumber(1 * typeScale, 3)}rem`,
-    "--font-size-caption": `${roundNumber(0.75 * typeScale, 4)}rem`,
-    "--font-size-eyebrow": `${roundNumber(0.625 * typeScale, 4)}rem`,
-    "--radius-sm": `${roundNumber(Math.max(2, radius * 0.5), 2)}px`,
-    "--radius-md": `${roundNumber(Math.max(3, radius * 0.75), 2)}px`,
-    "--radius-lg": `${roundNumber(radius, 2)}px`,
-    "--shadow-soft": getShadowValue(20, 60, 0.08, elevationScale),
-    "--shadow-raised": getShadowValue(32, 100, 0.12, elevationScale),
+    ...brandTokens,
+    ...layoutTokens,
+    ...typographyTokens,
     "--duration-fast": `${Math.max(1, Math.round(baseDuration * 0.62))}ms`,
     "--duration-base": `${Math.max(1, Math.round(baseDuration))}ms`,
     "--duration-slow": `${Math.max(1, Math.round(baseDuration * 1.92))}ms`,
-    "--browser-bar-height": `${browserChromeHeight}px`,
-    "--browser-content-min-height": `${clampNumber(
-      values.browserHeight,
-      360,
-      720,
-    )}px`,
-    "--demo-frame-min-height": `${clampNumber(values.demoHeight, 320, 640)}px`,
-    "--demo-preview-nav-height": `${Math.max(32, browserChromeHeight - 8)}px`,
-    "--hero-demo-height": `${clampNumber(values.browserHeight, 360, 720)}px`,
     "--navbar-blur": `${clampNumber(values.navbarBlur, 0, 28)}px`,
     "--brandy-scroll-behavior": values.reducedMotion ? "auto" : "smooth",
     "--brandy-marquee-duration": marqueeDuration,
     "--brandy-animation-play-state": values.reducedMotion ? "paused" : "running",
-  };
+  } as DesignCssVariables;
 }
 
 export function areDesignValuesEqual(
@@ -312,62 +481,6 @@ export function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function normalizeHexColor(value: string): string {
-  const withHash = value.trim().startsWith("#")
-    ? value.trim()
-    : `#${value.trim()}`;
-
-  if (/^#[0-9a-f]{3}$/i.test(withHash)) {
-    const [, r, g, b] = withHash;
-    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
-  }
-
-  if (/^#[0-9a-f]{6}$/i.test(withHash)) {
-    return withHash.toLowerCase();
-  }
-
-  return "#000000";
-}
-
-export function isHexColor(value: string): boolean {
-  const withHash = value.trim().startsWith("#")
-    ? value.trim()
-    : `#${value.trim()}`;
-
-  return /^#[0-9a-f]{3}$|^#[0-9a-f]{6}$/i.test(withHash);
-}
-
-export interface DerivedColorVariants {
-  base: string;
-  border: string;
-  dark: string;
-  hover: string;
-  light: string;
-  soft: string;
-}
-
-export function getDerivedColorVariants(
-  color: string,
-  surfaceColor = "#ffffff",
-  options: { highContrast?: boolean; preferDarkerHover?: boolean } = {},
-): DerivedColorVariants {
-  const base = normalizeHexColor(color);
-  const surface = normalizeHexColor(surfaceColor);
-  const preferDarkerHover =
-    options.preferDarkerHover ?? getRelativeLuminance(surface) > 0.5;
-  const contrastColor = preferDarkerHover ? "#000000" : "#ffffff";
-  const contrastWeight = options.highContrast ? 0.28 : 0.18;
-
-  return {
-    base,
-    border: withAlpha(base, options.highContrast ? 0.62 : 0.3),
-    dark: mixHex(base, "#000000", options.highContrast ? 0.32 : 0.24),
-    hover: mixHex(base, contrastColor, contrastWeight),
-    light: mixHex(base, "#ffffff", options.highContrast ? 0.64 : 0.78),
-    soft: mixHex(base, surface, options.highContrast ? 0.72 : 0.86),
-  };
-}
-
 function sanitizeDesignValuePatch(
   patch: Partial<DesignOverlayValues>,
 ): Partial<DesignOverlayValues> {
@@ -396,140 +509,4 @@ function getStepPrecision(step: number): number {
 
 function roundNumber(value: number, decimals = 0): number {
   return Number(value.toFixed(decimals));
-}
-
-function getRenderedPalette(values: DesignOverlayValues) {
-  const background = normalizeHexColor(values.backgroundColor);
-  const backgroundIsLight = getRelativeLuminance(background) > 0.5;
-  const contrastText = backgroundIsLight ? "#050708" : "#f8fafc";
-  const rawText = values.highContrast
-    ? contrastText
-    : values.autoColorVariants
-      ? getReadableTextColor(background)
-      : normalizeHexColor(values.textColor);
-  const automaticSurface = mixHex(
-    rawText,
-    background,
-    backgroundIsLight ? 0.96 : 0.86,
-  );
-  const automaticRaisedSurface = mixHex(
-    rawText,
-    background,
-    backgroundIsLight ? 0.995 : 0.92,
-  );
-  const surfaceRaised = values.autoColorVariants
-    ? automaticRaisedSurface
-    : normalizeHexColor(values.surfaceRaisedColor);
-  const surface = values.mutedMode
-    ? mixHex(
-        values.autoColorVariants
-          ? automaticSurface
-          : normalizeHexColor(values.surfaceColor),
-        background,
-        0.45,
-      )
-    : values.autoColorVariants
-      ? automaticSurface
-      : normalizeHexColor(values.surfaceColor);
-  const accent = values.mutedMode
-    ? mixHex(normalizeHexColor(values.accentColor), rawText, 0.18)
-    : normalizeHexColor(values.accentColor);
-  const brand = values.mutedMode
-    ? mixHex(normalizeHexColor(values.brandColor), rawText, 0.16)
-    : normalizeHexColor(values.brandColor);
-  const accentVariants = getDerivedColorVariants(accent, surfaceRaised, {
-    highContrast: values.highContrast,
-    preferDarkerHover: backgroundIsLight,
-  });
-  const brandVariants = getDerivedColorVariants(brand, surfaceRaised, {
-    highContrast: values.highContrast,
-    preferDarkerHover: backgroundIsLight,
-  });
-
-  return {
-    accent,
-    accentBorder: accentVariants.border,
-    accentHover: accentVariants.hover,
-    accentSoft: accentVariants.soft,
-    background,
-    border: mixHex(rawText, background, values.highContrast ? 0.55 : 0.84),
-    brand,
-    brandSoft: brandVariants.soft,
-    footerMuted: withAlpha(background, values.highContrast ? 0.86 : 0.72),
-    muted: mixHex(rawText, background, values.highContrast ? 0.28 : 0.42),
-    navBackground: withAlpha(surfaceRaised, values.highContrast ? 0.94 : 0.86),
-    surface,
-    surfaceRaised,
-    strongText: mixHex(rawText, background, values.highContrast ? 0.08 : 0.14),
-    subtleText: mixHex(rawText, background, values.highContrast ? 0.36 : 0.5),
-    surfaceStrong: mixHex(rawText, surface, values.highContrast ? 0.82 : 0.93),
-    text: rawText,
-  };
-}
-
-function getReadableTextColor(background: string): string {
-  const lightBackground = getRelativeLuminance(background) > 0.5;
-  return lightBackground
-    ? mixHex(background, "#000000", 0.92)
-    : mixHex(background, "#ffffff", 0.92);
-}
-
-function getShadowValue(
-  y: number,
-  blur: number,
-  alpha: number,
-  scale: number,
-): string {
-  if (scale <= 0) return "none";
-
-  const shadowAlpha = clampNumber(alpha * scale, 0.02, 0.22);
-  return `0 ${roundNumber(y * scale, 1)}px ${roundNumber(
-    blur * scale,
-    1,
-  )}px rgba(17, 20, 22, ${roundNumber(shadowAlpha, 3)})`;
-}
-
-function mixHex(start: string, end: string, endWeight: number): string {
-  const startRgb = hexToRgb(start);
-  const endRgb = hexToRgb(end);
-  const weight = clampNumber(endWeight, 0, 1);
-  const mixed = startRgb.map((channel, index) =>
-    Math.round(channel * (1 - weight) + endRgb[index] * weight),
-  ) as [number, number, number];
-
-  return rgbToHex(mixed);
-}
-
-function withAlpha(hex: string, alpha: number): string {
-  const [red, green, blue] = hexToRgb(hex);
-  return `rgba(${red}, ${green}, ${blue}, ${roundNumber(
-    clampNumber(alpha, 0, 1),
-    3,
-  )})`;
-}
-
-function getRelativeLuminance(hex: string): number {
-  const [red, green, blue] = hexToRgb(hex).map((channel) => {
-    const scaled = channel / 255;
-    return scaled <= 0.03928
-      ? scaled / 12.92
-      : ((scaled + 0.055) / 1.055) ** 2.4;
-  });
-
-  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const normalized = normalizeHexColor(hex).slice(1);
-  return [
-    Number.parseInt(normalized.slice(0, 2), 16),
-    Number.parseInt(normalized.slice(2, 4), 16),
-    Number.parseInt(normalized.slice(4, 6), 16),
-  ];
-}
-
-function rgbToHex([red, green, blue]: [number, number, number]): string {
-  return `#${[red, green, blue]
-    .map((channel) => clampNumber(channel, 0, 255).toString(16).padStart(2, "0"))
-    .join("")}`;
 }

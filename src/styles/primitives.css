@@ -34,12 +34,12 @@ body {
 
 .section[data-variant="accent"] {
   background: var(--color-accent);
-  color: var(--white);
+  color: var(--color-on-accent);
 }
 
 .section[data-variant="accent"] .text-h2,
 .section[data-variant="accent"] .text-body-lg {
-  color: var(--white);
+  color: var(--color-on-accent);
 }
 
 .section[data-variant="inverted"] {
@@ -185,7 +185,7 @@ body {
 .card[data-variant="accent"] {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--white);
+  color: var(--color-on-accent);
 }
 
 .button {
@@ -211,7 +211,7 @@ body {
 }
 
 .button:focus-visible {
-  outline: var(--stroke-medium) solid var(--color-blue);
+  outline: var(--stroke-medium) solid var(--focus-ring);
   outline-offset: var(--space-1);
 }
 
@@ -231,18 +231,22 @@ body {
 }
 
 .button--primary {
-  background: var(--color-accent);
-  color: var(--white);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
 }
 
 .button--primary:hover {
-  background: var(--color-accent-hover);
+  background: var(--button-primary-hover);
 }
 
 .button--secondary {
-  background: var(--white);
-  border-color: var(--color-border);
-  color: var(--color-text);
+  background: var(--button-secondary-bg);
+  border-color: var(--button-secondary-border);
+  color: var(--button-secondary-text);
+}
+
+.button--secondary:hover {
+  background: var(--button-secondary-hover);
 }
 
 .button--ghost {
@@ -264,13 +268,13 @@ body {
 }
 
 .badge[data-tone="accent"] {
-  background: var(--color-accent-soft);
-  border-color: transparent;
-  color: var(--color-accent-hover);
+  background: var(--badge-brand-bg);
+  border-color: var(--badge-brand-border);
+  color: var(--badge-brand-text);
 }
 
 .badge[data-tone="blue"] {
-  background: var(--color-blue-soft);
-  border-color: transparent;
-  color: var(--color-blue);
+  background: var(--badge-highlight-bg);
+  border-color: var(--badge-highlight-border);
+  color: var(--badge-highlight-text);
 }
