@@ -79,13 +79,14 @@ async function handleDesignSyncRequest(
 
   try {
     const payload = await readJsonBody(request);
-    const { brand, brandDerivation, layout, reload, typography, values } =
+    const { brand, brandDerivation, layout, lockup, reload, typography, values } =
       getValidatedDesignSyncPayload(payload);
     const result = await syncOverlayDesignTokens(
       values,
       brand,
       brandDerivation,
       layout,
+      lockup,
       typography,
     );
 
@@ -144,6 +145,7 @@ async function syncOverlayDesignTokens(
   },
   brandDerivation?: BrandDerivationSyncPayload,
   layout?: LayoutSyncPayload,
+  lockup?: LockupSyncPayload,
   typography?: TypographySyncPayload,
 ) {
   const finishSuppressingSourceReload =
@@ -154,6 +156,7 @@ async function syncOverlayDesignTokens(
       brand,
       brandDerivation,
       layout,
+      lockup,
       typography,
     });
   } finally {
@@ -198,6 +201,7 @@ function getValidatedDesignSyncPayload(payload: unknown): {
   };
   brandDerivation?: BrandDerivationSyncPayload;
   layout?: LayoutSyncPayload;
+  lockup?: LockupSyncPayload;
   reload: boolean;
   typography?: TypographySyncPayload;
   values: Record<string, string>;
@@ -229,6 +233,7 @@ function getValidatedDesignSyncPayload(payload: unknown): {
     brand: getValidatedBrandPayload(payload.brand),
     brandDerivation: getValidatedBrandDerivationPayload(payload.brandDerivation),
     layout: getValidatedLayoutPayload(payload.layout),
+    lockup: getValidatedLockupPayload(payload.lockup),
     reload: payload.reload === true,
     typography: getValidatedTypographyPayload(payload.typography),
     values,
@@ -384,6 +389,15 @@ type LayoutSyncPayload = {
   width: "narrow" | "standard" | "wide" | "full";
 };
 
+type LockupSyncPayload = {
+  gap: number;
+  logoSize: number;
+  markShape: string;
+  wordmarkFont: string;
+  wordmarkSize: number;
+  wordmarkTracking: number;
+};
+
 type BrandDerivationSyncPayload = {
   accentMomentDistancePercent: number;
   backgroundDistancePercent: number;
@@ -472,6 +486,41 @@ function getValidatedLayoutPayload(value: unknown): LayoutSyncPayload | undefine
   };
 
   return layout as LayoutSyncPayload;
+}
+
+function getValidatedLockupPayload(value: unknown): LockupSyncPayload | undefined {
+  if (value == null) return undefined;
+  if (!isObjectRecord(value)) {
+    throw new SyncRequestError(400, "Design sync lockup seeds must be an object.");
+  }
+
+  const allowedKeys = [
+    "gap",
+    "logoSize",
+    "markShape",
+    "wordmarkFont",
+    "wordmarkSize",
+    "wordmarkTracking",
+  ].sort();
+  const keys = Object.keys(value).sort();
+  if (keys.join(",") !== allowedKeys.join(",")) {
+    throw new SyncRequestError(
+      400,
+      "Design sync lockup seeds must contain the supported lockup controls.",
+    );
+  }
+
+  return {
+    gap: getNumberValue(value.gap, "gap"),
+    logoSize: getNumberValue(value.logoSize, "logoSize"),
+    markShape: getStringValue(value.markShape, "markShape"),
+    wordmarkFont: getStringValue(value.wordmarkFont, "wordmarkFont"),
+    wordmarkSize: getNumberValue(value.wordmarkSize, "wordmarkSize"),
+    wordmarkTracking: getNumberValue(
+      value.wordmarkTracking,
+      "wordmarkTracking",
+    ),
+  };
 }
 
 function getValidatedTypographyPayload(

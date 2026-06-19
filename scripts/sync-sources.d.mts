@@ -38,6 +38,14 @@ export function syncDesignTokensFromValues(
       textWidth: number;
       width: "narrow" | "standard" | "wide" | "full";
     };
+    lockup?: {
+      gap: number;
+      logoSize: number;
+      markShape: string;
+      wordmarkFont: string;
+      wordmarkSize: number;
+      wordmarkTracking: number;
+    };
     typography?: {
       density: number;
       headlineStyle: number;

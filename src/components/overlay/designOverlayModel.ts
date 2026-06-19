@@ -17,6 +17,14 @@ import {
   type LayoutWidth,
 } from "../../lib/layoutTheme.mjs";
 import {
+  DEFAULT_LOCKUP_SEEDS,
+  generateLockupThemeTokens,
+  sanitizeLockupSeeds,
+  type LockupFont,
+  type LockupSeeds,
+  type LockupShape,
+} from "../../lib/lockupTheme.mjs";
+import {
   generateTypographyThemeTokens,
   sanitizeTypographySeeds,
   type TypographyFont,
@@ -46,6 +54,12 @@ export interface DesignOverlayValues {
   neutralSurfaceDistancePercent: number;
   readableTextDistancePercent: number;
   secondaryTextDistancePercent: number;
+  lockupShape: LockupShape;
+  lockupLogoSize: number;
+  lockupWordmarkFont: LockupFont;
+  lockupWordmarkSize: number;
+  lockupWordmarkTracking: number;
+  lockupGap: number;
   sectionSpacing: number;
   radius: number;
   pageWidth: LayoutWidth;
@@ -73,6 +87,7 @@ export interface DesignOverlayValues {
 }
 
 export type DesignOverlayGroupKey =
+  | "lockup"
   | "palette"
   | "layout"
   | "typography"
@@ -81,6 +96,7 @@ export type DesignOverlayGroupKey =
   | "modes";
 
 export const DESIGN_OVERLAY_STORAGE_KEY = "brandy:design-overlay:v1";
+export const DESIGN_VALUES_CHANGE_EVENT = "brandy:design-values-change";
 
 export const DEFAULT_DESIGN_OVERLAY_VALUES: DesignOverlayValues = {
   primaryColor: "#635bff",
@@ -105,6 +121,12 @@ export const DEFAULT_DESIGN_OVERLAY_VALUES: DesignOverlayValues = {
   neutralSurfaceDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.neutralSurfaceDistancePercent,
   readableTextDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.readableTextDistancePercent,
   secondaryTextDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.secondaryTextDistancePercent,
+  lockupShape: DEFAULT_LOCKUP_SEEDS.markShape,
+  lockupLogoSize: DEFAULT_LOCKUP_SEEDS.logoSize,
+  lockupWordmarkFont: DEFAULT_LOCKUP_SEEDS.wordmarkFont,
+  lockupWordmarkSize: DEFAULT_LOCKUP_SEEDS.wordmarkSize,
+  lockupWordmarkTracking: DEFAULT_LOCKUP_SEEDS.wordmarkTracking,
+  lockupGap: DEFAULT_LOCKUP_SEEDS.gap,
   sectionSpacing: 70,
   radius: 2,
   pageWidth: "standard",
@@ -260,6 +282,11 @@ export const DESIGN_CSS_VARIABLE_NAMES = [
   "--dark-color-border",
   "--color-nav-bg",
   "--color-footer-muted",
+  "--lockup-logo-size",
+  "--lockup-wordmark-font",
+  "--lockup-wordmark-size",
+  "--lockup-wordmark-tracking",
+  "--lockup-gap",
   "--section-padding-x",
   "--section-padding-y-sm",
   "--section-padding-y-md",
@@ -288,6 +315,7 @@ export const DESIGN_CSS_VARIABLE_NAMES = [
   "--button-font-size",
   "--button-font-weight",
   "--badge-font-weight",
+  "--navbar-brand-mark-size",
   "--navbar-link-font-size",
   "--demo-layer-font-size",
   "--font-family-heading",
@@ -421,6 +449,17 @@ export function getDesignLayoutSeeds(values: DesignOverlayValues): LayoutSeeds {
   });
 }
 
+export function getDesignLockupSeeds(values: DesignOverlayValues): LockupSeeds {
+  return sanitizeLockupSeeds({
+    gap: values.lockupGap,
+    logoSize: values.lockupLogoSize,
+    markShape: values.lockupShape,
+    wordmarkFont: values.lockupWordmarkFont,
+    wordmarkSize: values.lockupWordmarkSize,
+    wordmarkTracking: values.lockupWordmarkTracking,
+  });
+}
+
 export function getDesignTypographySeeds(
   values: DesignOverlayValues,
 ): TypographySeeds {
@@ -449,6 +488,7 @@ export function getDesignCssVariables(
     mutedMode: values.mutedMode,
   });
   const layoutTokens = generateLayoutThemeTokens(getDesignLayoutSeeds(values));
+  const lockupTokens = generateLockupThemeTokens(getDesignLockupSeeds(values));
   const typographyTokens = generateTypographyThemeTokens(
     getDesignTypographySeeds(values),
   );
@@ -462,6 +502,7 @@ export function getDesignCssVariables(
   return {
     ...brandTokens,
     ...layoutTokens,
+    ...lockupTokens,
     ...typographyTokens,
     "--duration-fast": `${Math.max(1, Math.round(baseDuration * 0.62))}ms`,
     "--duration-base": `${Math.max(1, Math.round(baseDuration))}ms`,

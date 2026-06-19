@@ -18,6 +18,13 @@ import {
   sanitizeLayoutSeeds,
 } from "../src/lib/layoutTheme.mjs";
 import {
+  DEFAULT_LOCKUP_SEEDS,
+  LOCKUP_GENERATED_TOKEN_NAMES,
+  LOCKUP_SEED_KEYS,
+  generateLockupThemeTokens,
+  sanitizeLockupSeeds,
+} from "../src/lib/lockupTheme.mjs";
+import {
   DEFAULT_TYPOGRAPHY_SEEDS,
   TYPOGRAPHY_GENERATED_TOKEN_NAMES,
   TYPOGRAPHY_SEED_KEYS,
@@ -45,6 +52,7 @@ const GENERATED_LAYOUT_TOKEN_NAMES = new Set(LAYOUT_GENERATED_TOKEN_NAMES);
 const GENERATED_TYPOGRAPHY_TOKEN_NAMES = new Set(
   TYPOGRAPHY_GENERATED_TOKEN_NAMES,
 );
+const GENERATED_LOCKUP_TOKEN_NAMES = new Set(LOCKUP_GENERATED_TOKEN_NAMES);
 const LAYOUT_SEED_KEYS = [
   "spacing",
   "radius",
@@ -90,12 +98,14 @@ export async function syncDesignTokensFromValues(values, options = {}) {
     ? sanitizeSourceBrandDerivationControls(options.brandDerivation)
     : null;
   const layout = options.layout ? sanitizeSourceLayoutSeeds(options.layout) : null;
+  const lockup = options.lockup ? sanitizeSourceLockupSeeds(options.lockup) : null;
   const typography = options.typography
     ? sanitizeSourceTypographySeeds(options.typography)
     : null;
   const tokenValues = sanitizeTokenValuePatch(values, {
     skipGeneratedBrandTokens: brand != null || brandDerivation != null,
     skipGeneratedLayoutTokens: layout != null,
+    skipGeneratedLockupTokens: lockup != null,
     skipGeneratedTypographyTokens: typography != null,
   });
   const source = await readDesignTokenSource();
@@ -122,6 +132,13 @@ export async function syncDesignTokensFromValues(values, options = {}) {
     source.layout = layout;
   }
 
+  if (lockup) {
+    for (const key of LOCKUP_SEED_KEYS) {
+      if (source.lockup[key] !== lockup[key]) changedCount += 1;
+    }
+    source.lockup = lockup;
+  }
+
   if (typography) {
     for (const key of TYPOGRAPHY_SEED_KEYS) {
       if (source.typography[key] !== typography[key]) changedCount += 1;
@@ -142,6 +159,7 @@ export async function syncDesignTokensFromValues(values, options = {}) {
 
   applyGeneratedBrandTokens(source);
   applyGeneratedLayoutTokens(source);
+  applyGeneratedLockupTokens(source);
   applyGeneratedTypographyTokens(source);
 
   if (!options.check) {
@@ -207,6 +225,7 @@ function readTokenDefaults(css) {
       DEFAULT_BRAND_DERIVATION_CONTROLS,
     ),
     layout: sanitizeLayoutSeeds(DEFAULT_LAYOUT_SEEDS),
+    lockup: sanitizeLockupSeeds(DEFAULT_LOCKUP_SEEDS),
     typography: sanitizeTypographySeeds(DEFAULT_TYPOGRAPHY_SEEDS),
     motion: sanitizeMotionSeeds(),
     imagery: sanitizeImagerySeeds(),
@@ -216,6 +235,7 @@ function readTokenDefaults(css) {
   };
   applyGeneratedBrandTokens(source);
   applyGeneratedLayoutTokens(source);
+  applyGeneratedLockupTokens(source);
   applyGeneratedTypographyTokens(source);
   return source;
 }
@@ -250,6 +270,9 @@ async function readDesignTokenSource() {
   const layout = sanitizeSourceLayoutSeeds(
     brandSource.seeds.layout ?? DEFAULT_LAYOUT_SEEDS,
   );
+  const lockup = sanitizeSourceLockupSeeds(
+    brandSource.seeds.lockup ?? DEFAULT_LOCKUP_SEEDS,
+  );
   const typography = sanitizeSourceTypographySeeds(
     brandSource.seeds.typography ?? DEFAULT_TYPOGRAPHY_SEEDS,
   );
@@ -260,6 +283,7 @@ async function readDesignTokenSource() {
       colorDerivation,
       imagery: brandSource.seeds.imagery,
       layout,
+      lockup,
       meta: brandSource.meta,
       motion: brandSource.seeds.motion,
       strategy: brandSource.strategy,
@@ -270,6 +294,7 @@ async function readDesignTokenSource() {
     };
     applyGeneratedBrandTokens(source);
     applyGeneratedLayoutTokens(source);
+    applyGeneratedLockupTokens(source);
     applyGeneratedTypographyTokens(source);
     return source;
   }
@@ -279,6 +304,7 @@ async function readDesignTokenSource() {
     colorDerivation,
     imagery: brandSource.seeds.imagery,
     layout,
+    lockup,
     meta: brandSource.meta,
     motion: brandSource.seeds.motion,
     strategy: brandSource.strategy,
@@ -289,6 +315,7 @@ async function readDesignTokenSource() {
   };
   applyGeneratedBrandTokens(source);
   applyGeneratedLayoutTokens(source);
+  applyGeneratedLockupTokens(source);
   applyGeneratedTypographyTokens(source);
   return source;
 }
@@ -372,8 +399,9 @@ function serializeDesignTokenSource(source) {
       creative_seeds: {
         color: source.color,
         color_derivation: source.colorDerivation,
-        typography: source.typography,
         layout: source.layout,
+        lockup: source.lockup,
+        typography: source.typography,
       },
       generated_tokens: { root, media },
     },
@@ -415,6 +443,7 @@ function readBrandSource(parsed) {
             : DEFAULT_BRAND_SEEDS,
       imagery: sanitizeImagerySeeds(brandBrief?.imagery ?? seeds?.imagery),
       layout: seeds?.layout ?? parsed?.layout ?? DEFAULT_LAYOUT_SEEDS,
+      lockup: seeds?.lockup ?? parsed?.lockup ?? DEFAULT_LOCKUP_SEEDS,
       motion: sanitizeMotionSeeds(brandBrief?.motion ?? seeds?.motion),
       typography:
         seeds?.typography ?? parsed?.typography ?? DEFAULT_TYPOGRAPHY_SEEDS,
@@ -625,6 +654,36 @@ function sanitizeSourceTypographySeeds(typography) {
   return sanitizeTypographySeeds(typography);
 }
 
+function sanitizeSourceLockupSeeds(lockup) {
+  if (!lockup || typeof lockup !== "object" || Array.isArray(lockup)) {
+    throw new Error(
+      "Lockup seeds must contain markShape, logoSize, wordmarkFont, wordmarkSize, wordmarkTracking, and gap.",
+    );
+  }
+
+  const keys = Object.keys(lockup).sort();
+  const expectedKeys = [...LOCKUP_SEED_KEYS].sort();
+  if (keys.join(",") !== expectedKeys.join(",")) {
+    throw new Error(
+      "Lockup seeds must contain only markShape, logoSize, wordmarkFont, wordmarkSize, wordmarkTracking, and gap.",
+    );
+  }
+
+  for (const key of ["logoSize", "wordmarkSize", "wordmarkTracking", "gap"]) {
+    if (typeof lockup[key] !== "number") {
+      throw new Error(`Lockup seed ${key} must be a number.`);
+    }
+  }
+
+  for (const key of ["markShape", "wordmarkFont"]) {
+    if (typeof lockup[key] !== "string") {
+      throw new Error(`Lockup seed ${key} must be a string.`);
+    }
+  }
+
+  return sanitizeLockupSeeds(lockup);
+}
+
 function applyGeneratedBrandTokens(source) {
   const generatedTokens = generateBrandThemeTokens(source.color, {
     derivation: source.colorDerivation,
@@ -637,6 +696,13 @@ function applyGeneratedBrandTokens(source) {
 function applyGeneratedLayoutTokens(source) {
   const generatedTokens = generateLayoutThemeTokens(source.layout);
   for (const name of LAYOUT_GENERATED_TOKEN_NAMES) {
+    source.root.set(name, generatedTokens[name]);
+  }
+}
+
+function applyGeneratedLockupTokens(source) {
+  const generatedTokens = generateLockupThemeTokens(source.lockup);
+  for (const name of LOCKUP_GENERATED_TOKEN_NAMES) {
     source.root.set(name, generatedTokens[name]);
   }
 }
@@ -674,6 +740,12 @@ function sanitizeTokenValuePatch(values, options = {}) {
     if (
       options.skipGeneratedLayoutTokens &&
       GENERATED_LAYOUT_TOKEN_NAMES.has(name)
+    ) {
+      continue;
+    }
+    if (
+      options.skipGeneratedLockupTokens &&
+      GENERATED_LOCKUP_TOKEN_NAMES.has(name)
     ) {
       continue;
     }

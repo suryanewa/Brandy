@@ -2,6 +2,7 @@ import { ArrowRight, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { landingPage } from "../../content/landing";
 import { track } from "../../lib/analytics";
+import { BrandLockup } from "../patterns";
 import { Button, Container } from "../primitives";
 
 export function Navbar() {
@@ -15,8 +16,7 @@ export function Navbar() {
           href="#top"
           onClick={() => track("nav_brand_clicked")}
         >
-          <span aria-hidden="true" />
-          {landingPage.brand.name}
+          <BrandLockup name={landingPage.brand.name} />
         </a>
 
         <nav aria-label="Primary navigation" className="navbar__links">

@@ -23,6 +23,16 @@ import {
   type LayoutSeeds,
 } from "../src/lib/layoutTheme.mjs";
 import {
+  COOLSHAPES_CATEGORY_COUNTS,
+  COOLSHAPES_MARK_SHAPE_OPTIONS,
+  LOCKUP_GENERATED_TOKEN_NAMES,
+  LOCKUP_SEED_KEYS,
+  LOCKUP_SHAPE_OPTIONS,
+  generateLockupThemeTokens,
+  sanitizeLockupSeeds,
+  type LockupSeeds,
+} from "../src/lib/lockupTheme.mjs";
+import {
   TYPOGRAPHY_GENERATED_MEDIA_TOKEN_NAMES,
   TYPOGRAPHY_GENERATED_TOKEN_NAMES,
   TYPOGRAPHY_FONT_IDS,
@@ -133,6 +143,45 @@ describe("source sync files", () => {
     for (const name of LAYOUT_GENERATED_TOKEN_NAMES) {
       expect(source.root[name]).toBe(generatedTokens[name]);
     }
+  });
+
+  it("keeps lockup seeds as the editable design source", () => {
+    const source = readDesignTokenYaml();
+
+    expect(Object.keys(source.creativeSeeds.lockup).sort()).toEqual(
+      [...LOCKUP_SEED_KEYS].sort(),
+    );
+    expect(sanitizeLockupSeeds(source.creativeSeeds.lockup)).toEqual(
+      source.creativeSeeds.lockup,
+    );
+    expect(
+      LOCKUP_SHAPE_OPTIONS.map((option) => option.value),
+    ).toContain(source.creativeSeeds.lockup.markShape);
+  });
+
+  it("keeps generated lockup tokens in sync with lockup seeds", () => {
+    const source = readDesignTokenYaml();
+    const generatedTokens = generateLockupThemeTokens(source.creativeSeeds.lockup);
+
+    for (const name of LOCKUP_GENERATED_TOKEN_NAMES) {
+      expect(source.root[name]).toBe(generatedTokens[name]);
+    }
+    expect(source.root["--navbar-brand-mark-size"]).toBe(
+      "var(--lockup-logo-size)",
+    );
+  });
+
+  it("covers every documented Coolshapes mark category and count", () => {
+    const optionCounts = COOLSHAPES_MARK_SHAPE_OPTIONS.reduce<
+      Record<string, number>
+    >((counts, option) => {
+      expect(option.category).toBeDefined();
+      if (!option.category) return counts;
+      counts[option.category] = (counts[option.category] ?? 0) + 1;
+      return counts;
+    }, {});
+
+    expect(optionCounts).toEqual(COOLSHAPES_CATEGORY_COUNTS);
   });
 
   it("keeps typography seeds as the editable design source", () => {
@@ -250,6 +299,7 @@ function readDesignTokenYaml(): {
     color: BrandSeeds;
     colorDerivation: BrandDerivationControls;
     layout: LayoutSeeds;
+    lockup: LockupSeeds;
     typography: TypographySeeds;
   };
   hasLegacyTopLevelSeeds: boolean;
@@ -283,6 +333,7 @@ function readDesignTokenYaml(): {
       color?: BrandSeeds;
       color_derivation?: BrandDerivationControls;
       layout?: LayoutSeeds;
+      lockup?: LockupSeeds;
       typography?: TypographySeeds;
     };
     generated?: {
@@ -343,6 +394,14 @@ function readDesignTokenYaml(): {
         spacing: 0,
         textWidth: 0,
         width: "standard",
+      },
+      lockup: parsed.creative_seeds?.lockup ?? {
+        gap: 0,
+        logoSize: 0,
+        markShape: "coolshape:star:0",
+        wordmarkFont: "inter",
+        wordmarkSize: 0,
+        wordmarkTracking: 0,
       },
       typography: parsed.creative_seeds?.typography ?? {
         density: 0,

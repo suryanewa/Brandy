@@ -3,6 +3,7 @@ import {
   Palette,
   RotateCcw,
   Settings,
+  Shapes,
   Shuffle,
   SlidersHorizontal,
   Type,
@@ -27,6 +28,11 @@ import {
   generateLayoutRemix,
 } from "../../lib/layoutTheme.mjs";
 import {
+  LOCKUP_GENERATED_TOKEN_NAMES,
+  LOCKUP_SHAPE_OPTIONS,
+  generateLockupRemix,
+} from "../../lib/lockupTheme.mjs";
+import {
   TYPOGRAPHY_FONT_OPTIONS,
   TYPOGRAPHY_GENERATED_TOKEN_NAMES,
   generateTypographyRemix,
@@ -35,11 +41,13 @@ import {
   DEFAULT_DESIGN_OVERLAY_VALUES,
   DESIGN_CSS_VARIABLE_NAMES,
   DESIGN_OVERLAY_STORAGE_KEY,
+  DESIGN_VALUES_CHANGE_EVENT,
   areDesignValuesEqual,
   getDesignBrandDerivation,
   getDesignBrandSeeds,
   getDesignCssVariables,
   getDesignLayoutSeeds,
+  getDesignLockupSeeds,
   getDesignTypographySeeds,
   persistDesignValueDiff,
   readStoredDesignValues,
@@ -93,6 +101,10 @@ type NumberSettingKey =
   | "radius"
   | "pageGutter"
   | "heroBalance"
+  | "lockupGap"
+  | "lockupLogoSize"
+  | "lockupWordmarkSize"
+  | "lockupWordmarkTracking"
   | "primaryHoverDistancePercent"
   | "readableTextDistancePercent"
   | "secondaryTextDistancePercent"
@@ -104,10 +116,12 @@ type NumberSettingKey =
   | "headlineStyle"
   | "typographyTightness";
 type LayoutSelectSettingKey = "gridDensity" | "heroScale" | "pageWidth";
+type LockupSelectSettingKey = "lockupShape" | "lockupWordmarkFont";
 type TypographySelectSettingKey = "typographyPairing" | "typographyStyle";
 type TypographyFontSettingKey = "typographyPrimaryFont" | "typographySecondaryFont";
 type SelectSettingKey =
   | LayoutSelectSettingKey
+  | LockupSelectSettingKey
   | TypographyFontSettingKey
   | TypographySelectSettingKey;
 type BooleanSettingKey = "darkMode" | "mutedMode" | "highContrast";
@@ -302,6 +316,63 @@ const TYPOGRAPHY_SELECT_CONTROLS = [
 ] as const satisfies readonly SelectControlConfig<
   TypographyFontSettingKey | TypographySelectSettingKey
 >[];
+const LOCKUP_SELECT_CONTROLS = [
+  {
+    key: "lockupShape",
+    label: "Logo shape",
+    options: LOCKUP_SHAPE_OPTIONS,
+  },
+  {
+    key: "lockupWordmarkFont",
+    label: "Wordmark font",
+    options: TYPOGRAPHY_FONT_OPTIONS.map((font) => ({
+      label: font.label,
+      value: font.id,
+    })),
+  },
+] as const satisfies readonly SelectControlConfig<LockupSelectSettingKey>[];
+const LOCKUP_SLIDERS: readonly SliderControlConfig[] = [
+  {
+    key: "lockupLogoSize",
+    label: "Logo size",
+    min: 12,
+    max: 72,
+    startLabel: "Small",
+    endLabel: "Large",
+    step: 1,
+    suffix: "px",
+  },
+  {
+    key: "lockupWordmarkSize",
+    label: "Wordmark size",
+    min: 12,
+    max: 42,
+    startLabel: "Small",
+    endLabel: "Large",
+    step: 1,
+    suffix: "px",
+  },
+  {
+    key: "lockupWordmarkTracking",
+    label: "Wordmark tracking",
+    min: -2,
+    max: 10,
+    startLabel: "Tight",
+    endLabel: "Spaced",
+    step: 0.1,
+    suffix: "px",
+  },
+  {
+    key: "lockupGap",
+    label: "Mark gap",
+    min: 0,
+    max: 32,
+    startLabel: "Tight",
+    endLabel: "Open",
+    step: 1,
+    suffix: "px",
+  },
+];
 const MODE_TOGGLES: readonly ToggleControlConfig[] = [
   { key: "mutedMode", label: "Muted mode" },
   { key: "highContrast", label: "High contrast" },
@@ -329,6 +400,14 @@ const PALETTE_KEYS = [
   "mutedMode",
   "highContrast",
 ] as const satisfies readonly ResetKey[];
+const LOCKUP_KEYS = [
+  "lockupShape",
+  "lockupLogoSize",
+  "lockupWordmarkFont",
+  "lockupWordmarkSize",
+  "lockupWordmarkTracking",
+  "lockupGap",
+] as const satisfies readonly ResetKey[];
 const LAYOUT_KEYS = [
   "sectionSpacing",
   "radius",
@@ -351,6 +430,7 @@ const TYPOGRAPHY_KEYS = [
   "typographyTightness",
 ] as const satisfies readonly ResetKey[];
 const INITIAL_GROUP_STATE: Record<DesignOverlayGroupKey, boolean> = {
+  lockup: true,
   palette: true,
   layout: true,
   typography: true,
@@ -372,11 +452,13 @@ const TRACKED_CSS_VARIABLE_NAMES = Array.from(
 const SOURCE_GENERATED_TOKEN_NAMES = new Set<`--${string}`>([
   ...BRAND_GENERATED_TOKEN_NAMES,
   ...LAYOUT_GENERATED_TOKEN_NAMES,
+  ...LOCKUP_GENERATED_TOKEN_NAMES,
   ...TYPOGRAPHY_GENERATED_TOKEN_NAMES,
 ]);
 const SOURCE_SYNC_DEBOUNCE_MS = 650;
 const PALETTE_REMIX_SALT_RANGE = 4096;
 const LAYOUT_REMIX_SALT_RANGE = 4096;
+const LOCKUP_REMIX_SALT_RANGE = 4096;
 const TYPOGRAPHY_REMIX_SALT_RANGE = 4096;
 const DERIVED_COLOR_CONTROLS = [
   {
@@ -509,6 +591,8 @@ export function DesignOverlay({
   const paletteRemixStepRef = useRef(0);
   const layoutRemixSaltRef = useRef(getLayoutRemixSalt());
   const layoutRemixStepRef = useRef(0);
+  const lockupRemixSaltRef = useRef(getLockupRemixSalt());
+  const lockupRemixStepRef = useRef(0);
   const typographyRemixSaltRef = useRef(getTypographyRemixSalt());
   const typographyRemixStepRef = useRef(0);
   const [open, setOpen] = useState(initialOpen);
@@ -632,6 +716,14 @@ export function DesignOverlay({
   }, [resolvedDefaults, values]);
 
   useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent<DesignOverlayValues>(DESIGN_VALUES_CHANGE_EVENT, {
+        detail: values,
+      }),
+    );
+  }, [values]);
+
+  useEffect(() => {
     persistDesignTokenValueDiff(tokenValues);
   }, [tokenValues]);
 
@@ -693,6 +785,7 @@ export function DesignOverlay({
         brand: getDesignBrandSeeds(values),
         brandDerivation: getDesignBrandDerivation(values),
         layout: getDesignLayoutSeeds(values),
+        lockup: getDesignLockupSeeds(values),
         reload: false,
         typography: getDesignTypographySeeds(values),
         values: sourceSyncValues,
@@ -743,6 +836,10 @@ export function DesignOverlay({
       if ((LAYOUT_KEYS as readonly ResetKey[]).includes(key)) {
         layoutRemixSaltRef.current = getLayoutRemixSalt();
         layoutRemixStepRef.current = 0;
+      }
+      if ((LOCKUP_KEYS as readonly ResetKey[]).includes(key)) {
+        lockupRemixSaltRef.current = getLockupRemixSalt();
+        lockupRemixStepRef.current = 0;
       }
       updateValue(key, nextValue);
     },
@@ -834,6 +931,26 @@ export function DesignOverlay({
     }));
   }, [markSourceSyncDirty]);
 
+  const remixLockup = useCallback(() => {
+    markSourceSyncDirty();
+    const remixStep = lockupRemixStepRef.current;
+    lockupRemixStepRef.current += 1;
+    const remix = generateLockupRemix({
+      salt: lockupRemixSaltRef.current,
+      step: remixStep,
+    });
+
+    setValues((current) => ({
+      ...current,
+      lockupGap: remix.gap,
+      lockupLogoSize: remix.logoSize,
+      lockupShape: remix.markShape,
+      lockupWordmarkFont: remix.wordmarkFont,
+      lockupWordmarkSize: remix.wordmarkSize,
+      lockupWordmarkTracking: remix.wordmarkTracking,
+    }));
+  }, [markSourceSyncDirty]);
+
   const updateTypographyPresetValue = useCallback(
     <Key extends TypographySelectSettingKey>(
       key: Key,
@@ -870,11 +987,12 @@ export function DesignOverlay({
       remixPalette();
       remixTypography();
       remixLayout();
+      remixLockup();
     };
 
     window.addEventListener("keydown", handlePaletteRemixShortcut);
     return () => window.removeEventListener("keydown", handlePaletteRemixShortcut);
-  }, [remixLayout, remixPalette, remixTypography]);
+  }, [remixLayout, remixLockup, remixPalette, remixTypography]);
 
   const resetAll = useCallback(() => {
     markSourceSyncDirty();
@@ -885,6 +1003,8 @@ export function DesignOverlay({
     paletteRemixStepRef.current = 0;
     layoutRemixSaltRef.current = getLayoutRemixSalt();
     layoutRemixStepRef.current = 0;
+    lockupRemixSaltRef.current = getLockupRemixSalt();
+    lockupRemixStepRef.current = 0;
     typographyRemixSaltRef.current = getTypographyRemixSalt();
     typographyRemixStepRef.current = 0;
   }, [markSourceSyncDirty, resolvedDefaults]);
@@ -900,6 +1020,10 @@ export function DesignOverlay({
       if (keys === LAYOUT_KEYS) {
         layoutRemixSaltRef.current = getLayoutRemixSalt();
         layoutRemixStepRef.current = 0;
+      }
+      if (keys === LOCKUP_KEYS) {
+        lockupRemixSaltRef.current = getLockupRemixSalt();
+        lockupRemixStepRef.current = 0;
       }
       if (keys === TYPOGRAPHY_KEYS) {
         typographyRemixSaltRef.current = getTypographyRemixSalt();
@@ -1119,6 +1243,28 @@ export function DesignOverlay({
           </header>
 
           <div className="design-overlay__content">
+            <CollapsibleGroup
+              id={`${baseId}-lockup`}
+              title="Lockup"
+              icon={<Shapes aria-hidden="true" />}
+              open={expandedGroups.lockup}
+              onToggle={() => toggleGroup("lockup")}
+              onReset={() => resetDefaultKeys(LOCKUP_KEYS)}
+              actions={
+                <button
+                  type="button"
+                  className="design-overlay__group-action"
+                  aria-label="Remix lockup"
+                  onClick={remixLockup}
+                >
+                  <Shuffle aria-hidden="true" />
+                </button>
+              }
+            >
+              {LOCKUP_SELECT_CONTROLS.map(renderSelectControl)}
+              {LOCKUP_SLIDERS.map(renderSliderControl)}
+            </CollapsibleGroup>
+
             <CollapsibleGroup
               id={`${baseId}-palette`}
               title="Palette"
@@ -1351,6 +1497,10 @@ function getPaletteRemixSalt(): number {
 
 function getLayoutRemixSalt(): number {
   return Math.floor(Math.random() * LAYOUT_REMIX_SALT_RANGE);
+}
+
+function getLockupRemixSalt(): number {
+  return Math.floor(Math.random() * LOCKUP_REMIX_SALT_RANGE);
 }
 
 function getTypographyRemixSalt(): number {

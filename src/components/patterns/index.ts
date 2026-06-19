@@ -1,4 +1,7 @@
 export { BeforeAfter } from "./BeforeAfter";
+export { BrandLockup } from "./BrandLockup";
+export { CUSTOM_BRAND_MARK_IDS, resolveBrandMark } from "./brandLockupModel";
+export type { BrandLockupProps, BrandMarkId, CustomBrandMarkId } from "./brandLockupModel";
 export { BrowserFrame } from "./BrowserFrame";
 export { DemoFrame } from "./DemoFrame";
 export { FAQAccordion } from "./FAQAccordion";

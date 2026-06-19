@@ -1,4 +1,5 @@
 import { landingPage } from "../../content/landing";
+import { BrandLockup } from "../patterns";
 import { Container } from "../primitives";
 
 export function Footer() {
@@ -7,8 +8,7 @@ export function Footer() {
       <Container className="footer__inner" size="xl">
         <div>
           <a className="footer__brand" href="#top">
-            <span aria-hidden="true" />
-            {landingPage.brand.name}
+            <BrandLockup name={landingPage.brand.name} />
           </a>
           <p>{landingPage.brand.description}</p>
         </div>
