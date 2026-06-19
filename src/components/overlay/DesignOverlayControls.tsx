@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import {
   clampNumber,
   formatSettingNumber,
@@ -8,6 +8,7 @@ import {
 } from "./designOverlayModel";
 
 interface SliderControlProps {
+  actions?: ReactNode;
   endLabel?: string;
   id: string;
   label: string;
@@ -21,6 +22,7 @@ interface SliderControlProps {
 }
 
 export function SliderControl({
+  actions,
   id,
   label,
   max,
@@ -64,32 +66,35 @@ export function SliderControl({
     <div className="design-overlay__slider-row">
       <div className="design-overlay__row-top">
         <label htmlFor={`${id}-range`}>{label}</label>
-        <span
-          className="design-overlay__number-shell"
-          onWheelCapture={adjustByWheel}
-        >
-          <input
-            id={`${id}-value`}
-            type="text"
-            inputMode="decimal"
-            aria-label={`${label} value`}
-            value={visibleDraft}
-            onBlur={(event) => commitDraft(event.currentTarget.value)}
-            onChange={(event) => setDraft(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                commitDraft(event.currentTarget.value);
-              }
-              if (event.key === "Escape") {
-                event.preventDefault();
-                setDraft(null);
-                event.currentTarget.blur();
-              }
-            }}
-          />
-          {suffix ? <span>{suffix}</span> : null}
-        </span>
+        <div className="design-overlay__row-tools">
+          <span
+            className="design-overlay__number-shell"
+            onWheelCapture={adjustByWheel}
+          >
+            <input
+              id={`${id}-value`}
+              type="text"
+              inputMode="decimal"
+              aria-label={`${label} value`}
+              value={visibleDraft}
+              onBlur={(event) => commitDraft(event.currentTarget.value)}
+              onChange={(event) => setDraft(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  commitDraft(event.currentTarget.value);
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setDraft(null);
+                  event.currentTarget.blur();
+                }
+              }}
+            />
+            {suffix ? <span>{suffix}</span> : null}
+          </span>
+          {actions}
+        </div>
       </div>
       <input
         id={`${id}-range`}
@@ -115,13 +120,20 @@ export function SliderControl({
 }
 
 interface ColorControlProps {
+  actions?: ReactNode;
   id: string;
   label: string;
   onChange: (value: string) => void;
   value: string;
 }
 
-export function ColorControl({ id, label, onChange, value }: ColorControlProps) {
+export function ColorControl({
+  actions,
+  id,
+  label,
+  onChange,
+  value,
+}: ColorControlProps) {
   const normalizedValue = normalizeHexColor(value);
   const [draft, setDraft] = useState<string | null>(null);
   const visibleDraft = draft ?? normalizedValue;
@@ -139,37 +151,40 @@ export function ColorControl({ id, label, onChange, value }: ColorControlProps) 
   return (
     <div className="design-overlay__color-row">
       <label htmlFor={`${id}-color`}>{label}</label>
-      <div className="design-overlay__color-control">
-        <input
-          id={`${id}-color`}
-          className="design-overlay__color-input"
-          type="color"
-          value={normalizedValue}
-          onChange={(event) => {
-            setDraft(null);
-            onChange(event.currentTarget.value);
-          }}
-        />
-        <input
-          className="design-overlay__hex-input"
-          type="text"
-          inputMode="text"
-          aria-label={`${label} hex color`}
-          value={visibleDraft}
-          onBlur={(event) => commitDraft(event.currentTarget.value)}
-          onChange={(event) => setDraft(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              commitDraft(event.currentTarget.value);
-            }
-            if (event.key === "Escape") {
-              event.preventDefault();
+      <div className="design-overlay__row-tools">
+        <div className="design-overlay__color-control">
+          <input
+            id={`${id}-color`}
+            className="design-overlay__color-input"
+            type="color"
+            value={normalizedValue}
+            onChange={(event) => {
               setDraft(null);
-              event.currentTarget.blur();
-            }
-          }}
-        />
+              onChange(event.currentTarget.value);
+            }}
+          />
+          <input
+            className="design-overlay__hex-input"
+            type="text"
+            inputMode="text"
+            aria-label={`${label} hex color`}
+            value={visibleDraft}
+            onBlur={(event) => commitDraft(event.currentTarget.value)}
+            onChange={(event) => setDraft(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                commitDraft(event.currentTarget.value);
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                setDraft(null);
+                event.currentTarget.blur();
+              }
+            }}
+          />
+        </div>
+        {actions}
       </div>
     </div>
   );
@@ -184,6 +199,7 @@ interface DerivedColorPreviewProps {
       onChange: (value: number) => void;
       sourceLabel: string;
       value: number;
+      actions?: ReactNode;
     };
     id: string;
     label: string;
@@ -232,6 +248,7 @@ export function DerivedColorPreview({
                   startLabel={`Near ${color.adjustment.sourceLabel}`}
                   endLabel="Far"
                   onChange={color.adjustment.onChange}
+                  actions={color.adjustment.actions}
                 />
               </div>
             ) : null}
@@ -243,6 +260,7 @@ export function DerivedColorPreview({
 }
 
 interface SegmentedControlProps<Value extends string> {
+  actions?: ReactNode;
   id: string;
   label: string;
   onChange: (value: Value) => void;
@@ -254,6 +272,7 @@ interface SegmentedControlProps<Value extends string> {
 }
 
 export function SegmentedControl<Value extends string>({
+  actions,
   id,
   label,
   onChange,
@@ -262,7 +281,12 @@ export function SegmentedControl<Value extends string>({
 }: SegmentedControlProps<Value>) {
   return (
     <div className="design-overlay__segmented-row">
-      <span id={`${id}-label`}>{label}</span>
+      <div className="design-overlay__row-top">
+        <span id={`${id}-label`} className="design-overlay__row-label">
+          {label}
+        </span>
+        {actions}
+      </div>
       <div
         className="design-overlay__segmented-control"
         role="radiogroup"
@@ -286,6 +310,7 @@ export function SegmentedControl<Value extends string>({
 }
 
 interface SelectControlProps<Value extends string> {
+  actions?: ReactNode;
   id: string;
   label: string;
   onChange: (value: Value) => void;
@@ -297,6 +322,7 @@ interface SelectControlProps<Value extends string> {
 }
 
 export function SelectControl<Value extends string>({
+  actions,
   id,
   label,
   onChange,
@@ -304,8 +330,11 @@ export function SelectControl<Value extends string>({
   value,
 }: SelectControlProps<Value>) {
   return (
-    <label className="design-overlay__select-row" htmlFor={id}>
-      <span>{label}</span>
+    <div className="design-overlay__select-row">
+      <div className="design-overlay__row-top">
+        <label htmlFor={id}>{label}</label>
+        {actions}
+      </div>
       <select
         id={id}
         value={value}
@@ -317,28 +346,38 @@ export function SelectControl<Value extends string>({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }
 
 interface ToggleControlProps {
+  actions?: ReactNode;
   checked: boolean;
   id: string;
   label: string;
   onChange: (checked: boolean) => void;
 }
 
-export function ToggleControl({ checked, id, label, onChange }: ToggleControlProps) {
+export function ToggleControl({
+  actions,
+  checked,
+  id,
+  label,
+  onChange,
+}: ToggleControlProps) {
   return (
-    <label className="design-overlay__toggle-row" htmlFor={id}>
-      <span>{label}</span>
-      <input
-        id={id}
-        type="checkbox"
-        role="switch"
-        checked={checked}
-        onChange={(event) => onChange(event.currentTarget.checked)}
-      />
-    </label>
+    <div className="design-overlay__toggle-row">
+      <label htmlFor={id}>{label}</label>
+      <div className="design-overlay__row-tools">
+        <input
+          id={id}
+          type="checkbox"
+          role="switch"
+          checked={checked}
+          onChange={(event) => onChange(event.currentTarget.checked)}
+        />
+        {actions}
+      </div>
+    </div>
   );
 }

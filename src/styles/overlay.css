@@ -129,7 +129,8 @@ html {
 
 .design-overlay__icon-button,
 .design-overlay__group-action,
-.design-overlay__group-reset {
+.design-overlay__group-reset,
+.design-overlay__parameter-action {
   align-items: center;
   background: transparent;
   border: var(--stroke-thin) solid transparent;
@@ -148,7 +149,8 @@ html {
 
 .design-overlay__icon-button:hover,
 .design-overlay__group-action:hover,
-.design-overlay__group-reset:hover {
+.design-overlay__group-reset:hover,
+.design-overlay__parameter-action:hover:not(:disabled) {
   background: var(--color-surface);
   color: var(--color-text);
 }
@@ -156,6 +158,7 @@ html {
 .design-overlay__icon-button svg,
 .design-overlay__group-action svg,
 .design-overlay__group-reset svg,
+.design-overlay__parameter-action svg,
 .design-overlay__reset-all svg {
   height: 1rem;
   width: 1rem;
@@ -470,11 +473,45 @@ html {
 }
 
 .design-overlay__row-top label,
+.design-overlay__row-label,
 .design-overlay__color-row label,
-.design-overlay__toggle-row > span {
+.design-overlay__toggle-row label {
   color: var(--color-text);
   font-weight: 680;
   min-width: 0;
+}
+
+.design-overlay__row-tools,
+.design-overlay__parameter-actions {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.125rem;
+}
+
+.design-overlay__parameter-actions {
+  gap: 0;
+}
+
+.design-overlay__parameter-action {
+  border-radius: var(--radius-sm);
+  height: 1.625rem;
+  width: 1.625rem;
+}
+
+.design-overlay__parameter-action svg {
+  height: 0.82rem;
+  width: 0.82rem;
+}
+
+.design-overlay__parameter-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.design-overlay__parameter-action[data-active="true"] {
+  background: var(--badge-brand-bg);
+  color: var(--button-primary-bg);
 }
 
 .design-overlay__number-shell {
@@ -561,11 +598,6 @@ html {
   gap: var(--space-2);
 }
 
-.design-overlay__segmented-row > span {
-  color: var(--color-text);
-  font-weight: 680;
-}
-
 .design-overlay__segmented-control {
   background: var(--color-surface);
   border: var(--stroke-thin) solid var(--color-border);
@@ -598,7 +630,7 @@ html {
   gap: var(--space-2);
 }
 
-.design-overlay__select-row > span {
+.design-overlay__select-row label {
   color: var(--color-text);
   font-weight: 680;
 }

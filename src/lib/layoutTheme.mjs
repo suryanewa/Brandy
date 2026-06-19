@@ -77,21 +77,22 @@ const WIDTH_BASES = {
 };
 const HERO_SCALE = {
   compact: {
-    headlineMax: "16ch",
+    headlineMax: "62rem",
     minHeight: "62svh",
     visualMin: "22rem",
   },
   balanced: {
-    headlineMax: "12ch",
+    headlineMax: "62rem",
     minHeight: "70svh",
     visualMin: "26rem",
   },
   immersive: {
-    headlineMax: "9ch",
+    headlineMax: "62rem",
     minHeight: "78svh",
     visualMin: "28rem",
   },
 };
+const HERO_DESCRIPTION_TARGET_WIDTH = 52;
 const GRID_DENSITY = {
   sparse: {
     cardMinHeight: "16rem",
@@ -203,7 +204,7 @@ export function generateLayoutThemeTokens(seeds = {}) {
     "--hero-grid-visual-min": hero.visualMin,
     "--hero-headline-max-width": hero.headlineMax,
     "--hero-copy-max-width": hero.headlineMax,
-    "--hero-description-max-width": `${layout.textWidth}rem`,
+    "--hero-description-max-width": `${HERO_DESCRIPTION_TARGET_WIDTH}rem`,
     "--footer-copy-max-width": `${Math.max(22, layout.textWidth - 12)}rem`,
     "--footer-columns": getFooterColumns(layout.gridDensity),
     "--card-padding": `${roundNumber(1.5 * spacingScale, 2)}rem`,

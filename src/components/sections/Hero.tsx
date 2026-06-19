@@ -1,9 +1,13 @@
 import { ArrowRight } from "lucide-react";
 import { landingPage } from "../../content/landing";
-import { BrowserFrame, DemoFrame } from "../patterns";
 import { Button, Cluster, Container, Heading, Section, Stack, Text } from "../primitives";
 
 export function Hero() {
+  const titleLines = getBalancedLines(landingPage.hero.title, {
+    preferredBreakAfter: ",",
+  });
+  const descriptionLines = getBalancedLines(landingPage.hero.description);
+
   return (
     <Section
       aria-labelledby="hero-title"
@@ -13,15 +17,28 @@ export function Hero() {
     >
       <Container className="hero-grid" size="xl">
         <Stack className="hero-copy" gap="lg">
-          <Stack gap="md">
-            <Heading as="h1" id="hero-title" size="display">
-              {landingPage.hero.title}
+          <Stack className="hero-copy__content" gap="md">
+            <Heading
+              aria-label={landingPage.hero.title}
+              as="h1"
+              id="hero-title"
+              size="display"
+            >
+              {titleLines.map((line) => (
+                <span className="hero-copy__line" key={line}>
+                  {line}
+                </span>
+              ))}
             </Heading>
             <Text className="hero-copy__description" size="body-lg">
-              {landingPage.hero.description}
+              {descriptionLines.map((line) => (
+                <span className="hero-copy__line" key={line}>
+                  {line}
+                </span>
+              ))}
             </Text>
           </Stack>
-          <Cluster className="hero-actions" align="start" gap="sm">
+          <Cluster className="hero-actions" align="center" gap="sm">
             <Button
               analyticsEvent="hero_primary_cta_clicked"
               href={landingPage.hero.primaryCta.href}
@@ -40,15 +57,50 @@ export function Hero() {
             </Button>
           </Cluster>
         </Stack>
-
-        <BrowserFrame className="hero-browser" title="brandy.system/page.tsx">
-          <DemoFrame
-            demo={landingPage.demo}
-            hero={landingPage.hero}
-            layers={landingPage.layers}
-          />
-        </BrowserFrame>
       </Container>
     </Section>
   );
+}
+
+function getBalancedLines(
+  text: string,
+  options: { preferredBreakAfter?: string } = {},
+): [string, string] {
+  const preferredBreakIndex = options.preferredBreakAfter
+    ? text.indexOf(options.preferredBreakAfter)
+    : -1;
+
+  if (preferredBreakIndex > -1) {
+    const preferredBreakAfter = options.preferredBreakAfter;
+
+    if (!preferredBreakAfter) return [text, ""];
+
+    return [
+      text.slice(0, preferredBreakIndex + preferredBreakAfter.length).trim(),
+      text.slice(preferredBreakIndex + preferredBreakAfter.length).trim(),
+    ];
+  }
+
+  const words = text.split(/\s+/);
+  if (words.length < 2) return [text, ""];
+
+  const midpoint = text.length / 2;
+  let bestIndex = 1;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let runningLength = 0;
+
+  for (let index = 1; index < words.length; index += 1) {
+    runningLength += words[index - 1].length + (index > 1 ? 1 : 0);
+    const distance = Math.abs(runningLength - midpoint);
+
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestIndex = index;
+    }
+  }
+
+  return [
+    words.slice(0, bestIndex).join(" "),
+    words.slice(bestIndex).join(" "),
+  ];
 }

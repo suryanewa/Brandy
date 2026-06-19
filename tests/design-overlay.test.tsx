@@ -1049,7 +1049,8 @@ describe("design overlay model", () => {
     expect(variables["--section-padding-y-md"]).toBe("3.5rem");
     expect(variables["--container-lg"]).toBe("1120px");
     expect(variables["--hero-grid-visual-fr"]).toBe("1.14fr");
-    expect(variables["--hero-headline-max-width"]).toBe("9ch");
+    expect(variables["--hero-headline-max-width"]).toBe("62rem");
+    expect(variables["--hero-description-max-width"]).toBe("52rem");
     expect(variables["--content-readable-max"]).toBe("38rem");
     expect(variables["--font-family-heading"]).toContain("Inter");
     expect(variables["--font-family-body"]).toContain("Roboto");
