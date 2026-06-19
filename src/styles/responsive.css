@@ -49,12 +49,10 @@
 
 @media (max-width: 640px) {
   .section[data-size="hero"] {
-    min-height: auto;
     padding-block: var(--space-8) var(--space-6);
   }
 
   .grid[data-columns],
-  .before-after,
   .starter-list {
     grid-template-columns: 1fr;
   }

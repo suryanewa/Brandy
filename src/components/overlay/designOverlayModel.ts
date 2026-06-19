@@ -47,6 +47,10 @@ export interface DesignOverlayValues {
   buttonSecondaryHoverDistancePercent: number;
   linkColorDistancePercent: number;
   linkHoverDistancePercent: number;
+  footerBackgroundDistancePercent: number;
+  footerBorderDistancePercent: number;
+  navbarBackgroundDistancePercent: number;
+  navbarBorderDistancePercent: number;
   primaryHoverDistancePercent: number;
   secondarySurfaceDistancePercent: number;
   accentMomentDistancePercent: number;
@@ -113,6 +117,14 @@ export const DEFAULT_DESIGN_OVERLAY_VALUES: DesignOverlayValues = {
     DEFAULT_BRAND_DERIVATION_CONTROLS.buttonSecondaryHoverDistancePercent,
   linkColorDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.linkColorDistancePercent,
   linkHoverDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.linkHoverDistancePercent,
+  footerBackgroundDistancePercent:
+    DEFAULT_BRAND_DERIVATION_CONTROLS.footerBackgroundDistancePercent,
+  footerBorderDistancePercent:
+    DEFAULT_BRAND_DERIVATION_CONTROLS.footerBorderDistancePercent,
+  navbarBackgroundDistancePercent:
+    DEFAULT_BRAND_DERIVATION_CONTROLS.navbarBackgroundDistancePercent,
+  navbarBorderDistancePercent:
+    DEFAULT_BRAND_DERIVATION_CONTROLS.navbarBorderDistancePercent,
   primaryHoverDistancePercent: DEFAULT_BRAND_DERIVATION_CONTROLS.primaryHoverDistancePercent,
   secondarySurfaceDistancePercent:
     DEFAULT_BRAND_DERIVATION_CONTROLS.secondarySurfaceDistancePercent,
@@ -237,6 +249,16 @@ export const DESIGN_CSS_VARIABLE_NAMES = [
   "--color-surface-strong",
   "--color-text",
   "--color-muted",
+  "--color-section-text",
+  "--color-section-muted",
+  "--color-surface-text",
+  "--color-surface-muted",
+  "--color-card-text",
+  "--color-card-muted",
+  "--color-accent-text",
+  "--color-accent-muted",
+  "--color-inverted-text",
+  "--color-inverted-muted",
   "--color-border",
   "--color-accent",
   "--color-accent-hover",
@@ -281,6 +303,17 @@ export const DESIGN_CSS_VARIABLE_NAMES = [
   "--dark-color-text",
   "--dark-color-border",
   "--color-nav-bg",
+  "--color-nav-border",
+  "--color-nav-lockup-logo",
+  "--color-nav-link",
+  "--color-nav-link-hover",
+  "--color-marquee-logo",
+  "--color-footer-bg",
+  "--color-footer-border",
+  "--color-footer-text",
+  "--color-footer-link",
+  "--color-footer-link-hover",
+  "--color-footer-lockup-logo",
   "--color-footer-muted",
   "--lockup-logo-size",
   "--lockup-wordmark-font",
@@ -428,6 +461,10 @@ export function getDesignBrandDerivation(
     highlightSoftDistancePercent: values.highlightSoftDistancePercent,
     linkColorDistancePercent: values.linkColorDistancePercent,
     linkHoverDistancePercent: values.linkHoverDistancePercent,
+    footerBackgroundDistancePercent: values.footerBackgroundDistancePercent,
+    footerBorderDistancePercent: values.footerBorderDistancePercent,
+    navbarBackgroundDistancePercent: values.navbarBackgroundDistancePercent,
+    navbarBorderDistancePercent: values.navbarBorderDistancePercent,
     neutralSurfaceDistancePercent: values.neutralSurfaceDistancePercent,
     primaryHoverDistancePercent: values.primaryHoverDistancePercent,
     readableTextDistancePercent: values.readableTextDistancePercent,

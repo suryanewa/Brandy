@@ -50,7 +50,7 @@ h4 {
 .text-h2,
 .text-h3,
 .text-h4 {
-  color: var(--color-text);
+  color: var(--section-text-color, var(--color-text));
   font-family: var(--font-family-heading);
   font-weight: var(--font-weight-heading);
   letter-spacing: var(--letter-spacing-heading);
@@ -83,27 +83,27 @@ h4 {
 }
 
 .text-body-lg {
-  color: var(--color-muted);
+  color: var(--section-muted-color, var(--color-muted));
   font-size: var(--font-size-body-lg);
   line-height: var(--line-height-body-lg);
   text-wrap: pretty;
 }
 
 .text-body {
-  color: var(--color-muted);
+  color: var(--section-muted-color, var(--color-muted));
   font-size: var(--font-size-body);
   line-height: var(--line-height-body);
   text-wrap: pretty;
 }
 
 .text-caption {
-  color: var(--color-muted);
+  color: var(--section-muted-color, var(--color-muted));
   font-size: var(--font-size-caption);
   line-height: var(--line-height-caption);
 }
 
 .text-eyebrow {
-  color: var(--link-color);
+  color: var(--section-link-color, var(--link-color));
   font-size: var(--font-size-eyebrow);
   font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-eyebrow);

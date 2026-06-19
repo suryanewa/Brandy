@@ -16,12 +16,16 @@ export const BRAND_DERIVATION_KEYS = [
   "linkColorDistancePercent",
   "linkHoverDistancePercent",
   "primaryHoverDistancePercent",
+  "footerBackgroundDistancePercent",
+  "footerBorderDistancePercent",
   "secondarySurfaceDistancePercent",
   "accentMomentDistancePercent",
   "highlightSoftDistancePercent",
   "neutralSurfaceDistancePercent",
   "readableTextDistancePercent",
   "secondaryTextDistancePercent",
+  "navbarBackgroundDistancePercent",
+  "navbarBorderDistancePercent",
 ];
 
 export const DEFAULT_BRAND_DERIVATION_CONTROLS = {
@@ -32,6 +36,10 @@ export const DEFAULT_BRAND_DERIVATION_CONTROLS = {
   buttonSecondaryHoverDistancePercent: 100,
   linkColorDistancePercent: 100,
   linkHoverDistancePercent: 100,
+  footerBackgroundDistancePercent: 100,
+  footerBorderDistancePercent: 100,
+  navbarBackgroundDistancePercent: 100,
+  navbarBorderDistancePercent: 100,
   primaryHoverDistancePercent: 100,
   secondarySurfaceDistancePercent: 100,
   accentMomentDistancePercent: 100,
@@ -43,7 +51,7 @@ export const DEFAULT_BRAND_DERIVATION_CONTROLS = {
 
 const DERIVATION_REMIX_RANGES = {
   accentMomentDistancePercent: [70, 145],
-  backgroundDistancePercent: [76, 116],
+  backgroundDistancePercent: [86, 220],
   borderDistancePercent: [55, 142],
   buttonPrimaryBgDistancePercent: [78, 126],
   buttonSecondaryBorderDistancePercent: [52, 132],
@@ -51,7 +59,11 @@ const DERIVATION_REMIX_RANGES = {
   highlightSoftDistancePercent: [48, 126],
   linkColorDistancePercent: [82, 138],
   linkHoverDistancePercent: [88, 150],
-  neutralSurfaceDistancePercent: [52, 126],
+  footerBackgroundDistancePercent: [84, 220],
+  footerBorderDistancePercent: [72, 220],
+  navbarBackgroundDistancePercent: [84, 220],
+  navbarBorderDistancePercent: [72, 220],
+  neutralSurfaceDistancePercent: [70, 220],
   primaryHoverDistancePercent: [88, 148],
   readableTextDistancePercent: [96, 132],
   secondarySurfaceDistancePercent: [46, 126],
@@ -219,6 +231,16 @@ export const BRAND_GENERATED_TOKEN_NAMES = [
   "--color-surface-strong",
   "--color-text",
   "--color-muted",
+  "--color-section-text",
+  "--color-section-muted",
+  "--color-surface-text",
+  "--color-surface-muted",
+  "--color-card-text",
+  "--color-card-muted",
+  "--color-accent-text",
+  "--color-accent-muted",
+  "--color-inverted-text",
+  "--color-inverted-muted",
   "--color-border",
   "--color-accent",
   "--color-accent-hover",
@@ -265,6 +287,17 @@ export const BRAND_GENERATED_TOKEN_NAMES = [
   "--dark-color-text",
   "--dark-color-border",
   "--color-nav-bg",
+  "--color-nav-border",
+  "--color-nav-lockup-logo",
+  "--color-nav-link",
+  "--color-nav-link-hover",
+  "--color-marquee-logo",
+  "--color-footer-bg",
+  "--color-footer-border",
+  "--color-footer-text",
+  "--color-footer-link",
+  "--color-footer-link-hover",
+  "--color-footer-lockup-logo",
   "--color-footer-muted",
 ];
 
@@ -286,7 +319,7 @@ export function sanitizeBrandDerivationControls(controls = {}) {
           ? Number(controls[key])
           : DEFAULT_BRAND_DERIVATION_CONTROLS[key],
         0,
-        160,
+        220,
       ),
     ]),
   );
@@ -305,7 +338,7 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     darkMode ? "#000000" : "#ffffff",
     darkMode ? neutral[950] : neutral[50],
     derivation.backgroundDistancePercent,
-    darkMode ? primary[950] : primary[50],
+    darkMode ? primary[600] : primary[500],
   );
   const surfaceTarget = darkMode
     ? mixHex(neutral[950], primary[900], 0.24)
@@ -314,7 +347,7 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     darkMode ? neutral[950] : neutral[50],
     surfaceTarget,
     derivation.neutralSurfaceDistancePercent,
-    darkMode ? primary[900] : primary[50],
+    darkMode ? primary[500] : primary[500],
   );
   const surfaceRaised = darkMode ? mixHex(neutral[900], primary[800], 0.16) : "#ffffff";
   const surfaceStrong = darkMode ? mixHex(neutral[900], primary[800], 0.28) : neutral[100];
@@ -443,6 +476,49 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     derivation.linkHoverDistancePercent,
     darkMode ? primary[50] : primary[950],
   ), background);
+  const navBackground = adjustDerivedColorDistance(
+    surfaceRaised,
+    darkMode ? surfaceRaised : surfaceRaised,
+    derivation.navbarBackgroundDistancePercent,
+    darkMode ? primary[500] : primary[500],
+  );
+  const navBorder = adjustDerivedColorDistance(
+    border,
+    border,
+    derivation.navbarBorderDistancePercent,
+    darkMode ? primary[400] : primary[500],
+  );
+  const navLink = ensureContrastColor(muted, navBackground);
+  const navLinkHover = ensureContrastColor(text, navBackground);
+  const navLockupLogo = ensureContrastColor(primary[500], navBackground);
+  const marqueeLogo = ensureContrastColor(muted, surface);
+  const surfaceText = ensureContrastColor(text, surface);
+  const surfaceMuted = ensureContrastColor(muted, surface);
+  const cardText = ensureContrastColor(text, surfaceRaised);
+  const cardMuted = ensureContrastColor(muted, surfaceRaised);
+  const accentText = getContrastText(primaryButtonBg);
+  const accentMuted = ensureContrastColor(muted, primaryButtonBg);
+  const footerBase = darkMode ? neutral[950] : text;
+  const footerBackground = adjustDerivedColorDistance(
+    footerBase,
+    footerBase,
+    derivation.footerBackgroundDistancePercent,
+    primary[500],
+  );
+  const footerBorder = adjustDerivedColorDistance(
+    border,
+    border,
+    derivation.footerBorderDistancePercent,
+    primary[500],
+  );
+  const invertedBg = footerBackground;
+  const invertedText = ensureContrastColor(background, invertedBg);
+  const invertedMuted = ensureContrastColor(muted, invertedBg);
+  const footerText = ensureContrastColor(surfaceRaised, footerBackground);
+  const footerMuted = ensureContrastColor(muted, footerBackground);
+  const footerLink = ensureContrastColor(primary[200], footerBackground);
+  const footerLinkHover = ensureContrastColor(primary[50], footerBackground);
+  const footerLockupLogo = ensureContrastColor(primary[500], footerBackground);
   const secondaryButtonTextSafe = ensureContrastColor(secondaryButtonText, secondaryButtonBg);
   const highlightTextSafe = ensureContrastColor(highlightText, highlightSoft);
 
@@ -472,6 +548,16 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--color-surface-strong": surfaceStrong,
     "--color-text": text,
     "--color-muted": muted,
+    "--color-section-text": text,
+    "--color-section-muted": muted,
+    "--color-surface-text": surfaceText,
+    "--color-surface-muted": surfaceMuted,
+    "--color-card-text": cardText,
+    "--color-card-muted": cardMuted,
+    "--color-accent-text": accentText,
+    "--color-accent-muted": accentMuted,
+    "--color-inverted-text": invertedText,
+    "--color-inverted-muted": invertedMuted,
     "--color-border": border,
     "--color-accent": primaryButtonBg,
     "--color-accent-hover": primaryHover,
@@ -520,20 +606,29 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
       "#000000",
       neutral[950],
       derivation.backgroundDistancePercent,
-      primary[950],
+      primary[600],
     ),
     "--dark-color-surface": adjustDerivedColorDistance(
       neutral[950],
       mixHex(neutral[950], primary[900], 0.24),
       derivation.neutralSurfaceDistancePercent,
-      primary[900],
+      primary[500],
     ),
     "--dark-color-text": neutral[50],
     "--dark-color-border": withAlpha(primary[300], 0.22),
-    "--color-nav-bg": darkMode
-      ? withAlpha(surfaceRaised, options.highContrast ? 0.96 : 0.9)
-      : withAlpha(surfaceRaised, options.highContrast ? 0.96 : 0.9),
-    "--color-footer-muted": withAlpha(neutral[50], options.highContrast ? 0.9 : 0.76),
+    "--color-nav-bg": navBackground,
+    "--color-nav-border": navBorder,
+    "--color-nav-lockup-logo": navLockupLogo,
+    "--color-nav-link": navLink,
+    "--color-nav-link-hover": navLinkHover,
+    "--color-marquee-logo": marqueeLogo,
+    "--color-footer-bg": footerBackground,
+    "--color-footer-border": footerBorder,
+    "--color-footer-text": footerText,
+    "--color-footer-link": footerLink,
+    "--color-footer-link-hover": footerLinkHover,
+    "--color-footer-lockup-logo": footerLockupLogo,
+    "--color-footer-muted": footerMuted,
   };
 }
 
@@ -770,7 +865,7 @@ function rgbToHex([red, green, blue]) {
 }
 
 function adjustDerivedColorDistance(origin, target, distance, extensionColor) {
-  const factor = clampNumber(distance, 0, 160) / 100;
+  const factor = clampNumber(distance, 0, 220) / 100;
   if (factor <= 1) return mixHex(origin, target, factor);
 
   const extension =

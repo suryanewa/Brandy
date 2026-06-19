@@ -104,6 +104,7 @@ export function DesignOverlayPaletteControls({
           adjustment: {
             id: `${baseId}-${control.id}-distance`,
             label: `${control.label} distance`,
+            max: "max" in control ? control.max : undefined,
             sourceLabel: control.sourceLabel,
             value: values[control.key],
             onChange: (value) => onValueChange(control.key, value),

@@ -13,8 +13,10 @@ export function Features() {
       <Container>
         <SectionHeader
           description={landingPage.featureOverview.description}
+          descriptionMaxLines={2}
           headingId="features-title"
           title={landingPage.featureOverview.title}
+          titleMaxLines={2}
         />
         <FeatureGrid items={landingPage.features} />
       </Container>

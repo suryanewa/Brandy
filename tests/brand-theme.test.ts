@@ -101,7 +101,7 @@ describe("brand theme generator", () => {
     expect(tokens["--link-hover"]).toBe("#4e48ca");
     expect(tokens["--color-highlight-soft"]).toBe("#fde68a");
     expect(tokens["--color-muted"]).toBe("#1b1e3c");
-    expect(tokens["--color-surface"]).toBe("#f7f7ff");
+    expect(tokens["--color-surface"]).toBe("#9f9aff");
   });
 
   it("derives harmonious dark semantic roles from the same seeds", () => {
@@ -190,11 +190,13 @@ describe("brand theme generator", () => {
     const repeat = generateBrandDerivationRemix({ step: 0 });
 
     expect(derivation).toMatchObject({
-      backgroundDistancePercent: 98,
+      backgroundDistancePercent: 161,
       buttonPrimaryBgDistancePercent: 100,
+      footerBackgroundDistancePercent: 196,
+      footerBorderDistancePercent: 98,
       linkHoverDistancePercent: 121,
       primaryHoverDistancePercent: 146,
-      secondaryTextDistancePercent: 125,
+      secondaryTextDistancePercent: 112,
     });
     expect(repeat).toEqual(derivation);
 
@@ -206,8 +208,61 @@ describe("brand theme generator", () => {
 
       expect(contrastRatio(tokens["--color-text"], tokens["--color-bg"])).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(tokens["--color-muted"], tokens["--color-bg"])).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(tokens["--color-section-text"], tokens["--color-bg"])).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(tokens["--color-section-muted"], tokens["--color-bg"])).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-surface-text"], tokens["--color-surface"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-surface-muted"], tokens["--color-surface"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-card-text"], tokens["--color-surface-raised"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-card-muted"], tokens["--color-surface-raised"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-accent-text"], tokens["--color-accent"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-accent-muted"], tokens["--color-accent"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-inverted-text"], tokens["--color-footer-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-inverted-muted"], tokens["--color-footer-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-footer-text"], tokens["--color-footer-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-footer-muted"], tokens["--color-footer-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-footer-link"], tokens["--color-footer-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-footer-link-hover"], tokens["--color-footer-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-footer-lockup-logo"], tokens["--color-footer-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(tokens["--link-color"], tokens["--color-bg"])).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(tokens["--link-hover"], tokens["--color-bg"])).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-nav-link"], tokens["--color-nav-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-nav-link-hover"], tokens["--color-nav-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-nav-lockup-logo"], tokens["--color-nav-bg"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--color-marquee-logo"], tokens["--color-surface"]),
+      ).toBeGreaterThanOrEqual(4.5);
       expect(
         contrastRatio(tokens["--button-primary-text"], tokens["--button-primary-bg"]),
       ).toBeGreaterThanOrEqual(4.5);

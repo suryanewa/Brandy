@@ -1,7 +1,6 @@
-import { AlertTriangle } from "lucide-react";
 import { landingPage } from "../../content/landing";
-import { BrowserFrame, SectionHeader } from "../patterns";
-import { Card, Container, Section, Split } from "../primitives";
+import { SectionHeader } from "../patterns";
+import { Container, Section, Split } from "../primitives";
 
 export function Problem() {
   return (
@@ -14,16 +13,7 @@ export function Problem() {
             headingId="problem-title"
             title={landingPage.problem.title}
           />
-          <BrowserFrame title="one-off-section.css">
-            <div className="problem-visual">
-              {landingPage.problem.items.map((item) => (
-                <Card className="problem-row" key={item} variant="ghost">
-                  <AlertTriangle aria-hidden="true" size={18} />
-                  <span>{item}</span>
-                </Card>
-              ))}
-            </div>
-          </BrowserFrame>
+          <div className="problem-empty-shape" aria-hidden="true" />
         </Split>
       </Container>
     </Section>

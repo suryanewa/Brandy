@@ -9,10 +9,12 @@ export function Starter() {
         <Stack gap="xl">
           <SectionHeader
             description={landingPage.starter.description}
+            descriptionMaxLines={2}
             headingId="starter-title"
             title={landingPage.starter.title}
+            titleMaxLines={2}
           />
-          <PricingCards starter={landingPage.starter} />
+          <PricingCards />
           <TestimonialGrid items={landingPage.proofItems} />
         </Stack>
       </Container>

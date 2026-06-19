@@ -3,7 +3,7 @@ import { cn } from "../../lib/cn";
 import type { CardVariant } from "../../types/design-system";
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
-  children: ReactNode;
+  children?: ReactNode;
   variant?: CardVariant;
 };
 

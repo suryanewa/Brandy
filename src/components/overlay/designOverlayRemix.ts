@@ -1,7 +1,12 @@
 import type { BrandDerivationControls } from "../../lib/brandTheme.mjs";
 import type { LayoutSeeds } from "../../lib/layoutTheme.mjs";
 import type { LockupSeeds } from "../../lib/lockupTheme.mjs";
-import type { TypographySeeds } from "../../lib/typographyTheme.mjs";
+import {
+  generateTypographyRemix,
+  type TypographyPairing,
+  type TypographySeeds,
+  type TypographyStyle,
+} from "../../lib/typographyTheme.mjs";
 import type { DesignOverlayValues } from "./designOverlayModel";
 import type { ResetKey } from "./designOverlayControlConfig";
 
@@ -11,6 +16,8 @@ const PALETTE_REMIX_SALT_RANGE = 4096;
 const LAYOUT_REMIX_SALT_RANGE = 4096;
 const LOCKUP_REMIX_SALT_RANGE = 4096;
 const TYPOGRAPHY_REMIX_SALT_RANGE = 4096;
+
+const BOOLEAN_REMIX_KEYS = ["darkMode", "mutedMode", "highContrast"] as const;
 
 export function applyDesignValuesPatch(
   current: DesignOverlayValues,
@@ -55,6 +62,50 @@ export function getTypographyRemixPatch(
   };
 }
 
+export function getRandomTypographyPresetPatch(
+  presetKey: "pairing" | "style",
+  value: TypographyPairing | TypographyStyle,
+  avoidPair?: string,
+): DesignValuesPatch {
+  let remix = generateTypographyRemix({
+    [presetKey]: value,
+    salt: getTypographyRemixSalt(),
+    step: getTypographyRemixSalt(),
+  });
+
+  for (let attempt = 1; attempt < 8; attempt += 1) {
+    const nextPair = `${remix.primaryFont}/${remix.secondaryFont}`;
+    if (nextPair !== avoidPair) break;
+    remix = generateTypographyRemix({
+      [presetKey]: value,
+      salt: getTypographyRemixSalt(),
+      step: attempt,
+    });
+  }
+
+  return getTypographyRemixPatch(remix);
+}
+
+export function getRandomTypographyRemixPatch(
+  avoidPair?: string,
+): DesignValuesPatch {
+  let remix = generateTypographyRemix({
+    salt: getTypographyRemixSalt(),
+    step: getTypographyRemixSalt(),
+  });
+
+  for (let attempt = 1; attempt < 8; attempt += 1) {
+    const nextPair = `${remix.primaryFont}/${remix.secondaryFont}`;
+    if (nextPair !== avoidPair) break;
+    remix = generateTypographyRemix({
+      salt: getTypographyRemixSalt(),
+      step: attempt,
+    });
+  }
+
+  return getTypographyRemixPatch(remix);
+}
+
 export function getLayoutRemixPatch(remix: LayoutSeeds): DesignValuesPatch {
   return {
     gridDensity: remix.gridDensity,
@@ -83,6 +134,12 @@ export function getBrandDerivationRemixPatch(
   remix: BrandDerivationControls,
 ): DesignValuesPatch {
   return remix;
+}
+
+export function getBooleanRemixPatch(): DesignValuesPatch {
+  return Object.fromEntries(
+    BOOLEAN_REMIX_KEYS.map((key) => [key, Math.random() >= 0.5]),
+  ) as DesignValuesPatch;
 }
 
 export function isNetworkSyncError(error: unknown): boolean {

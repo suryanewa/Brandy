@@ -77,17 +77,17 @@ const WIDTH_BASES = {
 };
 const HERO_SCALE = {
   compact: {
-    headlineMax: "62rem",
+    headlineMax: "56rem",
     minHeight: "62svh",
     visualMin: "22rem",
   },
   balanced: {
-    headlineMax: "62rem",
+    headlineMax: "56rem",
     minHeight: "70svh",
     visualMin: "26rem",
   },
   immersive: {
-    headlineMax: "62rem",
+    headlineMax: "56rem",
     minHeight: "78svh",
     visualMin: "28rem",
   },

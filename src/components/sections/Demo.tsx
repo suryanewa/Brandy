@@ -1,5 +1,5 @@
 import { landingPage } from "../../content/landing";
-import { BrowserFrame, DemoFrame, SectionHeader } from "../patterns";
+import { SectionHeader } from "../patterns";
 import { Container, Section, Stack } from "../primitives";
 
 export function Demo() {
@@ -9,16 +9,12 @@ export function Demo() {
         <Stack className="demo-section" gap="xl">
           <SectionHeader
             description={landingPage.demo.description}
+            descriptionMaxLines={2}
             headingId="demo-title"
             title={landingPage.demo.title}
+            titleMaxLines={2}
           />
-          <BrowserFrame title="modules/composer.tsx">
-            <DemoFrame
-              demo={landingPage.demo}
-              hero={landingPage.hero}
-              layers={landingPage.layers}
-            />
-          </BrowserFrame>
+          <div aria-hidden="true" className="browser-frame demo-browser-shape" />
         </Stack>
       </Container>
     </Section>

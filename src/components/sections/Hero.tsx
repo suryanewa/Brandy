@@ -21,6 +21,7 @@ export function Hero() {
             <Heading
               aria-label={landingPage.hero.title}
               as="h1"
+              className="hero-copy__title"
               id="hero-title"
               size="display"
             >

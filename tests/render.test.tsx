@@ -15,6 +15,9 @@ describe("App", () => {
         name: "Brand surfaces, generated from seeds.",
       }),
     ).toBeTruthy();
+    expect(document.querySelector("#hero-title")?.classList).toContain(
+      "hero-copy__title",
+    );
     expect(
       screen.getAllByRole("link", {
         name: /View system/,

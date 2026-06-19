@@ -1,10 +1,6 @@
-import { Code2, Layers, MousePointer2, Palette, Repeat2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { track } from "../../lib/analytics";
 import type { LandingPageContent } from "../../types/landing";
-import { Badge, Button, Cluster, Stack } from "../primitives";
-
-const layerIcons = [Palette, Code2, Layers, Repeat2, MousePointer2];
 
 type DemoFrameProps = {
   demo: LandingPageContent["demo"];
@@ -12,7 +8,7 @@ type DemoFrameProps = {
   layers: LandingPageContent["layers"];
 };
 
-export function DemoFrame({ demo, hero, layers }: DemoFrameProps) {
+export function DemoFrame({ demo, layers }: DemoFrameProps) {
   const [selectedLayer, setSelectedLayer] = useState(0);
   const [selectedModule, setSelectedModule] = useState(() =>
     Math.min(1, demo.modules.length - 1),
@@ -20,26 +16,13 @@ export function DemoFrame({ demo, hero, layers }: DemoFrameProps) {
 
   const activeLayerIndex = Math.min(selectedLayer, layers.length - 1);
   const activeModuleIndex = Math.min(selectedModule, demo.modules.length - 1);
-  const activeLayer = layers[activeLayerIndex];
-  const activeModule = demo.modules[activeModuleIndex];
-
-  const contractLines = useMemo(
-    () => [
-      `section: "${activeModule}"`,
-      `uses: "${activeLayer.title}"`,
-      "container: lg",
-      "variant: default",
-    ],
-    [activeLayer.title, activeModule],
-  );
 
   return (
     <div className="demo-frame">
       <div className="demo-frame__sidebar">
-        <p className="demo-frame__label">System layers</p>
+        <div className="demo-frame__label" aria-hidden="true" />
         <div className="demo-layer-list">
           {layers.map((layer, index) => {
-            const Icon = layerIcons[index] ?? Layers;
             const isActive = index === activeLayerIndex;
 
             return (
@@ -55,8 +38,7 @@ export function DemoFrame({ demo, hero, layers }: DemoFrameProps) {
                 }}
                 type="button"
               >
-                <Icon aria-hidden="true" size={16} />
-                <span>{layer.title}</span>
+                <span aria-hidden="true" />
               </button>
             );
           })}
@@ -67,13 +49,14 @@ export function DemoFrame({ demo, hero, layers }: DemoFrameProps) {
         <div className="demo-preview">
           <div className="demo-preview__nav" />
           <div className="demo-preview__hero">
-            <span />
-            <strong>{hero.title}</strong>
-            <p>{hero.description}</p>
+            <span aria-hidden="true" />
+            <i aria-hidden="true" />
+            <b aria-hidden="true" />
           </div>
           <div className="demo-preview__stack">
             {demo.modules.map((module, index) => (
               <button
+                aria-label={module}
                 aria-pressed={index === activeModuleIndex}
                 className="demo-module"
                 data-selected={index === activeModuleIndex}
@@ -84,41 +67,39 @@ export function DemoFrame({ demo, hero, layers }: DemoFrameProps) {
                 }}
                 type="button"
               >
-                <span>{module}</span>
+                <span aria-hidden="true" />
               </button>
             ))}
           </div>
         </div>
 
         <div className="demo-inspector">
-          <Cluster className="demo-inspector__top" gap="sm">
-            <Badge tone="accent">{activeLayer.title}</Badge>
-            <span>{activeModule}</span>
-          </Cluster>
-          <p>{activeLayer.description}</p>
-          <div className="demo-code" aria-label="Selected section contract">
-            {contractLines.map((line) => (
-              <code key={line}>{line}</code>
-            ))}
+          <div className="demo-inspector__top" aria-hidden="true">
+            <span />
+            <span />
           </div>
-          <Stack gap="sm">
+          <div className="demo-inspector__summary" aria-hidden="true" />
+          <div className="demo-code" aria-label="Selected section contract">
+            <code aria-hidden="true" />
+            <code aria-hidden="true" />
+            <code aria-hidden="true" />
+            <code aria-hidden="true" />
+          </div>
+          <div className="demo-token-stack" aria-hidden="true">
             {demo.tokenSets.map((token) => (
               <div className="token-row" key={token.label}>
                 <span className="token-row__swatch" data-swatch={token.swatch} />
-                <span>{token.label}</span>
-                <strong>{token.value}</strong>
+                <span />
+                <strong />
               </div>
             ))}
-          </Stack>
-          <Button
-            analyticsEvent="demo_played"
+          </div>
+          <button
+            aria-label="Inspect contract"
             className="demo-frame__button"
-            size="sm"
+            onClick={() => track("demo_played")}
             type="button"
-            variant="secondary"
-          >
-            Inspect contract
-          </Button>
+          />
         </div>
       </div>
     </div>

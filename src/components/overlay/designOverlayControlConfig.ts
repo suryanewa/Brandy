@@ -16,6 +16,10 @@ export type NumberSettingKey =
   | "highlightSoftDistancePercent"
   | "linkColorDistancePercent"
   | "linkHoverDistancePercent"
+  | "footerBackgroundDistancePercent"
+  | "footerBorderDistancePercent"
+  | "navbarBackgroundDistancePercent"
+  | "navbarBorderDistancePercent"
   | "neutralSurfaceDistancePercent"
   | "sectionSpacing"
   | "radius"
@@ -313,6 +317,10 @@ export const PALETTE_KEYS = [
   "buttonSecondaryHoverDistancePercent",
   "linkColorDistancePercent",
   "linkHoverDistancePercent",
+  "footerBackgroundDistancePercent",
+  "footerBorderDistancePercent",
+  "navbarBackgroundDistancePercent",
+  "navbarBorderDistancePercent",
   "primaryHoverDistancePercent",
   "secondarySurfaceDistancePercent",
   "accentMomentDistancePercent",
@@ -359,6 +367,10 @@ export const TYPOGRAPHY_KEYS = [
   "headlineStyle",
   "typographyTightness",
 ] as const satisfies readonly ResetKey[];
+export const DEFAULT_LOCKED_KEYS = [
+  "sectionSpacing",
+  "heroScale",
+] as const satisfies readonly ResetKey[];
 export const INITIAL_GROUP_STATE: Record<DesignOverlayGroupKey, boolean> = {
   lockup: true,
   palette: true,
@@ -373,7 +385,8 @@ export const DERIVED_COLOR_CONTROLS = [
     id: "background",
     key: "backgroundDistancePercent",
     label: "Background",
-    sourceLabel: "Page base",
+    max: 220,
+    sourceLabel: "Primary",
     token: "--color-bg",
   },
   {
@@ -426,6 +439,38 @@ export const DERIVED_COLOR_CONTROLS = [
     token: "--link-hover",
   },
   {
+    id: "footer-background",
+    key: "footerBackgroundDistancePercent",
+    label: "Footer background",
+    max: 220,
+    sourceLabel: "Primary",
+    token: "--color-footer-bg",
+  },
+  {
+    id: "footer-border",
+    key: "footerBorderDistancePercent",
+    label: "Footer border",
+    max: 220,
+    sourceLabel: "Primary",
+    token: "--color-footer-border",
+  },
+  {
+    id: "navbar-background",
+    key: "navbarBackgroundDistancePercent",
+    label: "Navbar background",
+    max: 220,
+    sourceLabel: "Primary",
+    token: "--color-nav-bg",
+  },
+  {
+    id: "navbar-border",
+    key: "navbarBorderDistancePercent",
+    label: "Navbar border",
+    max: 220,
+    sourceLabel: "Primary",
+    token: "--color-nav-border",
+  },
+  {
     id: "border",
     key: "borderDistancePercent",
     label: "Border",
@@ -450,7 +495,8 @@ export const DERIVED_COLOR_CONTROLS = [
     id: "neutral-surface",
     key: "neutralSurfaceDistancePercent",
     label: "Neutral surface",
-    sourceLabel: "Neutral base",
+    max: 220,
+    sourceLabel: "Primary",
     token: "--color-surface",
   },
   {
@@ -471,6 +517,7 @@ export const DERIVED_COLOR_CONTROLS = [
   id: string;
   key: NumberSettingKey;
   label: string;
+  max?: number;
   sourceLabel: string;
   token: DesignCssVariableName;
 }[];

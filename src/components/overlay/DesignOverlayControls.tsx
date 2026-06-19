@@ -196,6 +196,7 @@ interface DerivedColorPreviewProps {
     adjustment: {
       id: string;
       label: string;
+      max?: number;
       onChange: (value: number) => void;
       sourceLabel: string;
       value: number;
@@ -242,7 +243,7 @@ export function DerivedColorPreview({
                   label={color.adjustment.label}
                   value={color.adjustment.value}
                   min={0}
-                  max={160}
+                  max={color.adjustment.max ?? 160}
                   step={1}
                   suffix="%"
                   startLabel={`Near ${color.adjustment.sourceLabel}`}

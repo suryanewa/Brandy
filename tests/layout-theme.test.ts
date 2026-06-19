@@ -25,7 +25,7 @@ describe("layout theme generator", () => {
     expect(tokens["--container-lg"]).toBe("1120px");
     expect(tokens["--content-readable-max"]).toBe("38rem");
     expect(tokens["--hero-grid-visual-fr"]).toBe("1.14fr");
-    expect(tokens["--hero-headline-max-width"]).toBe("62rem");
+    expect(tokens["--hero-headline-max-width"]).toBe("56rem");
     expect(tokens["--hero-description-max-width"]).toBe("52rem");
     expect(tokens["--radius-lg"]).toBe("2px");
   });
@@ -50,8 +50,8 @@ describe("layout theme generator", () => {
     );
     expect(tokens["--hero-grid-text-fr"]).toBe("1.2fr");
     expect(tokens["--hero-grid-visual-fr"]).toBe("0.8fr");
-    expect(tokens["--hero-headline-max-width"]).toBe("62rem");
-    expect(tokens["--hero-copy-max-width"]).toBe("62rem");
+    expect(tokens["--hero-headline-max-width"]).toBe("56rem");
+    expect(tokens["--hero-copy-max-width"]).toBe("56rem");
     expect(tokens["--hero-description-max-width"]).toBe("52rem");
     expect(tokens["--footer-columns"]).toBe("1fr 1fr auto");
     expect(tokens["--radius-lg"]).toBe("4px");

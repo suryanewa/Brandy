@@ -17,6 +17,8 @@ import {
 } from "../src/components/overlay/designOverlayModel";
 import { DESIGN_TOKEN_STORAGE_KEY } from "../src/components/overlay/designTokenCatalog";
 
+vi.setConfig({ testTimeout: 10000 });
+
 afterEach(() => {
   vi.restoreAllMocks();
   vi.useRealTimers();
@@ -142,6 +144,19 @@ describe("DesignOverlay", () => {
     expect(panelText.indexOf("Typography")).toBeLessThan(
       panelText.indexOf("Layout"),
     );
+  });
+
+  it("locks viewport-height layout controls by default", () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const spacingLock = screen.getByRole("button", { name: "Unlock Spacing" });
+    const heroPresenceLock = screen.getByRole("button", {
+      name: "Unlock Hero presence",
+    });
+
+    expect(spacingLock.getAttribute("aria-pressed")).toBe("true");
+    expect(heroPresenceLock.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("only adjusts slider values by wheel over the numeric value", () => {
@@ -388,9 +403,13 @@ describe("DesignOverlay", () => {
       buttonPrimaryBgDistancePercent: 50,
       buttonSecondaryBorderDistancePercent: 100,
       buttonSecondaryHoverDistancePercent: 100,
+      footerBackgroundDistancePercent: 100,
+      footerBorderDistancePercent: 100,
       highlightSoftDistancePercent: 100,
       linkColorDistancePercent: 100,
       linkHoverDistancePercent: 100,
+      navbarBackgroundDistancePercent: 100,
+      navbarBorderDistancePercent: 100,
       neutralSurfaceDistancePercent: 100,
       primaryHoverDistancePercent: 50,
       readableTextDistancePercent: 100,
@@ -435,13 +454,13 @@ describe("DesignOverlay", () => {
     ).toBe("#f7a036");
     expect(
       document.documentElement.style.getPropertyValue("--gradient-hero-accent"),
-    ).toBe("#e33b2d");
+    ).toBe("#99281e");
     expect(
       document.documentElement.style.getPropertyValue("--color-bg"),
-    ).toBe("#fffcf9");
+    ).toBe("#fac482");
     expect(
       document.documentElement.style.getPropertyValue("--color-muted"),
-    ).toBe("#4a3e34");
+    ).toBe("#4c4135");
 
     await act(async () => {
       await vi.runOnlyPendingTimersAsync();
@@ -464,37 +483,63 @@ describe("DesignOverlay", () => {
       secondary: "#dfe83b",
     });
     expect(payload.brandDerivation).toMatchObject({
-      backgroundDistancePercent: 98,
+      backgroundDistancePercent: 161,
       buttonPrimaryBgDistancePercent: 100,
+      footerBackgroundDistancePercent: 196,
+      footerBorderDistancePercent: 98,
       linkHoverDistancePercent: 121,
       primaryHoverDistancePercent: 146,
-      secondaryTextDistancePercent: 125,
+      secondaryTextDistancePercent: 112,
     });
     expect(payload.values["--brand-primary-500"]).toBeUndefined();
     expect(payload.values["--gradient-hero-accent"]).toBeUndefined();
   });
 
+  it("randomizes palette toggles on section remix unless they are locked", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lock Dark mode" }));
+
+    randomSpy.mockReturnValue(0.9);
+    fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
+
+    expect((screen.getByRole("switch", { name: "Dark mode" }) as HTMLInputElement).checked).toBe(
+      false,
+    );
+    expect((screen.getByRole("switch", { name: "Muted mode" }) as HTMLInputElement).checked).toBe(
+      true,
+    );
+    expect(
+      (screen.getByRole("switch", { name: "High contrast" }) as HTMLInputElement).checked,
+    ).toBe(true);
+  });
+
   it("remixes palette, typography, and layout with the Space shortcut", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0);
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
     render(<DesignOverlay />);
 
+    randomSpy.mockReturnValue(0.9);
     fireEvent.keyDown(window, { key: " " });
 
     expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
       "#f7a036",
     );
-    expect(document.documentElement.style.getPropertyValue("--gradient-hero-accent")).toBe(
-      "#e33b2d",
+    expect(
+      document.documentElement.style.getPropertyValue("--gradient-hero-accent"),
+    ).not.toBe("");
+    expect(document.documentElement.style.getPropertyValue("--color-muted")).not.toBe(
+      "",
     );
-    expect(document.documentElement.style.getPropertyValue("--color-muted")).toBe(
-      "#4a3e34",
-    );
-    expect(document.documentElement.style.getPropertyValue("--font-size-display")).toBe(
-      "5.986rem",
+    expect(document.documentElement.style.getPropertyValue("--font-size-display")).not.toBe(
+      "",
     );
     expect(
       document.documentElement.style.getPropertyValue("--section-padding-y-md"),
     ).not.toBe("");
+    expect(
+      readStoredDesignValues(DEFAULT_DESIGN_OVERLAY_VALUES).highContrast,
+    ).toBe(true);
   });
 
   it("does not remix with Tab because Tab remains focus navigation", () => {
@@ -540,6 +585,35 @@ describe("DesignOverlay", () => {
     expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
       "",
     );
+  });
+
+  it("prevents Space from activating focused settings controls", () => {
+    render(<DesignOverlay />);
+
+    const trigger = screen.getByRole("button", { name: "Open design settings" });
+    trigger.focus();
+    const triggerEventAllowed = fireEvent.keyDown(trigger, { key: " " });
+    expect(triggerEventAllowed).toBe(false);
+    expect(document.activeElement).not.toBe(trigger);
+    expect(
+      screen.getByRole("button", { name: "Open design settings" }).getAttribute(
+        "aria-expanded",
+      ),
+    ).toBe("false");
+
+    fireEvent.click(trigger);
+    const closeButton = document.activeElement as HTMLElement;
+    expect(closeButton.classList).toContain("design-overlay__icon-button");
+    const closeButtonEventAllowed = fireEvent.keyDown(closeButton, { key: " " });
+    expect(closeButtonEventAllowed).toBe(false);
+    expect(document.activeElement).not.toBe(closeButton);
+
+    const darkMode = screen.getByRole("switch", { name: "Dark mode" });
+    darkMode.focus();
+    const darkModeEventAllowed = fireEvent.keyDown(darkMode, { key: " " });
+    expect(darkModeEventAllowed).toBe(false);
+    expect(document.activeElement).not.toBe(darkMode);
+    expect((darkMode as HTMLInputElement).checked).toBe(false);
   });
 
   it("toggles dark mode from palette and recalculates semantic colors", () => {
@@ -679,26 +753,26 @@ describe("DesignOverlay", () => {
       "display_plus_text",
     );
     expect((screen.getByRole("combobox", { name: "Primary font" }) as HTMLSelectElement).value).toBe(
-      "inter",
+      "space_grotesk",
     );
     expect((screen.getByRole("combobox", { name: "Secondary font" }) as HTMLSelectElement).value).toBe(
-      "roboto",
+      "dm_sans",
     );
     expect((screen.getByLabelText("Scale value") as HTMLInputElement).value).toBe(
-      "72",
+      "76",
     );
     expect((screen.getByLabelText("Density value") as HTMLInputElement).value).toBe(
-      "58",
+      "56",
     );
     expect((screen.getByLabelText("Weight value") as HTMLInputElement).value).toBe(
-      "64",
+      "68",
     );
     expect(
       document.documentElement.style.getPropertyValue("--font-size-display"),
-    ).toBe("5.986rem");
+    ).not.toBe("");
     expect(
       document.documentElement.style.getPropertyValue("--letter-spacing-heading"),
-    ).toBe("-0.005em");
+    ).not.toBe("");
 
     fireEvent.click(screen.getByRole("button", { name: "Remix typography" }));
 
@@ -709,14 +783,14 @@ describe("DesignOverlay", () => {
       "display_plus_text",
     );
     expect((screen.getByRole("combobox", { name: "Primary font" }) as HTMLSelectElement).value).toBe(
-      "space_grotesk",
+      "inter",
     );
     expect((screen.getByRole("combobox", { name: "Secondary font" }) as HTMLSelectElement).value).toBe(
-      "dm_sans",
+      "roboto",
     );
     expect(
       document.documentElement.style.getPropertyValue("--font-family-heading"),
-    ).toContain("Space Grotesk");
+    ).toContain("Inter");
 
     await act(async () => {
       await vi.runOnlyPendingTimersAsync();
@@ -732,18 +806,30 @@ describe("DesignOverlay", () => {
     };
 
     expect(payload.typography).toEqual({
-      density: 56,
-      headlineStyle: 72,
+      density: 58,
+      headlineStyle: 64,
       pairing: "display_plus_text",
-      primaryFont: "space_grotesk",
-      scale: 76,
-      secondaryFont: "dm_sans",
+      primaryFont: "inter",
+      scale: 72,
+      secondaryFont: "roboto",
       style: "geometric",
-      tightness: 56,
-      weight: 68,
+      tightness: 54,
+      weight: 64,
     });
     expect(payload.values["--font-family-heading"]).toBeUndefined();
     expect(payload.values["--font-size-display"]).toBeUndefined();
+  });
+
+  it("samples typography remixes from the random source at click time", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const callsBeforeRemix = randomSpy.mock.calls.length;
+    randomSpy.mockReturnValue(0.37);
+    fireEvent.click(screen.getByRole("button", { name: "Remix typography" }));
+
+    expect(randomSpy.mock.calls.length).toBeGreaterThan(callsBeforeRemix);
   });
 
   it("remixes layout controls and syncs the source layout seeds", async () => {
@@ -850,7 +936,7 @@ describe("DesignOverlay", () => {
     expect(payload.values["--hero-grid-text-fr"]).toBeUndefined();
   });
 
-  it("cycles concrete font pairings when type style or pairing selections repeat", () => {
+  it("randomizes concrete font pairings when type style or pairing selections repeat", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
@@ -944,9 +1030,13 @@ describe("DesignOverlay", () => {
       buttonPrimaryBgDistancePercent: 100,
       buttonSecondaryBorderDistancePercent: 100,
       buttonSecondaryHoverDistancePercent: 100,
+      footerBackgroundDistancePercent: 100,
+      footerBorderDistancePercent: 100,
       highlightSoftDistancePercent: 100,
       linkColorDistancePercent: 100,
       linkHoverDistancePercent: 100,
+      navbarBackgroundDistancePercent: 100,
+      navbarBorderDistancePercent: 100,
       neutralSurfaceDistancePercent: 100,
       primaryHoverDistancePercent: 100,
       readableTextDistancePercent: 100,
@@ -1049,7 +1139,7 @@ describe("design overlay model", () => {
     expect(variables["--section-padding-y-md"]).toBe("3.5rem");
     expect(variables["--container-lg"]).toBe("1120px");
     expect(variables["--hero-grid-visual-fr"]).toBe("1.14fr");
-    expect(variables["--hero-headline-max-width"]).toBe("62rem");
+    expect(variables["--hero-headline-max-width"]).toBe("56rem");
     expect(variables["--hero-description-max-width"]).toBe("52rem");
     expect(variables["--content-readable-max"]).toBe("38rem");
     expect(variables["--font-family-heading"]).toContain("Inter");

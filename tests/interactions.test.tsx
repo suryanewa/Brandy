@@ -56,7 +56,8 @@ describe("interactive semantics", () => {
     expect(screen.getByRole("button", { name: "Navbar" }).getAttribute("aria-pressed")).toBe(
       "true",
     );
-    expect(screen.getByText('section: "Navbar"')).toBeTruthy();
+    expect(screen.queryByText('section: "Navbar"')).toBeNull();
+    expect(screen.getByLabelText("Selected section contract")).toBeTruthy();
   });
 
   it("tracks FAQ analytics only when an item opens", () => {

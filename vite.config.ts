@@ -301,9 +301,13 @@ function getValidatedBrandDerivationPayload(
     "buttonPrimaryBgDistancePercent",
     "buttonSecondaryBorderDistancePercent",
     "buttonSecondaryHoverDistancePercent",
+    "footerBackgroundDistancePercent",
+    "footerBorderDistancePercent",
     "highlightSoftDistancePercent",
     "linkColorDistancePercent",
     "linkHoverDistancePercent",
+    "navbarBackgroundDistancePercent",
+    "navbarBorderDistancePercent",
     "neutralSurfaceDistancePercent",
     "primaryHoverDistancePercent",
     "readableTextDistancePercent",
@@ -343,6 +347,14 @@ function getValidatedBrandDerivationPayload(
       value.buttonSecondaryHoverDistancePercent,
       "buttonSecondaryHoverDistancePercent",
     ),
+    footerBackgroundDistancePercent: getNumberValue(
+      value.footerBackgroundDistancePercent,
+      "footerBackgroundDistancePercent",
+    ),
+    footerBorderDistancePercent: getNumberValue(
+      value.footerBorderDistancePercent,
+      "footerBorderDistancePercent",
+    ),
     highlightSoftDistancePercent: getNumberValue(
       value.highlightSoftDistancePercent,
       "highlightSoftDistancePercent",
@@ -354,6 +366,14 @@ function getValidatedBrandDerivationPayload(
     linkHoverDistancePercent: getNumberValue(
       value.linkHoverDistancePercent,
       "linkHoverDistancePercent",
+    ),
+    navbarBackgroundDistancePercent: getNumberValue(
+      value.navbarBackgroundDistancePercent,
+      "navbarBackgroundDistancePercent",
+    ),
+    navbarBorderDistancePercent: getNumberValue(
+      value.navbarBorderDistancePercent,
+      "navbarBorderDistancePercent",
     ),
     neutralSurfaceDistancePercent: getNumberValue(
       value.neutralSurfaceDistancePercent,
@@ -405,9 +425,13 @@ type BrandDerivationSyncPayload = {
   buttonPrimaryBgDistancePercent: number;
   buttonSecondaryBorderDistancePercent: number;
   buttonSecondaryHoverDistancePercent: number;
+  footerBackgroundDistancePercent: number;
+  footerBorderDistancePercent: number;
   highlightSoftDistancePercent: number;
   linkColorDistancePercent: number;
   linkHoverDistancePercent: number;
+  navbarBackgroundDistancePercent: number;
+  navbarBorderDistancePercent: number;
   neutralSurfaceDistancePercent: number;
   primaryHoverDistancePercent: number;
   readableTextDistancePercent: number;

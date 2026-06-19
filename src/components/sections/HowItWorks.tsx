@@ -5,13 +5,15 @@ import { Card, Container, Grid, Heading, Section, Stack, Text } from "../primiti
 export function HowItWorks() {
   return (
     <Section aria-labelledby="how-it-works-title" id="how-it-works" size="md">
-      <Container>
+      <Container className="how-it-works-layout">
         <SectionHeader
           description={landingPage.systemMap.description}
+          descriptionMaxLines={2}
           headingId="how-it-works-title"
           title={landingPage.systemMap.title}
+          titleMaxLines={2}
         />
-        <Grid columns={3}>
+        <Grid className="centered-card-grid one-row-card-grid how-it-works-grid" columns={3}>
           {landingPage.howItWorks.map((step) => (
             <Card className="step-card" key={step.title}>
               <Stack gap="sm">

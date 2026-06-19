@@ -13,10 +13,12 @@ export function UseCases() {
       <Container>
         <SectionHeader
           description={landingPage.useCaseOverview.description}
+          descriptionMaxLines={2}
           headingId="use-cases-title"
           title={landingPage.useCaseOverview.title}
+          titleMaxLines={2}
         />
-        <Grid columns={3}>
+        <Grid className="centered-card-grid one-row-card-grid use-cases-grid" columns={3}>
           {landingPage.useCases.map((item, index) => (
             <Card key={item.audience} variant={index === 0 ? "raised" : "default"}>
               <Stack gap="sm">

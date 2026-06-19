@@ -24,7 +24,6 @@ import {
 } from "../../lib/lockupTheme.mjs";
 import {
   TYPOGRAPHY_GENERATED_TOKEN_NAMES,
-  generateTypographyRemix,
 } from "../../lib/typographyTheme.mjs";
 import {
   DEFAULT_DESIGN_OVERLAY_VALUES,
@@ -46,6 +45,7 @@ import {
 } from "./designOverlayModel";
 import {
   DERIVED_COLOR_CONTROLS,
+  DEFAULT_LOCKED_KEYS,
   INITIAL_GROUP_STATE,
   LAYOUT_KEYS,
   LAYOUT_SEGMENTED_CONTROLS,
@@ -84,13 +84,14 @@ import { CollapsibleGroup, ParameterActions } from "./DesignOverlayGroups";
 import { DesignOverlayPaletteControls } from "./DesignOverlayPaletteControls";
 import {
   applyDesignValuesPatch,
+  getBooleanRemixPatch,
   getLayoutRemixPatch,
   getLayoutRemixSalt,
   getLockupRemixPatch,
   getLockupRemixSalt,
   getPaletteRemixSalt,
-  getTypographyRemixPatch,
-  getTypographyRemixSalt,
+  getRandomTypographyPresetPatch,
+  getRandomTypographyRemixPatch,
   getUnlockedPatch,
   isDarkModeShortcut,
   isNetworkSyncError,
@@ -154,8 +155,7 @@ export function DesignOverlay({
   const layoutRemixStepRef = useRef(0);
   const lockupRemixSaltRef = useRef(getLockupRemixSalt());
   const lockupRemixStepRef = useRef(0);
-  const typographyRemixSaltRef = useRef(getTypographyRemixSalt());
-  const typographyRemixStepRef = useRef(0);
+  const typographyPresetPairsRef = useRef(new Map<string, string>());
   const [open, setOpen] = useState(initialOpen);
   const [expandedGroups, setExpandedGroups] =
     useState<Record<DesignOverlayGroupKey, boolean>>(INITIAL_GROUP_STATE);
@@ -181,7 +181,7 @@ export function DesignOverlay({
   const [activeDerivedColor, setActiveDerivedColor] =
     useState<DerivedColorControlId | null>(null);
   const [lockedKeys, setLockedKeys] = useState<ReadonlySet<ResetKey>>(
-    () => new Set(),
+    () => new Set(DEFAULT_LOCKED_KEYS),
   );
 
   const resolveTargetRoot = useCallback((): HTMLElement | null => {
@@ -210,7 +210,22 @@ export function DesignOverlay({
     triggerButtonRef.current?.focus({ preventScroll: true });
   }, []);
 
+  const blockOverlaySpaceActivation = useCallback(
+    (event: React.KeyboardEvent<HTMLElement>) => {
+      if (event.key !== " " && event.key !== "Spacebar") return false;
+      event.preventDefault();
+      event.stopPropagation();
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement && event.currentTarget.contains(activeElement)) {
+        activeElement.blur();
+      }
+      return true;
+    },
+    [],
+  );
+
   const trapPanelFocus = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+    if (blockOverlaySpaceActivation(event)) return;
     if (event.key !== "Tab") return;
 
     const panel = panelRef.current;
@@ -231,7 +246,7 @@ export function DesignOverlay({
       event.preventDefault();
       (focusFirst ? firstFocusable : lastFocusable).focus();
     }
-  }, []);
+  }, [blockOverlaySpaceActivation]);
 
   useEffect(() => {
     const target = resolveTargetRoot();
@@ -394,8 +409,7 @@ export function DesignOverlay({
       nextValue: DesignOverlayValues[Key],
     ) => {
       if ((TYPOGRAPHY_KEYS as readonly ResetKey[]).includes(key)) {
-        typographyRemixSaltRef.current = getTypographyRemixSalt();
-        typographyRemixStepRef.current = 0;
+        typographyPresetPairsRef.current.clear();
       }
       if ((LAYOUT_KEYS as readonly ResetKey[]).includes(key)) {
         layoutRemixSaltRef.current = getLayoutRemixSalt();
@@ -444,24 +458,12 @@ export function DesignOverlay({
 
       return {
         ...generateBrandDerivationRemix({ step: remixStep }),
+        ...getBooleanRemixPatch(),
         primaryColor: remix.palette.primary,
         secondaryColor: remix.palette.secondary,
         accentColor: remix.palette.accent,
         highlightColor: remix.palette.highlight,
       };
-    },
-    [],
-  );
-
-  const getNextTypographyRemix = useCallback(
-    (options: Parameters<typeof generateTypographyRemix>[0] = {}) => {
-      const remixStep = typographyRemixStepRef.current;
-      typographyRemixStepRef.current += 1;
-      return generateTypographyRemix({
-        ...options,
-        salt: typographyRemixSaltRef.current,
-        step: remixStep,
-      });
     },
     [],
   );
@@ -476,13 +478,15 @@ export function DesignOverlay({
 
   const remixTypography = useCallback(() => {
     markSourceSyncDirty();
-    const patch = getUnlockedPatch(
-      getTypographyRemixPatch(getNextTypographyRemix()),
-      lockedKeys,
-    );
-
-    setValues((current) => applyDesignValuesPatch(current, patch));
-  }, [getNextTypographyRemix, lockedKeys, markSourceSyncDirty]);
+    setValues((current) => {
+      const currentPair = `${current.typographyPrimaryFont}/${current.typographySecondaryFont}`;
+      const patch = getUnlockedPatch(
+        getRandomTypographyRemixPatch(currentPair),
+        lockedKeys,
+      );
+      return applyDesignValuesPatch(current, patch);
+    });
+  }, [lockedKeys, markSourceSyncDirty]);
 
   const remixLayout = useCallback(() => {
     markSourceSyncDirty();
@@ -518,25 +522,21 @@ export function DesignOverlay({
       nextValue: DesignOverlayValues[Key],
     ) => {
       markSourceSyncDirty();
-      const remix = generateTypographyRemix({
-        [key === "typographyStyle" ? "style" : "pairing"]: nextValue,
-        salt: typographyRemixSaltRef.current,
-        step: typographyRemixStepRef.current,
-      });
-      typographyRemixStepRef.current += 1;
+      const presetKey = key === "typographyStyle" ? "style" : "pairing";
 
-      setValues((current) => ({
-        ...current,
-        headlineStyle: remix.headlineStyle,
-        typographyDensity: remix.density,
-        typographyPairing: remix.pairing,
-        typographyPrimaryFont: remix.primaryFont,
-        typographyScale: remix.scale,
-        typographySecondaryFont: remix.secondaryFont,
-        typographyStyle: remix.style,
-        typographyTightness: remix.tightness,
-        typographyWeight: remix.weight,
-      }));
+      setValues((current) => {
+        const historyKey = `${presetKey}:${nextValue}`;
+        const patch = getRandomTypographyPresetPatch(
+          presetKey,
+          nextValue,
+          typographyPresetPairsRef.current.get(historyKey),
+        );
+        typographyPresetPairsRef.current.set(
+          historyKey,
+          `${patch.typographyPrimaryFont}/${patch.typographySecondaryFont}`,
+        );
+        return applyDesignValuesPatch(current, patch);
+      });
     },
     [markSourceSyncDirty],
   );
@@ -566,8 +566,7 @@ export function DesignOverlay({
     layoutRemixStepRef.current = 0;
     lockupRemixSaltRef.current = getLockupRemixSalt();
     lockupRemixStepRef.current = 0;
-    typographyRemixSaltRef.current = getTypographyRemixSalt();
-    typographyRemixStepRef.current = 0;
+    typographyPresetPairsRef.current.clear();
   }, [markSourceSyncDirty, resolvedDefaults]);
 
   const resetDefaultKeys = useCallback(
@@ -587,8 +586,7 @@ export function DesignOverlay({
         lockupRemixStepRef.current = 0;
       }
       if (keys === TYPOGRAPHY_KEYS) {
-        typographyRemixSaltRef.current = getTypographyRemixSalt();
-        typographyRemixStepRef.current = 0;
+        typographyPresetPairsRef.current.clear();
       }
       setValues((current) => {
         const next = { ...current };
@@ -628,7 +626,9 @@ export function DesignOverlay({
         } else if (key === "darkMode" || key === "mutedMode" || key === "highContrast") {
           Object.assign(patch, { [key]: !current[key] });
         } else if ((TYPOGRAPHY_KEYS as readonly ResetKey[]).includes(key)) {
-          patch = getTypographyRemixPatch(getNextTypographyRemix());
+          patch = getRandomTypographyRemixPatch(
+            `${current.typographyPrimaryFont}/${current.typographySecondaryFont}`,
+          );
         } else if ((LAYOUT_KEYS as readonly ResetKey[]).includes(key)) {
           const remixStep = layoutRemixStepRef.current;
           layoutRemixStepRef.current += 1;
@@ -658,7 +658,6 @@ export function DesignOverlay({
     },
     [
       getNextPaletteRemixPatch,
-      getNextTypographyRemix,
       lockedKeys,
       markSourceSyncDirty,
     ],
@@ -844,6 +843,7 @@ export function DesignOverlay({
         aria-label={open ? "Close design settings" : "Open design settings"}
         tabIndex={open ? -1 : undefined}
         onClick={() => setOpen((current) => !current)}
+        onKeyDown={blockOverlaySpaceActivation}
       >
         <Settings aria-hidden="true" />
       </button>
