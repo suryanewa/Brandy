@@ -19,6 +19,16 @@ import { DESIGN_TOKEN_STORAGE_KEY } from "../src/components/overlay/designTokenC
 
 vi.setConfig({ testTimeout: 10000 });
 
+const SOURCE_SYNC_TEST_WAIT_MS = 700;
+
+async function waitForSourceSyncDebounce() {
+  await act(async () => {
+    vi.advanceTimersByTime(SOURCE_SYNC_TEST_WAIT_MS);
+    await Promise.resolve();
+  });
+  vi.useRealTimers();
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   vi.useRealTimers();
@@ -146,6 +156,19 @@ describe("DesignOverlay", () => {
     );
   });
 
+  it("blurs section toggles after pointer activation so actions can hide on hover out", () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const paletteToggle = screen.getByRole("button", { name: "Palette" });
+    paletteToggle.focus();
+    expect(document.activeElement).toBe(paletteToggle);
+
+    fireEvent.pointerUp(paletteToggle);
+
+    expect(document.activeElement).not.toBe(paletteToggle);
+  });
+
   it("locks viewport-height layout controls by default", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
@@ -157,6 +180,37 @@ describe("DesignOverlay", () => {
 
     expect(spacingLock.getAttribute("aria-pressed")).toBe("true");
     expect(heroPresenceLock.getAttribute("aria-pressed")).toBe("true");
+    expect(
+      screen.getByRole("button", { name: "Reset Spacing" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("button", { name: "Reset Hero presence" }).hasAttribute("disabled"),
+    ).toBe(true);
+  });
+
+  it("locks whole sections from reset, remix, and spacebar remix", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.9);
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lock Palette" }));
+
+    expect(
+      screen.getByRole("button", { name: "Remix palette" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("button", { name: "Reset Palette" }).hasAttribute("disabled"),
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
+    fireEvent.keyDown(window, { key: " " });
+
+    expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe("#635bff");
+    expect((screen.getByLabelText("Primary hex color") as HTMLInputElement).value).toBe(
+      "#635bff",
+    );
+    expect(document.documentElement.style.getPropertyValue("--font-size-display")).not.toBe(
+      "",
+    );
   });
 
   it("only adjusts slider values by wheel over the numeric value", () => {
@@ -383,12 +437,9 @@ describe("DesignOverlay", () => {
     );
     expect(screen.getByLabelText("Secondary hover distance value")).toBeTruthy();
 
-    await act(async () => {
-      await vi.runOnlyPendingTimersAsync();
-    });
-    vi.useRealTimers();
+    await waitForSourceSyncDebounce();
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
     const payload = JSON.parse(String(requestInit.body)) as {
@@ -462,12 +513,9 @@ describe("DesignOverlay", () => {
       document.documentElement.style.getPropertyValue("--color-muted"),
     ).toBe("#4c4135");
 
-    await act(async () => {
-      await vi.runOnlyPendingTimersAsync();
-    });
-    vi.useRealTimers();
+    await waitForSourceSyncDebounce();
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
     const payload = JSON.parse(String(requestInit.body)) as {
@@ -602,11 +650,11 @@ describe("DesignOverlay", () => {
     ).toBe("false");
 
     fireEvent.click(trigger);
-    const closeButton = document.activeElement as HTMLElement;
-    expect(closeButton.classList).toContain("design-overlay__icon-button");
-    const closeButtonEventAllowed = fireEvent.keyDown(closeButton, { key: " " });
-    expect(closeButtonEventAllowed).toBe(false);
-    expect(document.activeElement).not.toBe(closeButton);
+    const panel = screen.getByRole("dialog", { name: "Design Settings" });
+    expect(document.activeElement).toBe(panel);
+    const panelEventAllowed = fireEvent.keyDown(panel, { key: " " });
+    expect(panelEventAllowed).toBe(false);
+    expect(document.activeElement).not.toBe(panel);
 
     const darkMode = screen.getByRole("switch", { name: "Dark mode" });
     darkMode.focus();
@@ -655,10 +703,7 @@ describe("DesignOverlay", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
     fireEvent.click(screen.getByRole("switch", { name: "Dark mode" }));
 
-    await act(async () => {
-      await vi.runOnlyPendingTimersAsync();
-    });
-    vi.useRealTimers();
+    await waitForSourceSyncDebounce();
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(
@@ -792,12 +837,9 @@ describe("DesignOverlay", () => {
       document.documentElement.style.getPropertyValue("--font-family-heading"),
     ).toContain("Inter");
 
-    await act(async () => {
-      await vi.runOnlyPendingTimersAsync();
-    });
-    vi.useRealTimers();
+    await waitForSourceSyncDebounce();
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
     const payload = JSON.parse(String(requestInit.body)) as {
@@ -908,12 +950,9 @@ describe("DesignOverlay", () => {
       document.documentElement.style.getPropertyValue("--hero-grid-text-fr"),
     ).not.toBe("");
 
-    await act(async () => {
-      await vi.runOnlyPendingTimersAsync();
-    });
-    vi.useRealTimers();
+    await waitForSourceSyncDebounce();
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
     const payload = JSON.parse(String(requestInit.body)) as {
@@ -997,12 +1036,9 @@ describe("DesignOverlay", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
 
-    await act(async () => {
-      await vi.runOnlyPendingTimersAsync();
-    });
-    vi.useRealTimers();
+    await waitForSourceSyncDebounce();
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
     const payload = JSON.parse(String(requestInit.body)) as {
@@ -1085,10 +1121,7 @@ describe("DesignOverlay", () => {
     });
     fireEvent.blur(screen.getByLabelText("Spacing value"));
 
-    await act(async () => {
-      await vi.runOnlyPendingTimersAsync();
-    });
-    vi.useRealTimers();
+    await waitForSourceSyncDebounce();
 
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
     expect(screen.queryByRole("status")).toBeNull();

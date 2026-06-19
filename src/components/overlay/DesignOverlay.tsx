@@ -3,10 +3,8 @@ import {
   RotateCcw,
   Settings,
   Shapes,
-  Shuffle,
   SlidersHorizontal,
   Type,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
@@ -80,7 +78,7 @@ import {
   type DesignTokenValueMap,
   type DesignTokenVariableName,
 } from "./designTokenCatalog";
-import { CollapsibleGroup, ParameterActions } from "./DesignOverlayGroups";
+import { CollapsibleGroup, GroupRemixAction, ParameterActions } from "./DesignOverlayGroups";
 import { DesignOverlayPaletteControls } from "./DesignOverlayPaletteControls";
 import {
   applyDesignValuesPatch,
@@ -140,7 +138,6 @@ export function DesignOverlay({
   const baseId = useId();
   const panelId = `${baseId}-design-overlay-panel`;
   const headingId = `${baseId}-design-overlay-heading`;
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const restoreRef = useRef<InlineRestore | null>(null);
@@ -157,6 +154,7 @@ export function DesignOverlay({
   const lockupRemixStepRef = useRef(0);
   const typographyPresetPairsRef = useRef(new Map<string, string>());
   const [open, setOpen] = useState(initialOpen);
+  const [panelRendered, setPanelRendered] = useState(initialOpen);
   const [expandedGroups, setExpandedGroups] =
     useState<Record<DesignOverlayGroupKey, boolean>>(INITIAL_GROUP_STATE);
 
@@ -183,6 +181,8 @@ export function DesignOverlay({
   const [lockedKeys, setLockedKeys] = useState<ReadonlySet<ResetKey>>(
     () => new Set(DEFAULT_LOCKED_KEYS),
   );
+  const [lockedGroups, setLockedGroups] =
+    useState<ReadonlySet<DesignOverlayGroupKey>>(() => new Set());
 
   const resolveTargetRoot = useCallback((): HTMLElement | null => {
     if (targetRoot) return targetRoot;
@@ -209,6 +209,15 @@ export function DesignOverlay({
     setOpen(false);
     triggerButtonRef.current?.focus({ preventScroll: true });
   }, []);
+
+  const openPanel = useCallback(() => { setPanelRendered(true); setOpen(true); }, []);
+
+  const togglePanel = useCallback(() => {
+    if (open) { closePanel(); return; }
+    openPanel();
+  }, [closePanel, open, openPanel]);
+
+  const finishPanelAnimation = useCallback(() => { if (!open) setPanelRendered(false); }, [open]);
 
   const blockOverlaySpaceActivation = useCallback(
     (event: React.KeyboardEvent<HTMLElement>) => {
@@ -310,7 +319,7 @@ export function DesignOverlay({
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === ",") {
         event.preventDefault();
-        setOpen((current) => !current);
+        togglePanel();
         return;
       }
 
@@ -331,11 +340,11 @@ export function DesignOverlay({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closePanel, open]);
+  }, [closePanel, open, togglePanel]);
 
   useEffect(() => {
     if (!open) return;
-    closeButtonRef.current?.focus({ preventScroll: true });
+    panelRef.current?.focus({ preventScroll: true });
   }, [open]);
 
   const tokenIsDirty = Object.keys(tokenValues).length > 0;
@@ -444,6 +453,14 @@ export function DesignOverlay({
       return next;
     });
   }, []);
+  const toggleGroupLock = useCallback((group: DesignOverlayGroupKey) => {
+    setLockedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
+  }, []);
 
   const getNextPaletteRemixPatch = useCallback(
     (current: DesignOverlayValues): DesignValuesPatch => {
@@ -469,14 +486,16 @@ export function DesignOverlay({
   );
 
   const remixPalette = useCallback(() => {
+    if (lockedGroups.has("palette")) return;
     markSourceSyncDirty();
     setValues((current) => {
       const patch = getUnlockedPatch(getNextPaletteRemixPatch(current), lockedKeys);
       return applyDesignValuesPatch(current, patch);
     });
-  }, [getNextPaletteRemixPatch, lockedKeys, markSourceSyncDirty]);
+  }, [getNextPaletteRemixPatch, lockedGroups, lockedKeys, markSourceSyncDirty]);
 
   const remixTypography = useCallback(() => {
+    if (lockedGroups.has("typography")) return;
     markSourceSyncDirty();
     setValues((current) => {
       const currentPair = `${current.typographyPrimaryFont}/${current.typographySecondaryFont}`;
@@ -486,9 +505,10 @@ export function DesignOverlay({
       );
       return applyDesignValuesPatch(current, patch);
     });
-  }, [lockedKeys, markSourceSyncDirty]);
+  }, [lockedGroups, lockedKeys, markSourceSyncDirty]);
 
   const remixLayout = useCallback(() => {
+    if (lockedGroups.has("layout")) return;
     markSourceSyncDirty();
     const remixStep = layoutRemixStepRef.current;
     layoutRemixStepRef.current += 1;
@@ -500,9 +520,10 @@ export function DesignOverlay({
     const patch = getUnlockedPatch(getLayoutRemixPatch(remix), lockedKeys);
 
     setValues((current) => applyDesignValuesPatch(current, patch));
-  }, [lockedKeys, markSourceSyncDirty]);
+  }, [lockedGroups, lockedKeys, markSourceSyncDirty]);
 
   const remixLockup = useCallback(() => {
+    if (lockedGroups.has("lockup")) return;
     markSourceSyncDirty();
     const remixStep = lockupRemixStepRef.current;
     lockupRemixStepRef.current += 1;
@@ -514,7 +535,7 @@ export function DesignOverlay({
     const patch = getUnlockedPatch(getLockupRemixPatch(remix), lockedKeys);
 
     setValues((current) => applyDesignValuesPatch(current, patch));
-  }, [lockedKeys, markSourceSyncDirty]);
+  }, [lockedGroups, lockedKeys, markSourceSyncDirty]);
 
   const updateTypographyPresetValue = useCallback(
     <Key extends TypographySelectSettingKey>(
@@ -571,6 +592,10 @@ export function DesignOverlay({
 
   const resetDefaultKeys = useCallback(
     (keys: readonly ResetKey[]) => {
+      if (keys === PALETTE_KEYS && lockedGroups.has("palette")) return;
+      if (keys === LAYOUT_KEYS && lockedGroups.has("layout")) return;
+      if (keys === LOCKUP_KEYS && lockedGroups.has("lockup")) return;
+      if (keys === TYPOGRAPHY_KEYS && lockedGroups.has("typography")) return;
       markSourceSyncDirty();
       if (keys === PALETTE_KEYS) {
         paletteRemixBaseRef.current = null;
@@ -591,22 +616,24 @@ export function DesignOverlay({
       setValues((current) => {
         const next = { ...current };
         for (const key of keys) {
+          if (lockedKeys.has(key)) continue;
           Object.assign(next, { [key]: resolvedDefaults[key] });
         }
         return next;
       });
     },
-    [markSourceSyncDirty, resolvedDefaults],
+    [lockedGroups, lockedKeys, markSourceSyncDirty, resolvedDefaults],
   );
 
   const resetSetting = useCallback(
     (key: ResetKey) => {
+      if (lockedKeys.has(key)) return;
       const patch: DesignValuesPatch = {};
       Object.assign(patch, { [key]: resolvedDefaults[key] });
       markSourceSyncDirty();
       setValues((current) => applyDesignValuesPatch(current, patch));
     },
-    [markSourceSyncDirty, resolvedDefaults],
+    [lockedKeys, markSourceSyncDirty, resolvedDefaults],
   );
 
   const remixSetting = useCallback(
@@ -656,11 +683,7 @@ export function DesignOverlay({
         return applyDesignValuesPatch(current, singleValuePatch);
       });
     },
-    [
-      getNextPaletteRemixPatch,
-      lockedKeys,
-      markSourceSyncDirty,
-    ],
+    [getNextPaletteRemixPatch, lockedKeys, markSourceSyncDirty],
   );
 
   const renderParameterActions = useCallback(
@@ -825,10 +848,11 @@ export function DesignOverlay({
   };
   return (
     <div className={overlayClassName}>
-      {open ? (
+      {panelRendered ? (
         <button
           type="button"
           className="design-overlay__scrim"
+          data-state={open ? "open" : "closing"}
           aria-label="Close design settings"
           onClick={closePanel}
         />
@@ -842,35 +866,26 @@ export function DesignOverlay({
         aria-expanded={open}
         aria-label={open ? "Close design settings" : "Open design settings"}
         tabIndex={open ? -1 : undefined}
-        onClick={() => setOpen((current) => !current)}
+        onClick={togglePanel}
         onKeyDown={blockOverlaySpaceActivation}
       >
         <Settings aria-hidden="true" />
       </button>
 
-      {open ? (
+      {panelRendered ? (
         <aside
           ref={panelRef}
           id={panelId}
-          className="design-overlay__panel"
-          role="dialog"
-          aria-modal="true"
+          className="design-overlay__panel settings-sheet-content"
+          data-state={open ? "open" : "closing"} role={open ? "dialog" : undefined}
+          aria-hidden={!open} aria-modal={open ? "true" : undefined}
           aria-labelledby={headingId}
+          tabIndex={-1}
           onKeyDown={trapPanelFocus}
+          onAnimationEnd={finishPanelAnimation}
         >
           <header className="design-overlay__header">
-            <div>
-              <h2 id={headingId}>{title}</h2>
-            </div>
-            <button
-              ref={closeButtonRef}
-              type="button"
-              className="design-overlay__icon-button"
-              aria-label="Close design settings"
-              onClick={closePanel}
-            >
-              <X aria-hidden="true" />
-            </button>
+            <h2 id={headingId}>{title}</h2>
           </header>
 
           <div className="design-overlay__content">
@@ -879,18 +894,11 @@ export function DesignOverlay({
               title="Lockup"
               icon={<Shapes aria-hidden="true" />}
               open={expandedGroups.lockup}
+              locked={lockedGroups.has("lockup")}
+              onLockToggle={() => toggleGroupLock("lockup")}
               onToggle={() => toggleGroup("lockup")}
               onReset={() => resetDefaultKeys(LOCKUP_KEYS)}
-              actions={
-                <button
-                  type="button"
-                  className="design-overlay__group-action"
-                  aria-label="Remix lockup"
-                  onClick={remixLockup}
-                >
-                  <Shuffle aria-hidden="true" />
-                </button>
-              }
+              actions={<GroupRemixAction label="lockup" locked={lockedGroups.has("lockup")} onRemix={remixLockup} />}
             >
               {LOCKUP_SELECT_CONTROLS.map(renderSelectControl)}
               {LOCKUP_SLIDERS.map(renderSliderControl)}
@@ -901,18 +909,11 @@ export function DesignOverlay({
               title="Palette"
               icon={<Palette aria-hidden="true" />}
               open={expandedGroups.palette}
+              locked={lockedGroups.has("palette")}
+              onLockToggle={() => toggleGroupLock("palette")}
               onToggle={() => toggleGroup("palette")}
               onReset={() => resetDefaultKeys(PALETTE_KEYS)}
-              actions={
-                <button
-                  type="button"
-                  className="design-overlay__group-action"
-                  aria-label="Remix palette"
-                  onClick={remixPalette}
-                >
-                  <Shuffle aria-hidden="true" />
-                </button>
-              }
+              actions={<GroupRemixAction label="palette" locked={lockedGroups.has("palette")} onRemix={remixPalette} />}
             >
               <DesignOverlayPaletteControls
                 activeDerivedColor={activeDerivedColor}
@@ -932,18 +933,11 @@ export function DesignOverlay({
               title="Typography"
               icon={<Type aria-hidden="true" />}
               open={expandedGroups.typography}
+              locked={lockedGroups.has("typography")}
+              onLockToggle={() => toggleGroupLock("typography")}
               onToggle={() => toggleGroup("typography")}
               onReset={() => resetDefaultKeys(TYPOGRAPHY_KEYS)}
-              actions={
-                <button
-                  type="button"
-                  className="design-overlay__group-action"
-                  aria-label="Remix typography"
-                  onClick={remixTypography}
-                >
-                  <Shuffle aria-hidden="true" />
-                </button>
-              }
+              actions={<GroupRemixAction label="typography" locked={lockedGroups.has("typography")} onRemix={remixTypography} />}
             >
               {TYPOGRAPHY_SELECT_CONTROLS.map(renderSelectControl)}
               {TYPOGRAPHY_SLIDERS.map(renderSliderControl)}
@@ -954,18 +948,11 @@ export function DesignOverlay({
               title="Layout"
               icon={<SlidersHorizontal aria-hidden="true" />}
               open={expandedGroups.layout}
+              locked={lockedGroups.has("layout")}
+              onLockToggle={() => toggleGroupLock("layout")}
               onToggle={() => toggleGroup("layout")}
               onReset={() => resetDefaultKeys(LAYOUT_KEYS)}
-              actions={
-                <button
-                  type="button"
-                  className="design-overlay__group-action"
-                  aria-label="Remix layout"
-                  onClick={remixLayout}
-                >
-                  <Shuffle aria-hidden="true" />
-                </button>
-              }
+              actions={<GroupRemixAction label="layout" locked={lockedGroups.has("layout")} onRemix={remixLayout} />}
             >
               {LAYOUT_SEGMENTED_CONTROLS.map(renderSegmentedControl)}
               {LAYOUT_SLIDERS.map(renderSliderControl)}

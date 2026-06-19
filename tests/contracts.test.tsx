@@ -6,6 +6,7 @@ import { Button, Section } from "../src/components/primitives";
 import { landingPage } from "../src/content/landing";
 
 const supportedSwatches = new Set(["green", "white", "radius"]);
+const overlayCss = readFileSync("src/styles/overlay.css", "utf8");
 const patternsCss = readFileSync("src/styles/patterns.css", "utf8");
 const primitivesCss = readFileSync("src/styles/primitives.css", "utf8");
 const sectionsCss = readFileSync("src/styles/sections.css", "utf8");
@@ -70,6 +71,31 @@ describe("modular contracts", () => {
     expect(primitivesCss).toContain("justify-content: center;");
     expect(primitivesCss).toContain("flex: 0 1 min(100%, var(--container-xl));");
     expect(primitivesCss).toContain("justify-items: center;");
+  });
+
+  it("keeps the design settings UI on a fixed Taki-style skin", () => {
+    expect(overlayCss).toContain("--color-text: oklch(0.145 0 0);");
+    expect(overlayCss).toContain("--color-surface-raised: oklch(1 0 0);");
+    expect(overlayCss).toContain("--button-primary-bg: oklch(0.205 0 0);");
+    expect(overlayCss).toContain("--font-size-caption: 0.875rem;");
+    expect(overlayCss).toContain("scrollbar-width: none;");
+    expect(overlayCss).toContain("box-shadow: none;");
+    expect(overlayCss).toContain("width: min(75vw, 28rem);");
+    expect(overlayCss).toContain("grid-template-columns: auto auto auto;");
+    expect(overlayCss).toContain(
+      ".design-overlay__group-header:is(:hover, :focus-within) .design-overlay__group-actions",
+    );
+    expect(overlayCss).toContain("pointer-events: none;");
+    expect(overlayCss).toContain(".design-overlay__range::-webkit-slider-thumb");
+    expect(overlayCss).toContain("opacity: 0;");
+    expect(overlayCss).toContain("grid-template-rows: 0fr;");
+    expect(overlayCss).toContain("transition: grid-template-rows 200ms ease-in-out");
+    expect(overlayCss).toContain('.design-overlay__group-content[data-open="true"]');
+    expect(overlayCss).toContain("grid-template-rows: 1fr;");
+    expect(overlayCss).toContain(".design-overlay__group-content-inner");
+    expect(overlayCss).toContain(".design-overlay__panel[data-state=\"closing\"]");
+    expect(overlayCss).toContain("@keyframes design-overlay-exit");
+    expect(overlayCss).toContain("to { transform: translateX(100%); }");
   });
 
   it("keeps internal CTA and nav hrefs pointed at rendered section ids", () => {
