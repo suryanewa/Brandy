@@ -48,17 +48,34 @@ import gradient47 from "../../assets/gradients/hero/47-fractal-phantom-gradient-
 import gradient48 from "../../assets/gradients/hero/48-cool-tone-spatial-gradient.webp";
 import gradient49 from "../../assets/gradients/hero/49-dusky-amber-glows.webp";
 import gradient50 from "../../assets/gradients/hero/50-blue-velvet-light-reflection.webp";
+import { EXTERNAL_HERO_BACKGROUNDS } from "./externalHeroBackgrounds";
+import { PATTERN_CRAFT_BACKGROUNDS } from "./patternCraftBackgrounds";
 
 export type HeroGradientTone = "dark" | "light";
+export type HeroBackgroundSource =
+  | "aceternity"
+  | "animateui"
+  | "gradientshub"
+  | "kokonutui"
+  | "magicui"
+  | "patterncraft"
+  | "reactbits"
+  | "uilayouts"
+  | "vengenceui";
 
 export type HeroGradientBackground = {
+  backgroundColor: string;
+  backgroundImage: string;
+  backgroundPosition: string;
+  backgroundRepeat: string;
+  backgroundSize: string;
   hue: number;
   id: string;
   label: string;
   lightness: number;
   saturation: number;
   secondaryHue: number;
-  src: string;
+  source: HeroBackgroundSource;
 };
 
 export const HERO_GRADIENT_BACKGROUNDS = [
@@ -114,6 +131,12 @@ export const HERO_GRADIENT_BACKGROUNDS = [
   gradient("50-blue-velvet-light-reflection", "Blue velvet light reflection", gradient50, 221, 15, 0.23, 0.55),
 ] as const satisfies readonly HeroGradientBackground[];
 
+export const HERO_BACKGROUNDS = [
+  ...HERO_GRADIENT_BACKGROUNDS,
+  ...PATTERN_CRAFT_BACKGROUNDS,
+  ...EXTERNAL_HERO_BACKGROUNDS,
+] as const satisfies readonly HeroGradientBackground[];
+
 export function selectHeroGradientBackground({
   primaryColor,
   secondaryColor,
@@ -124,11 +147,11 @@ export function selectHeroGradientBackground({
   const primaryHue = getHexHue(primaryColor);
   const secondaryHue = secondaryColor ? getHexHue(secondaryColor) : null;
 
-  return HERO_GRADIENT_BACKGROUNDS.reduce((best, candidate) => {
+  return HERO_BACKGROUNDS.reduce((best, candidate) => {
     const score = getGradientScore(candidate, primaryHue, secondaryHue);
     const bestScore = getGradientScore(best, primaryHue, secondaryHue);
     return score < bestScore ? candidate : best;
-  }, HERO_GRADIENT_BACKGROUNDS[0]);
+  }, HERO_BACKGROUNDS[0]);
 }
 
 export function getHeroGradientTone(background: HeroGradientBackground): HeroGradientTone {
@@ -144,7 +167,20 @@ function gradient(
   lightness: number,
   saturation: number,
 ): HeroGradientBackground {
-  return { hue, id, label, lightness, saturation, secondaryHue, src };
+  return {
+    backgroundColor: "var(--color-bg)",
+    backgroundImage: `url("${src}")`,
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    hue,
+    id,
+    label,
+    lightness,
+    saturation,
+    secondaryHue,
+    source: "gradientshub",
+  };
 }
 
 function getGradientScore(

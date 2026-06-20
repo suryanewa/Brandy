@@ -147,6 +147,11 @@ export function isNetworkSyncError(error: unknown): boolean {
   return /fetch|network/i.test(error.message);
 }
 
+export function isSettingsToggleShortcut(event: KeyboardEvent): boolean {
+  if (!event.metaKey && !event.ctrlKey) return false;
+  return event.key === "," || event.code === "Comma";
+}
+
 export function isDarkModeShortcut(event: KeyboardEvent): boolean {
   if (event.metaKey || event.ctrlKey || event.altKey) return false;
   if (event.key.toLowerCase() !== "d") return false;

@@ -60,6 +60,30 @@ describe("modular contracts", () => {
     expect(sectionsCss).not.toContain("#demo");
   });
 
+  it("keeps hero background CTA colors contrast-safe across palette remixes", () => {
+    expect(sectionsCss).toContain("--brandy-hero-button-primary-bg: var(--button-primary-bg);");
+    expect(sectionsCss).toContain("--brandy-hero-button-primary-text: var(--button-primary-text);");
+    expect(sectionsCss).toContain("--brandy-hero-button-secondary-bg: var(--button-secondary-bg);");
+    expect(sectionsCss).toContain("--brandy-hero-button-secondary-text: var(--button-secondary-text);");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-primary-bg: var(--white);");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-primary-text: var(--ink-950);");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-primary-bg: #ffffff;");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-primary-bg: #111416;");
+    expect(sectionsCss).toContain(":root[data-brandy-hero-background=\"on\"] {");
+    expect(sectionsCss).toContain("--brandy-hero-background-text: #ffffff;");
+    expect(sectionsCss).toContain("--brandy-hero-background-text: #111416;");
+    expect(sectionsCss).not.toContain("--brandy-hero-background-text: var(--white);");
+    expect(sectionsCss).not.toContain("--brandy-hero-background-text: var(--ink-950);");
+    expect(sectionsCss).toContain("color: var(--brandy-hero-button-primary-text);");
+    const primaryButtonRule = sectionsCss.match(
+      /:root\[data-brandy-hero-background="on"\] \.hero-actions \.button--primary \{[^}]+\}/,
+    )?.[0];
+    expect(primaryButtonRule).toBeTruthy();
+    expect(primaryButtonRule).not.toContain("color: var(--color-bg);");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-secondary-bg: rgb(255 255 255 / 0.12);");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-secondary-bg: rgb(0 0 0 / 0.08);");
+  });
+
   it("centers post-hero section content on the navbar edge system", () => {
     window.history.pushState({}, "", "/");
     render(<App />);

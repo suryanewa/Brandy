@@ -16,7 +16,6 @@ import {
   snapToStep,
 } from "../src/components/overlay/designOverlayModel";
 import { DESIGN_TOKEN_STORAGE_KEY } from "../src/components/overlay/designTokenCatalog";
-
 vi.setConfig({ testTimeout: 10000 });
 
 const SOURCE_SYNC_TEST_WAIT_MS = 700;
@@ -33,6 +32,10 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.useRealTimers();
   window.localStorage.clear();
+  delete document.documentElement.dataset.brandyHeroBackground;
+  delete document.documentElement.dataset.brandyHeroBackgroundId;
+  delete document.documentElement.dataset.brandyHeroBackgroundSource;
+  delete document.documentElement.dataset.brandyHeroBackgroundTone;
   document.documentElement.removeAttribute("style");
 });
 
@@ -71,10 +74,16 @@ describe("DesignOverlay", () => {
     ).toBe(true);
   });
 
-  it("supports the settings keyboard shortcut and Escape close", () => {
+  it("toggles the settings pane with Cmd+, and closes with Escape", () => {
     render(<DesignOverlay />);
 
-    fireEvent.keyDown(window, { key: ",", metaKey: true });
+    fireEvent.keyDown(window, { key: ",", code: "Comma", metaKey: true });
+    expect(screen.getByRole("dialog", { name: "Design Settings" })).toBeTruthy();
+
+    fireEvent.keyDown(window, { key: ",", code: "Comma", metaKey: true });
+    expect(screen.queryByRole("dialog", { name: "Design Settings" })).toBeNull();
+
+    fireEvent.keyDown(window, { key: ",", code: "Comma", metaKey: true });
     expect(screen.getByRole("dialog", { name: "Design Settings" })).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "Escape" });
@@ -230,14 +239,26 @@ describe("DesignOverlay", () => {
     const initialBackground = document.documentElement.style.getPropertyValue(
       "--brandy-hero-background-image",
     );
+    const initialBackgroundId = document.documentElement.dataset.brandyHeroBackgroundId;
     expect(backgroundToggle.checked).toBe(true);
     expect(document.documentElement.dataset.brandyHeroBackground).toBe("on");
     expect(document.documentElement.dataset.brandyHeroBackgroundId).toBeTruthy();
+    expect(document.documentElement.dataset.brandyHeroBackgroundSource).toMatch(
+      /^(aceternity|animateui|gradientshub|kokonutui|magicui|patterncraft|reactbits|uilayouts|vengenceui)$/,
+    );
     expect(document.documentElement.dataset.brandyHeroBackgroundTone).toMatch(
       /^(dark|light)$/,
     );
-    expect(initialBackground).toContain("/assets/");
-    expect(initialBackground).toContain(".webp");
+    expect(initialBackground).not.toBe("");
+    expect(
+      document.documentElement.style.getPropertyValue("--brandy-hero-background-size"),
+    ).not.toBe("");
+    expect(
+      document.documentElement.style.getPropertyValue("--brandy-hero-background-position"),
+    ).not.toBe("");
+    expect(
+      document.documentElement.style.getPropertyValue("--brandy-hero-background-repeat"),
+    ).not.toBe("");
 
     fireEvent.click(screen.getByRole("tab", { name: "Design" }));
     fireEvent.change(screen.getByLabelText("Primary hex color"), {
@@ -250,7 +271,9 @@ describe("DesignOverlay", () => {
         "--brandy-hero-background-image",
       );
       expect(rematchedBackground).not.toBe("");
-      expect(rematchedBackground).not.toBe(initialBackground);
+      expect(document.documentElement.dataset.brandyHeroBackgroundId).not.toBe(
+        initialBackgroundId,
+      );
     });
 
     fireEvent.click(screen.getByRole("tab", { name: "Sections" }));
@@ -261,6 +284,22 @@ describe("DesignOverlay", () => {
     expect(
       document.documentElement.style.getPropertyValue("--brandy-hero-background-image"),
     ).toBe("");
+    expect(
+      document.documentElement.style.getPropertyValue("--brandy-hero-background-size"),
+    ).toBe("");
+  });
+
+  it("omits vertical navbar presets from the sections tab", () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Sections" }));
+    fireEvent.click(screen.getByRole("button", { name: "Navbar" }));
+
+    const options = Array.from(
+      screen.getByRole("combobox", { name: "Preset" }).querySelectorAll("option"),
+    ).map((option) => option.textContent);
+
+    expect(options).toEqual(["Default", "Centered logo", "Split"]);
   });
 
   it("only adjusts slider values by wheel over the numeric value", () => {
@@ -752,7 +791,7 @@ describe("DesignOverlay", () => {
     ).toBe("#635bff");
     expect(
       document.documentElement.style.getPropertyValue("--button-primary-hover"),
-    ).toBe("#958fff");
+    ).toBe("#6561ad");
     expect(
       document.documentElement.style.getPropertyValue("--badge-brand-bg"),
     ).toBe("rgba(149, 143, 255, 0.16)");

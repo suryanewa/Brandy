@@ -5,6 +5,7 @@ import {
   generateBrandDerivationRemix,
   generateBrandThemeTokens,
   generatePaletteRemix,
+  getHeroBackgroundCopyColors,
   isHexColor,
   PALETTE_REMIX_SCHEMES,
   normalizeHexColor,
@@ -46,7 +47,7 @@ describe("brand theme generator", () => {
       "--button-primary-hover": "#4943bd",
       "--button-secondary-bg": "#f0fcff",
       "--button-secondary-border": "#bdf4ff",
-      "--button-secondary-hover": "#dbf9ff",
+      "--button-secondary-hover": "#e1faff",
       "--link-color": "#4943bd",
       "--link-hover": "#393594",
       "--focus-ring": "#958fff",
@@ -96,7 +97,7 @@ describe("brand theme generator", () => {
     expect(tokens["--button-primary-bg"]).toBe("#5d56f0");
     expect(tokens["--button-primary-hover"]).toBe("#534dd7");
     expect(tokens["--button-secondary-border"]).toBe("#00d4ff");
-    expect(tokens["--button-secondary-hover"]).toBe("#6ee7ff");
+    expect(tokens["--button-secondary-hover"]).toBe("#e2faff");
     expect(tokens["--link-color"]).toBe("#635bff");
     expect(tokens["--link-hover"]).toBe("#4e48ca");
     expect(tokens["--color-highlight-soft"]).toBe("#fde68a");
@@ -117,8 +118,9 @@ describe("brand theme generator", () => {
       "--color-muted": "#dad8ff",
       "--color-border": "rgba(189, 186, 255, 0.22)",
       "--button-primary-bg": "#635bff",
-      "--button-primary-hover": "#958fff",
-      "--button-secondary-bg": "rgba(82, 226, 255, 0.14)",
+      "--button-primary-hover": "#6561ad",
+      "--button-secondary-bg": "#182d46",
+      "--button-secondary-hover": "#1e3d57",
       "--button-secondary-text": "#dbf9ff",
       "--badge-brand-bg": "rgba(149, 143, 255, 0.16)",
       "--badge-brand-text": "#e9e8ff",
@@ -185,6 +187,17 @@ describe("brand theme generator", () => {
     expect(Math.max(...primaryMetrics.map((color) => color.l))).toBeGreaterThan(74);
   });
 
+  it("keeps hero background copy readable across palette remixes", () => {
+    for (let step = 0; step < 200; step += 1) {
+      const remix = generatePaletteRemix(DEFAULT_BRAND_SEEDS, { step });
+      for (const tone of ["dark", "light"] as const) {
+        const copy = getHeroBackgroundCopyColors(tone, remix.palette);
+        expect(contrastRatio(copy.text, copy.representativeBg)).toBeGreaterThanOrEqual(4.5);
+        expect(contrastRatio(copy.muted, copy.representativeBg)).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
   it("remixes derived color distances while preserving readable contrast", () => {
     const derivation = generateBrandDerivationRemix({ step: 0 });
     const repeat = generateBrandDerivationRemix({ step: 0 });
@@ -200,11 +213,12 @@ describe("brand theme generator", () => {
     });
     expect(repeat).toEqual(derivation);
 
-    for (let step = 0; step < PALETTE_REMIX_SCHEMES.length * 2; step += 1) {
-      const remix = generatePaletteRemix(DEFAULT_BRAND_SEEDS, { step });
-      const tokens = generateBrandThemeTokens(remix.palette, {
-        derivation: generateBrandDerivationRemix({ step }),
-      });
+    for (let salt = 0; salt < 8; salt += 1) {
+      for (let step = 0; step < PALETTE_REMIX_SCHEMES.length * 3; step += 1) {
+        const remix = generatePaletteRemix(DEFAULT_BRAND_SEEDS, { salt, step });
+        const tokens = generateBrandThemeTokens(remix.palette, {
+          derivation: generateBrandDerivationRemix({ step: step + salt * 11 }),
+        });
 
       expect(contrastRatio(tokens["--color-text"], tokens["--color-bg"])).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(tokens["--color-muted"], tokens["--color-bg"])).toBeGreaterThanOrEqual(4.5);
@@ -267,8 +281,15 @@ describe("brand theme generator", () => {
         contrastRatio(tokens["--button-primary-text"], tokens["--button-primary-bg"]),
       ).toBeGreaterThanOrEqual(4.5);
       expect(
+        contrastRatio(tokens["--button-primary-text"], tokens["--button-primary-hover"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
         contrastRatio(tokens["--button-secondary-text"], tokens["--button-secondary-bg"]),
       ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens["--button-secondary-text"], tokens["--button-secondary-hover"]),
+      ).toBeGreaterThanOrEqual(4.5);
+      }
     }
   });
 });

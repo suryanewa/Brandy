@@ -13,6 +13,7 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { SelectControl, ToggleControl } from "./DesignOverlayControls";
 import { CollapsibleGroup, GroupRemixAction } from "./DesignOverlayGroups";
+import { getHeroBackgroundCopyColors } from "../../lib/brandTheme.mjs";
 import {
   getHeroGradientTone,
   selectHeroGradientBackground,
@@ -61,8 +62,6 @@ const SECTION_GROUPS = [
       { label: "Default", value: "default" },
       { label: "Centered logo", value: "centered-logo" },
       { label: "Split", value: "split" },
-      { label: "Vertical left", value: "vertical-left" },
-      { label: "Vertical right", value: "vertical-right" },
     ],
   },
   {
@@ -347,22 +346,42 @@ function applyHeroBackgroundAttributes(enabled: boolean) {
   if (!enabled) {
     delete root.dataset.brandyHeroBackground;
     delete root.dataset.brandyHeroBackgroundId;
+    delete root.dataset.brandyHeroBackgroundSource;
     delete root.dataset.brandyHeroBackgroundTone;
+    removeRootStyleProperty("--brandy-hero-background-color");
     removeRootStyleProperty("--brandy-hero-background-image");
+    removeRootStyleProperty("--brandy-hero-background-position");
+    removeRootStyleProperty("--brandy-hero-background-repeat");
+    removeRootStyleProperty("--brandy-hero-background-size");
+    removeRootStyleProperty("--brandy-hero-background-text");
+    removeRootStyleProperty("--brandy-hero-background-muted");
     return;
   }
 
   const styles = getComputedStyle(root);
+  const primaryColor = getCssColor(styles, "--brand-primary-500", "#635bff");
+  const secondaryColor = getCssColor(styles, "--brand-secondary-500", "#00d4ff");
   const background = selectHeroGradientBackground({
-    primaryColor: getCssColor(styles, "--brand-primary-500", "#635bff"),
-    secondaryColor: getCssColor(styles, "--brand-secondary-500", "#00d4ff"),
+    primaryColor,
+    secondaryColor,
   });
   const tone = getHeroGradientTone(background);
+  const copyColors = getHeroBackgroundCopyColors(tone, {
+    primary: primaryColor,
+    secondary: secondaryColor,
+  });
 
   root.dataset.brandyHeroBackground = "on";
   root.dataset.brandyHeroBackgroundId = background.id;
+  root.dataset.brandyHeroBackgroundSource = background.source;
   root.dataset.brandyHeroBackgroundTone = tone;
-  setRootStyleProperty("--brandy-hero-background-image", `url("${background.src}")`);
+  setRootStyleProperty("--brandy-hero-background-color", background.backgroundColor);
+  setRootStyleProperty("--brandy-hero-background-image", background.backgroundImage);
+  setRootStyleProperty("--brandy-hero-background-position", background.backgroundPosition);
+  setRootStyleProperty("--brandy-hero-background-repeat", background.backgroundRepeat);
+  setRootStyleProperty("--brandy-hero-background-size", background.backgroundSize);
+  setRootStyleProperty("--brandy-hero-background-text", copyColors.text);
+  setRootStyleProperty("--brandy-hero-background-muted", copyColors.muted);
 }
 
 function getCssColor(styles: CSSStyleDeclaration, property: string, fallback: string) {

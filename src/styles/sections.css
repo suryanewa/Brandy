@@ -165,14 +165,29 @@
   align-items: center;
 }
 
-:root[data-brandy-hero-background="on"] .hero-section {
+:root[data-brandy-hero-background="on"] {
+  --brandy-hero-background-text: #ffffff;
   --brandy-hero-background-muted: color-mix(in srgb, var(--brandy-hero-background-text) 78%, transparent);
+}
+
+:root[data-brandy-hero-background-tone="light"] {
+  --brandy-hero-background-text: #111416;
+  --brandy-hero-background-muted: color-mix(in srgb, var(--brandy-hero-background-text) 78%, transparent);
+}
+
+:root[data-brandy-hero-background="on"] .hero-section {
+  --brandy-hero-button-primary-bg: var(--button-primary-bg);
+  --brandy-hero-button-primary-hover-bg: var(--button-primary-hover);
+  --brandy-hero-button-primary-text: var(--button-primary-text);
+  --brandy-hero-button-secondary-bg: var(--button-secondary-bg);
+  --brandy-hero-button-secondary-border: var(--button-secondary-border);
+  --brandy-hero-button-secondary-hover-bg: var(--button-secondary-hover);
+  --brandy-hero-button-secondary-text: var(--button-secondary-text);
   --brandy-hero-background-scrim: rgb(0 0 0 / 0.58);
-  --brandy-hero-background-text: var(--white);
   --section-muted-color: var(--brandy-hero-background-muted);
   --section-text-color: var(--brandy-hero-background-text);
 
-  background-color: var(--color-bg);
+  background-color: var(--brandy-hero-background-color, var(--color-bg));
   background-image:
     linear-gradient(
       135deg,
@@ -184,42 +199,32 @@
       var(--brandy-hero-background-scrim)
     ),
     var(--brandy-hero-background-image);
-  background-position: center;
-  background-size: cover;
+  background-position: center, center, var(--brandy-hero-background-position, center);
+  background-repeat: no-repeat, no-repeat, var(--brandy-hero-background-repeat, no-repeat);
+  background-size: cover, cover, var(--brandy-hero-background-size, cover);
 }
 
 :root[data-brandy-hero-background-tone="light"] .hero-section {
-  --brandy-hero-background-muted: color-mix(in srgb, var(--ink-950) 78%, transparent);
   --brandy-hero-background-scrim: rgb(255 255 255 / 0.76);
-  --brandy-hero-background-text: var(--ink-950);
 }
 
 :root[data-brandy-hero-background="on"] .hero-actions .button--primary {
-  background: var(--brandy-hero-background-text);
-  color: var(--color-bg);
-}
-
-:root[data-brandy-hero-background-tone="light"] .hero-actions .button--primary {
-  background: var(--ink-950);
-  color: var(--white);
+  background: var(--brandy-hero-button-primary-bg);
+  color: var(--brandy-hero-button-primary-text);
 }
 
 :root[data-brandy-hero-background="on"] .hero-actions .button--primary:hover {
-  background: color-mix(
-    in srgb,
-    var(--brandy-hero-background-text) 88%,
-    var(--brand-primary-500)
-  );
+  background: var(--brandy-hero-button-primary-hover-bg);
 }
 
 :root[data-brandy-hero-background="on"] .hero-actions .button--secondary {
-  background: color-mix(in srgb, var(--brandy-hero-background-text) 14%, transparent);
-  border-color: color-mix(in srgb, var(--brandy-hero-background-text) 34%, transparent);
-  color: var(--brandy-hero-background-text);
+  background: var(--brandy-hero-button-secondary-bg);
+  border-color: var(--brandy-hero-button-secondary-border);
+  color: var(--brandy-hero-button-secondary-text);
 }
 
 :root[data-brandy-hero-background="on"] .hero-actions .button--secondary:hover {
-  background: color-mix(in srgb, var(--brandy-hero-background-text) 22%, transparent);
+  background: var(--brandy-hero-button-secondary-hover-bg);
 }
 
 .hero-copy__content {

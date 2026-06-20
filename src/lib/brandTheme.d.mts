@@ -55,6 +55,16 @@ export type PaletteRemixResult = {
   schemeLabel: string;
 };
 
+export type HeroBackgroundTone = "dark" | "light";
+
+export type HeroBackgroundCopyColors = {
+  text: string;
+  muted: string;
+  representativeBg: string;
+};
+
+export type HeroBackgroundCopyColorSeeds = Partial<Pick<BrandSeeds, "primary" | "secondary">>;
+
 export type BrandThemeOptions = {
   darkMode?: boolean;
   derivation?: Partial<BrandDerivationControls>;
@@ -85,5 +95,9 @@ export function generatePaletteRemix(
 export function generateBrandDerivationRemix(
   options?: BrandDerivationRemixOptions,
 ): BrandDerivationControls;
+export function getHeroBackgroundCopyColors(
+  tone: HeroBackgroundTone,
+  seedColors?: HeroBackgroundCopyColorSeeds,
+): HeroBackgroundCopyColors;
 export function normalizeHexColor(value: string): string;
 export function isHexColor(value: string): boolean;

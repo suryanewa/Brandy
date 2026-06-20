@@ -88,6 +88,7 @@ import {
   isDarkModeShortcut,
   isNetworkSyncError,
   isPaletteRemixShortcut,
+  isSettingsToggleShortcut,
   isTextEntrySpaceTarget,
   type DesignValuesPatch,
 } from "./designOverlayRemix";
@@ -315,7 +316,7 @@ export function DesignOverlay({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === ",") {
+      if (isSettingsToggleShortcut(event)) {
         event.preventDefault();
         togglePanel();
         return;
@@ -863,6 +864,7 @@ export function DesignOverlay({
         className="design-overlay__trigger"
         aria-controls={panelId}
         aria-expanded={open}
+        aria-keyshortcuts="Meta+,"
         aria-label={open ? "Close design settings" : "Open design settings"}
         tabIndex={open ? -1 : undefined}
         onClick={togglePanel}

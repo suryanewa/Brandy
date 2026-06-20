@@ -417,7 +417,11 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     derivation.primaryHoverDistancePercent,
   );
   const secondaryButtonBg = darkMode
-    ? withAlpha(secondary[400], scaleAlphaDistance(0.14, derivation.secondarySurfaceDistancePercent))
+    ? mixHex(
+        surface,
+        secondary[400],
+        scaleAlphaDistance(0.14, derivation.secondarySurfaceDistancePercent),
+      )
     : adjustDerivedColorDistance(
         secondary[500],
         secondary[50],
@@ -425,7 +429,8 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
         "#ffffff",
       );
   const secondaryButtonHover = darkMode
-    ? withAlpha(
+    ? mixHex(
+        surface,
         secondary[400],
         scaleAlphaDistance(0.22, derivation.buttonSecondaryHoverDistancePercent),
       )
@@ -519,7 +524,13 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
   const footerLink = ensureContrastColor(primary[200], footerBackground);
   const footerLinkHover = ensureContrastColor(primary[50], footerBackground);
   const footerLockupLogo = ensureContrastColor(primary[500], footerBackground);
+  const primaryButtonTextSafe = getContrastText(primaryButtonBg);
+  const primaryHoverSafe = ensureBackgroundContrastForText(primaryHover, primaryButtonTextSafe);
   const secondaryButtonTextSafe = ensureContrastColor(secondaryButtonText, secondaryButtonBg);
+  const secondaryButtonHoverSafe = ensureBackgroundContrastForText(
+    secondaryButtonHover,
+    secondaryButtonTextSafe,
+  );
   const highlightTextSafe = ensureContrastColor(highlightText, highlightSoft);
 
   return {
@@ -537,10 +548,10 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--mist-200": surfaceStrong,
     "--mist-300": border,
     "--green-600": primaryButtonBg,
-    "--green-700": primaryHover,
+    "--green-700": primaryHoverSafe,
     "--green-100": brandBadgeBg,
     "--blue-600": secondaryAction,
-    "--blue-100": secondaryButtonHover,
+    "--blue-100": secondaryButtonHoverSafe,
     "--amber-500": harmonizeSemanticColor(WARNING_BASE, normalizedSeeds.accent),
     "--color-bg": background,
     "--color-surface": surface,
@@ -560,15 +571,15 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--color-inverted-muted": invertedMuted,
     "--color-border": border,
     "--color-accent": primaryButtonBg,
-    "--color-accent-hover": primaryHover,
+    "--color-accent-hover": primaryHoverSafe,
     "--color-accent-soft": brandBadgeBg,
     "--color-accent-border": withAlpha(
       primary[500],
       darkMode ? 0.48 : options.highContrast ? 0.62 : 0.32,
     ),
     "--color-blue": secondaryAction,
-    "--color-blue-soft": secondaryButtonHover,
-    "--color-on-accent": getContrastText(primaryButtonBg),
+    "--color-blue-soft": secondaryButtonHoverSafe,
+    "--color-on-accent": primaryButtonTextSafe,
     "--color-highlight": darkMode ? highlight[300] : highlight[400],
     "--color-highlight-soft": highlightSoft,
     "--color-on-highlight": darkMode ? getContrastText(highlight[300]) : getContrastText(highlight[300]),
@@ -577,10 +588,10 @@ export function generateBrandThemeTokens(seeds = {}, options = {}) {
     "--color-error": harmonizeSemanticColor(ERROR_BASE, normalizedSeeds.accent),
     "--color-info": harmonizeSemanticColor(INFO_BASE, normalizedSeeds.primary),
     "--button-primary-bg": primaryButtonBg,
-    "--button-primary-hover": primaryHover,
-    "--button-primary-text": getContrastText(primaryButtonBg),
+    "--button-primary-hover": primaryHoverSafe,
+    "--button-primary-text": primaryButtonTextSafe,
     "--button-secondary-bg": secondaryButtonBg,
-    "--button-secondary-hover": secondaryButtonHover,
+    "--button-secondary-hover": secondaryButtonHoverSafe,
     "--button-secondary-text": secondaryButtonTextSafe,
     "--button-secondary-border": secondaryButtonBorder,
     "--link-color": linkColor,
@@ -715,6 +726,26 @@ export function generateBrandDerivationRemix(options = {}) {
   );
 }
 
+export function getHeroBackgroundCopyColors(
+  tone,
+  seedColors = {},
+) {
+  const primary = normalizeHexColor(seedColors.primary ?? DEFAULT_BRAND_SEEDS.primary);
+  const secondary = normalizeHexColor(seedColors.secondary ?? DEFAULT_BRAND_SEEDS.secondary);
+  const gradientTint = mixHex(primary, secondary, 0.38);
+  const scrimBase = tone === "light" ? "#ffffff" : "#000000";
+  const scrimWeight = tone === "light" ? 0.76 : 0.58;
+  const representativeBg = mixHex(gradientTint, scrimBase, scrimWeight);
+  const text = getContrastText(representativeBg);
+  const muted = ensureContrastColor(
+    mixHex(text, representativeBg, 0.42),
+    representativeBg,
+    3,
+  );
+
+  return { text, muted, representativeBg };
+}
+
 export function normalizeHexColor(value) {
   const withHash = String(value).trim().startsWith("#")
     ? String(value).trim()
@@ -786,9 +817,14 @@ function harmonizeSemanticColor(base, seed) {
   return mixHex(base, seed, 0.08);
 }
 
-function getContrastText(background) {
-  if (getContrastRatio("#ffffff", background) >= 4.5) return "#ffffff";
-  return getContrastRatio("#111416", background) >= 4.5 ? "#111416" : "#000000";
+function getContrastText(background, minimumRatio = 4.5) {
+  const candidates = ["#ffffff", "#111416", "#000000"];
+
+  for (const candidate of candidates) {
+    if (getContrastRatio(candidate, background) >= minimumRatio) return candidate;
+  }
+
+  return ensureContrastColor("#111416", background, minimumRatio);
 }
 
 function getShadowValue(color, y, blur, alpha, scale) {
@@ -847,6 +883,18 @@ function ensureContrastColor(foreground, background, minimumRatio = 4.5) {
   const blackRatio = getContrastRatio("#000000", background);
   const whiteRatio = getContrastRatio("#ffffff", background);
   return blackRatio >= whiteRatio ? "#000000" : "#ffffff";
+}
+
+function ensureBackgroundContrastForText(background, foreground, minimumRatio = 4.5) {
+  if (getContrastRatio(foreground, background) >= minimumRatio) return background;
+
+  const target = getRelativeLuminance(foreground) > 0.5 ? "#000000" : "#ffffff";
+  for (let weight = 0.08; weight <= 1; weight += 0.08) {
+    const candidate = mixHex(background, target, weight);
+    if (getContrastRatio(foreground, candidate) >= minimumRatio) return candidate;
+  }
+
+  return target;
 }
 
 function hexToRgb(hex) {
