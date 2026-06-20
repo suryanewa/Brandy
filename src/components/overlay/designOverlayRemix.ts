@@ -165,13 +165,28 @@ export function isPaletteRemixShortcut(event: KeyboardEvent): boolean {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return true;
   if (target.isContentEditable) return false;
-  if (target.closest(".design-overlay")) return false;
+  if (target.closest(".design-overlay")) return !isTextEntrySpaceTarget(target);
 
   return !target.closest("input, select, textarea");
 }
 
 export function getPaletteRemixSalt(): number {
   return Math.floor(Math.random() * PALETTE_REMIX_SALT_RANGE);
+}
+
+export function isTextEntrySpaceTarget(target: HTMLElement) {
+  if (target instanceof HTMLTextAreaElement) return true;
+  if (!(target instanceof HTMLInputElement)) return false;
+
+  return new Set([
+    "email",
+    "number",
+    "password",
+    "search",
+    "tel",
+    "text",
+    "url",
+  ]).has(target.type);
 }
 
 export function getLayoutRemixSalt(): number {

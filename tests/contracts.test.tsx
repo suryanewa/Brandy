@@ -48,6 +48,12 @@ describe("modular contracts", () => {
     expect(primitivesCss).toContain('.section[data-size="lg"]');
     expect(primitivesCss).toContain("block-size: 100svh;");
     expect(primitivesCss).toContain("align-items: safe center;");
+    expect(primitivesCss).toContain('.section[data-size="hero"]');
+    expect(primitivesCss).toContain(
+      "block-size: calc(100svh - var(--navbar-min-height) - var(--stroke-thin));",
+    );
+    expect(sectionsCss).toContain(':root[data-brandy-navbar-preset^="vertical"] .section[data-size="hero"]');
+    expect(sectionsCss).toContain("min-block-size: 100svh;");
     expect(sectionsCss).toContain(".section.logo-marquee-section");
     expect(sectionsCss).toContain(".section.final-cta-section");
     expect(sectionsCss).toContain("block-size: auto;");
@@ -82,6 +88,9 @@ describe("modular contracts", () => {
     expect(overlayCss).toContain("box-shadow: none;");
     expect(overlayCss).toContain("width: min(75vw, 28rem);");
     expect(overlayCss).toContain("grid-template-columns: auto auto auto;");
+    expect(overlayCss).toContain(
+      ".design-overlay__group:is(:hover, :focus-within) .design-overlay__group-actions",
+    );
     expect(overlayCss).toContain(
       ".design-overlay__group-header:is(:hover, :focus-within) .design-overlay__group-actions",
     );

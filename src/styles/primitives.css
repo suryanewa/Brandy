@@ -36,8 +36,8 @@ body {
 
 .section[data-size="hero"] {
   align-items: safe center;
-  display: flex;
   block-size: calc(100svh - var(--navbar-min-height) - var(--stroke-thin));
+  display: flex;
   min-block-size: calc(100svh - var(--navbar-min-height) - var(--stroke-thin));
   padding-block: var(--space-16) var(--space-10);
 }

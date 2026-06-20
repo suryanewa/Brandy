@@ -12,17 +12,9 @@ import {
   generateBrandDerivationRemix,
   generatePaletteRemix,
 } from "../../lib/brandTheme.mjs";
-import {
-  LAYOUT_GENERATED_TOKEN_NAMES,
-  generateLayoutRemix,
-} from "../../lib/layoutTheme.mjs";
-import {
-  LOCKUP_GENERATED_TOKEN_NAMES,
-  generateLockupRemix,
-} from "../../lib/lockupTheme.mjs";
-import {
-  TYPOGRAPHY_GENERATED_TOKEN_NAMES,
-} from "../../lib/typographyTheme.mjs";
+import { LAYOUT_GENERATED_TOKEN_NAMES, generateLayoutRemix } from "../../lib/layoutTheme.mjs";
+import { LOCKUP_GENERATED_TOKEN_NAMES, generateLockupRemix } from "../../lib/lockupTheme.mjs";
+import { TYPOGRAPHY_GENERATED_TOKEN_NAMES } from "../../lib/typographyTheme.mjs";
 import {
   DEFAULT_DESIGN_OVERLAY_VALUES,
   DESIGN_CSS_VARIABLE_NAMES,
@@ -80,6 +72,8 @@ import {
 } from "./designTokenCatalog";
 import { CollapsibleGroup, GroupRemixAction, ParameterActions } from "./DesignOverlayGroups";
 import { DesignOverlayPaletteControls } from "./DesignOverlayPaletteControls";
+import { DesignOverlaySectionsTab } from "./DesignOverlaySectionsTab";
+import { DesignOverlayTabs, type DesignOverlayTab } from "./DesignOverlayTabs";
 import {
   applyDesignValuesPatch,
   getBooleanRemixPatch,
@@ -94,6 +88,7 @@ import {
   isDarkModeShortcut,
   isNetworkSyncError,
   isPaletteRemixShortcut,
+  isTextEntrySpaceTarget,
   type DesignValuesPatch,
 } from "./designOverlayRemix";
 
@@ -157,6 +152,7 @@ export function DesignOverlay({
   const [panelRendered, setPanelRendered] = useState(initialOpen);
   const [expandedGroups, setExpandedGroups] =
     useState<Record<DesignOverlayGroupKey, boolean>>(INITIAL_GROUP_STATE);
+  const [activeTab, setActiveTab] = useState<DesignOverlayTab>("design");
 
   const resolvedDefaults = useMemo<DesignOverlayValues>(
     () => ({
@@ -222,13 +218,15 @@ export function DesignOverlay({
   const blockOverlaySpaceActivation = useCallback(
     (event: React.KeyboardEvent<HTMLElement>) => {
       if (event.key !== " " && event.key !== "Spacebar") return false;
+      if (event.target instanceof HTMLElement && isTextEntrySpaceTarget(event.target)) {
+        return false;
+      }
       event.preventDefault();
-      event.stopPropagation();
       const activeElement = document.activeElement;
       if (activeElement instanceof HTMLElement && event.currentTarget.contains(activeElement)) {
         activeElement.blur();
       }
-      return true;
+      return false;
     },
     [],
   );
@@ -570,6 +568,7 @@ export function DesignOverlay({
       remixTypography();
       remixLayout();
       remixLockup();
+      window.dispatchEvent(new CustomEvent("brandy:section-presets-remix"));
     };
 
     window.addEventListener("keydown", handlePaletteRemixShortcut);
@@ -887,8 +886,11 @@ export function DesignOverlay({
           <header className="design-overlay__header">
             <h2 id={headingId}>{title}</h2>
           </header>
+          <DesignOverlayTabs activeTab={activeTab} onChange={setActiveTab} />
 
           <div className="design-overlay__content">
+            {activeTab === "design" ? (
+              <>
             <CollapsibleGroup
               id={`${baseId}-lockup`}
               title="Lockup"
@@ -957,6 +959,10 @@ export function DesignOverlay({
               {LAYOUT_SEGMENTED_CONTROLS.map(renderSegmentedControl)}
               {LAYOUT_SLIDERS.map(renderSliderControl)}
             </CollapsibleGroup>
+              </>
+            ) : (
+              <DesignOverlaySectionsTab baseId={baseId} />
+            )}
           </div>
 
           <footer className="design-overlay__footer">

@@ -78,20 +78,19 @@ const WIDTH_BASES = {
 const HERO_SCALE = {
   compact: {
     headlineMax: "56rem",
-    minHeight: "62svh",
     visualMin: "22rem",
   },
   balanced: {
     headlineMax: "56rem",
-    minHeight: "70svh",
     visualMin: "26rem",
   },
   immersive: {
     headlineMax: "56rem",
-    minHeight: "78svh",
     visualMin: "28rem",
   },
 };
+const HERO_SECTION_MIN_HEIGHT =
+  "calc(100svh - var(--navbar-min-height) - var(--stroke-thin))";
 const HERO_DESCRIPTION_TARGET_WIDTH = 52;
 const GRID_DENSITY = {
   sparse: {
@@ -186,7 +185,7 @@ export function generateLayoutThemeTokens(seeds = {}) {
     "--section-padding-y-sm": `${roundNumber(3 * spacingScale, 2)}rem`,
     "--section-padding-y-md": `${roundNumber(5 * spacingScale, 2)}rem`,
     "--section-padding-y-lg": `${roundNumber(6 * spacingScale, 2)}rem`,
-    "--section-hero-min-height": hero.minHeight,
+    "--section-hero-min-height": HERO_SECTION_MIN_HEIGHT,
     "--brandy-section-default-padding-y": "var(--section-padding-y-md)",
     "--container-sm": `${Math.round(baseWidth * 0.61)}px`,
     "--container-md": `${Math.round(baseWidth * 0.81)}px`,

@@ -22,6 +22,9 @@ describe("layout theme generator", () => {
 
     expect(tokens["--section-padding-x"]).toBe("clamp(1.25rem, 2.8vw, 2.1rem)");
     expect(tokens["--section-padding-y-md"]).toBe("3.5rem");
+    expect(tokens["--section-hero-min-height"]).toBe(
+      "calc(100svh - var(--navbar-min-height) - var(--stroke-thin))",
+    );
     expect(tokens["--container-lg"]).toBe("1120px");
     expect(tokens["--content-readable-max"]).toBe("38rem");
     expect(tokens["--hero-grid-visual-fr"]).toBe("1.14fr");
@@ -44,6 +47,9 @@ describe("layout theme generator", () => {
 
     expect(tokens["--section-padding-x"]).toBe("clamp(1.25rem, 2.4vw, 1.8rem)");
     expect(tokens["--section-padding-y-md"]).toBe("3rem");
+    expect(tokens["--section-hero-min-height"]).toBe(
+      "calc(100svh - var(--navbar-min-height) - var(--stroke-thin))",
+    );
     expect(tokens["--container-lg"]).toBe("820px");
     expect(tokens["--brandy-grid-default-columns"]).toBe(
       "repeat(4, minmax(0, 1fr))",
@@ -91,6 +97,9 @@ describe("layout theme generator", () => {
 
     const tokens = generateLayoutThemeTokens(firstRemix);
     expect(tokens["--section-padding-y-md"]).not.toBe("");
+    expect(tokens["--section-hero-min-height"]).toBe(
+      "calc(100svh - var(--navbar-min-height) - var(--stroke-thin))",
+    );
     expect(tokens["--container-lg"]).not.toBe("");
     expect(tokens["--hero-grid-text-fr"]).not.toBe("");
   });

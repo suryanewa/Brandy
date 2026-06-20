@@ -213,6 +213,56 @@ describe("DesignOverlay", () => {
     );
   });
 
+  it("adds a palette-matched hero background from the sections tab", async () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Sections" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hero" }));
+
+    const backgroundToggle = screen.getByRole("switch", {
+      name: "Background",
+    }) as HTMLInputElement;
+    expect(backgroundToggle.checked).toBe(false);
+    expect(document.documentElement.dataset.brandyHeroBackground).toBeUndefined();
+
+    fireEvent.click(backgroundToggle);
+
+    const initialBackground = document.documentElement.style.getPropertyValue(
+      "--brandy-hero-background-image",
+    );
+    expect(backgroundToggle.checked).toBe(true);
+    expect(document.documentElement.dataset.brandyHeroBackground).toBe("on");
+    expect(document.documentElement.dataset.brandyHeroBackgroundId).toBeTruthy();
+    expect(document.documentElement.dataset.brandyHeroBackgroundTone).toMatch(
+      /^(dark|light)$/,
+    );
+    expect(initialBackground).toContain("/assets/");
+    expect(initialBackground).toContain(".webp");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Design" }));
+    fireEvent.change(screen.getByLabelText("Primary hex color"), {
+      target: { value: "#f97316" },
+    });
+    fireEvent.blur(screen.getByLabelText("Primary hex color"));
+
+    await waitFor(() => {
+      const rematchedBackground = document.documentElement.style.getPropertyValue(
+        "--brandy-hero-background-image",
+      );
+      expect(rematchedBackground).not.toBe("");
+      expect(rematchedBackground).not.toBe(initialBackground);
+    });
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sections" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hero" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Background" }));
+
+    expect(document.documentElement.dataset.brandyHeroBackground).toBeUndefined();
+    expect(
+      document.documentElement.style.getPropertyValue("--brandy-hero-background-image"),
+    ).toBe("");
+  });
+
   it("only adjusts slider values by wheel over the numeric value", () => {
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
@@ -590,6 +640,23 @@ describe("DesignOverlay", () => {
     ).toBe(true);
   });
 
+  it("remixes with Space while focus is inside the settings panel", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+
+    const paletteToggle = screen.getByRole("button", { name: "Palette" });
+    paletteToggle.focus();
+
+    randomSpy.mockReturnValue(0.9);
+    fireEvent.keyDown(paletteToggle, { key: " " });
+
+    expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
+      "#f7a036",
+    );
+    expect(document.activeElement).not.toBe(paletteToggle);
+  });
+
   it("does not remix with Tab because Tab remains focus navigation", () => {
     render(<DesignOverlay />);
 
@@ -636,6 +703,7 @@ describe("DesignOverlay", () => {
   });
 
   it("prevents Space from activating focused settings controls", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
     render(<DesignOverlay />);
 
     const trigger = screen.getByRole("button", { name: "Open design settings" });

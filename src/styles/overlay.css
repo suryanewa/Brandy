@@ -173,6 +173,12 @@ html {
   margin: 0;
 }
 
+.design-overlay__tabs { background: var(--color-surface); border: var(--stroke-thin) solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: var(--space-1); grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--space-1); }
+.design-overlay__tabs button { background: transparent; border: 0; border-radius: calc(var(--radius-md) - 1px); color: var(--color-muted); cursor: pointer; min-height: 1.8rem; transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.design-overlay__tabs button:hover,
+.design-overlay__tabs button[aria-selected="true"] { color: var(--color-text); }
+.design-overlay__tabs button[aria-selected="true"] { background: var(--color-surface-raised); box-shadow: var(--shadow-soft); }
+
 .design-overlay__icon-button,
 .design-overlay__group-action,
 .design-overlay__group-reset,
@@ -246,6 +252,7 @@ html {
   transition: opacity var(--duration-fast) var(--ease-out);
 }
 
+.design-overlay__group:is(:hover, :focus-within) .design-overlay__group-actions,
 .design-overlay__group-header:is(:hover, :focus-within) .design-overlay__group-actions {
   opacity: 1;
   pointer-events: auto;
