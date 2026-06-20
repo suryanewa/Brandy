@@ -55,6 +55,14 @@ describe("modular contracts", () => {
     expect(sectionsCss).toContain(':root[data-brandy-navbar-preset^="vertical"] .section[data-size="hero"]');
     expect(sectionsCss).toContain("min-block-size: 100svh;");
     expect(sectionsCss).toContain(".section.logo-marquee-section");
+    expect(sectionsCss).toContain(".logo-marquee__viewport {");
+    expect(sectionsCss).toContain("overflow: hidden;");
+    expect(sectionsCss).toContain(".section.logo-marquee-section .marquee {");
+    expect(sectionsCss).toContain("padding-block: 0;");
+    expect(sectionsCss).toContain(":root[data-brandy-logos-preset=\"static\"] .marquee {");
+    expect(sectionsCss).toContain("overflow: hidden;");
+    expect(sectionsCss).toContain(":root[data-brandy-logos-preset=\"static\"] .marquee__group {");
+    expect(sectionsCss).toContain("flex-wrap: nowrap;");
     expect(sectionsCss).toContain(".section.final-cta-section");
     expect(sectionsCss).toContain("block-size: auto;");
     expect(sectionsCss).not.toContain("#demo");
