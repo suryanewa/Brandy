@@ -198,6 +198,11 @@
   z-index: 1;
 }
 
+:root[data-brandy-hero-shader-type="halftone-dots"] .hero-section__shader-canvas {
+  filter: blur(25px);
+  scale: 1.08;
+}
+
 :root[data-brandy-hero-background="on"] .hero-section > .container {
   position: relative;
   z-index: 1;

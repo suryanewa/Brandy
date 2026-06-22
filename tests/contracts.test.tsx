@@ -102,6 +102,10 @@ describe("modular contracts", () => {
       "color: var(--brandy-hero-button-primary-text, var(--button-primary-text));",
     );
     expect(sectionsCss).toContain(':root[data-brandy-hero-shader="on"] .hero-section__shader::after');
+    expect(sectionsCss).toContain(
+      ':root[data-brandy-hero-shader-type="halftone-dots"] .hero-section__shader-canvas',
+    );
+    expect(sectionsCss).toContain("filter: blur(25px);");
     const primaryButtonRule = sectionsCss.match(
       /:root\[data-brandy-hero-background="on"\] \.hero-actions \.button--primary \{[^}]+\}/,
     )?.[0];
