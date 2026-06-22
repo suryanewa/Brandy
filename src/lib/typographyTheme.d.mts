@@ -59,3 +59,8 @@ export function generateTypographyThemeTokens(
 export function generateTypographyMediaThemeTokens(
   seeds?: Partial<TypographySeeds>,
 ): Record<string, Record<`--${string}`, string>>;
+export function isSerifFontStack(stack: string): boolean;
+export function resolveButtonFontStack(fonts: {
+  body: string;
+  heading: string;
+}): string;
