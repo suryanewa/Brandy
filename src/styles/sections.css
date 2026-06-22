@@ -318,36 +318,6 @@
   white-space: nowrap;
 }
 
-:root[data-brandy-hero-preset="centered-high"] .hero-section,
-:root[data-brandy-hero-preset="left-high"] .hero-section {
-  align-items: flex-start;
-  padding-block-start: clamp(var(--space-8), 10vh, var(--space-16));
-}
-
-:root[data-brandy-hero-preset="centered-high"] .hero-section {
-  align-items: center;
-  padding-block-start: var(--space-16);
-}
-
-:root[data-brandy-hero-preset="centered-high"] .hero-grid {
-  transform: translateY(clamp(-3.5rem, -6svh, -2rem));
-}
-
-:root[data-brandy-hero-preset="left-high"] .hero-section {
-  align-items: center;
-  padding-block-start: var(--space-16);
-}
-
-:root[data-brandy-hero-preset="left-high"] .hero-grid {
-  transform: translateY(clamp(-3.5rem, -6svh, -2rem));
-}
-
-:root[data-brandy-hero-preset="centered-low"] .hero-section,
-:root[data-brandy-hero-preset="left-low"] .hero-section {
-  align-items: flex-end;
-  padding-block-end: clamp(var(--space-8), 10vh, var(--space-16));
-}
-
 :root[data-brandy-hero-preset^="left"] .hero-grid {
   justify-items: start;
   text-align: left;

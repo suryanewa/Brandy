@@ -54,11 +54,7 @@ const SECTION_GROUPS = [
     icon: <Star aria-hidden="true" />,
     presets: [
       { label: "Centered", value: "centered" },
-      { label: "Centered high", value: "centered-high" },
-      { label: "Centered low", value: "centered-low" },
       { label: "Left", value: "left" },
-      { label: "Left high", value: "left-high" },
-      { label: "Left low", value: "left-low" },
       { label: "Editorial", value: "editorial" },
     ],
   },

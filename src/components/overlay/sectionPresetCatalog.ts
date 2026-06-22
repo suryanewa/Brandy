@@ -38,11 +38,7 @@ export const SECTION_GROUPS: readonly {
     key: "hero",
     presets: [
       { label: "Centered", value: "centered" },
-      { label: "Centered high", value: "centered-high" },
-      { label: "Centered low", value: "centered-low" },
       { label: "Left", value: "left" },
-      { label: "Left high", value: "left-high" },
-      { label: "Left low", value: "left-low" },
       { label: "Editorial", value: "editorial" },
     ],
   },
