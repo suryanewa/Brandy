@@ -65,10 +65,7 @@ export const SECTION_GROUPS: readonly {
       { label: "2 x 2", value: "two-by-two" },
       { label: "2 x 3", value: "two-by-three" },
       { label: "2 x 4", value: "two-by-four" },
-      { label: "3 top / 2 bottom", value: "three-two" },
-      { label: "2 top / 3 bottom", value: "two-three" },
-      { label: "3 top / 4 bottom", value: "three-four" },
-      { label: "4 top / 3 bottom", value: "four-three" },
+      { label: "Mixed", value: "three-two" },
     ],
   },
   {
