@@ -1,4 +1,4 @@
-import { getHeroBackgroundCopyColors } from "../../lib/brandTheme.mjs";
+import { getHeroVisualContrastColors } from "../../lib/brandTheme.mjs";
 import type { DesignOverlayValues } from "./designOverlayModel";
 import {
   DEFAULT_HERO_BACKGROUND_ENABLED,
@@ -303,9 +303,14 @@ function publishHeroVisualArtifacts(
   lastSyncedPaletteKey = paletteKey;
   lastSyncedGeneration = heroVisualGeneration;
 
-  const copyColors = getHeroBackgroundCopyColors(background.tone, {
-    primary: palette.primary,
-    secondary: palette.secondary,
+  const copyColors = getHeroVisualContrastColors({
+    tone: background.tone,
+    seedColors: {
+      primary: palette.primary,
+      secondary: palette.secondary,
+    },
+    source: background.source,
+    buttonTokens: readHeroButtonTokens(),
   });
   const root = document.documentElement;
   const canRenderShaderLayer = globalHeroShaderEnabled && Boolean(background.gradientDataUrl && shader);
@@ -341,6 +346,25 @@ function publishHeroVisualArtifacts(
   setRootStyleProperty("--brandy-hero-background-size", background.backgroundSize);
   setRootStyleProperty("--brandy-hero-background-text", copyColors.text);
   setRootStyleProperty("--brandy-hero-background-muted", copyColors.muted);
+  setRootStyleProperty("--brandy-hero-button-primary-bg", copyColors.buttons.primaryBg);
+  setRootStyleProperty(
+    "--brandy-hero-button-primary-hover-bg",
+    copyColors.buttons.primaryHover,
+  );
+  setRootStyleProperty("--brandy-hero-button-primary-text", copyColors.buttons.primaryText);
+  setRootStyleProperty("--brandy-hero-button-secondary-bg", copyColors.buttons.secondaryBg);
+  setRootStyleProperty(
+    "--brandy-hero-button-secondary-border",
+    copyColors.buttons.secondaryBorder,
+  );
+  setRootStyleProperty(
+    "--brandy-hero-button-secondary-hover-bg",
+    copyColors.buttons.secondaryHover,
+  );
+  setRootStyleProperty(
+    "--brandy-hero-button-secondary-text",
+    copyColors.buttons.secondaryText,
+  );
 
   publishHeroVisualState({
     backgroundEnabled: globalHeroBackgroundEnabled,
@@ -391,6 +415,13 @@ function clearHeroVisualAttributes() {
   removeRootStyleProperty("--brandy-hero-background-size");
   removeRootStyleProperty("--brandy-hero-background-text");
   removeRootStyleProperty("--brandy-hero-background-muted");
+  removeRootStyleProperty("--brandy-hero-button-primary-bg");
+  removeRootStyleProperty("--brandy-hero-button-primary-hover-bg");
+  removeRootStyleProperty("--brandy-hero-button-primary-text");
+  removeRootStyleProperty("--brandy-hero-button-secondary-bg");
+  removeRootStyleProperty("--brandy-hero-button-secondary-border");
+  removeRootStyleProperty("--brandy-hero-button-secondary-hover-bg");
+  removeRootStyleProperty("--brandy-hero-button-secondary-text");
 }
 
 function publishHeroVisualState(nextState: HeroVisualState) {
@@ -407,6 +438,20 @@ function readBrandPaletteColors(): BrandPaletteColors {
     secondary: getCssColor(styles, "--brand-secondary-500", "#00d4ff"),
     accent: getCssColor(styles, "--brand-accent-500", "#ff6b35"),
     highlight: getCssColor(styles, "--brand-highlight-500", "#fde68a"),
+  };
+}
+
+function readHeroButtonTokens() {
+  const styles = getComputedStyle(document.documentElement);
+
+  return {
+    primaryBg: getCssColor(styles, "--button-primary-bg", "#635bff"),
+    primaryHover: getCssColor(styles, "--button-primary-hover", "#635bff"),
+    primaryText: getCssColor(styles, "--button-primary-text", "#ffffff"),
+    secondaryBg: getCssColor(styles, "--button-secondary-bg", "#f8f8f2"),
+    secondaryBorder: getCssColor(styles, "--button-secondary-border", "#dfe2c6"),
+    secondaryHover: getCssColor(styles, "--button-secondary-hover", "#eeefe0"),
+    secondaryText: getCssColor(styles, "--button-secondary-text", "#4d5214"),
   };
 }
 

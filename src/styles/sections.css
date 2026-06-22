@@ -189,6 +189,15 @@
   transform: translate(-50%, -50%);
 }
 
+:root[data-brandy-hero-shader="on"] .hero-section__shader::after {
+  background: var(--brandy-hero-background-scrim);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
 :root[data-brandy-hero-background="on"] .hero-section > .container {
   position: relative;
   z-index: 1;
@@ -205,13 +214,6 @@
 }
 
 :root[data-brandy-hero-background="on"] .hero-section {
-  --brandy-hero-button-primary-bg: var(--button-primary-bg);
-  --brandy-hero-button-primary-hover-bg: var(--button-primary-hover);
-  --brandy-hero-button-primary-text: var(--button-primary-text);
-  --brandy-hero-button-secondary-bg: var(--button-secondary-bg);
-  --brandy-hero-button-secondary-border: var(--button-secondary-border);
-  --brandy-hero-button-secondary-hover-bg: var(--button-secondary-hover);
-  --brandy-hero-button-secondary-text: var(--button-secondary-text);
   --brandy-hero-background-scrim: rgb(0 0 0 / 0.58);
   --section-muted-color: var(--brandy-hero-background-muted);
   --section-text-color: var(--brandy-hero-background-text);
@@ -268,22 +270,22 @@
 }
 
 :root[data-brandy-hero-background="on"] .hero-actions .button--primary {
-  background: var(--brandy-hero-button-primary-bg);
-  color: var(--brandy-hero-button-primary-text);
+  background: var(--brandy-hero-button-primary-bg, var(--button-primary-bg));
+  color: var(--brandy-hero-button-primary-text, var(--button-primary-text));
 }
 
 :root[data-brandy-hero-background="on"] .hero-actions .button--primary:hover {
-  background: var(--brandy-hero-button-primary-hover-bg);
+  background: var(--brandy-hero-button-primary-hover-bg, var(--button-primary-hover));
 }
 
 :root[data-brandy-hero-background="on"] .hero-actions .button--secondary {
-  background: var(--brandy-hero-button-secondary-bg);
-  border-color: var(--brandy-hero-button-secondary-border);
-  color: var(--brandy-hero-button-secondary-text);
+  background: var(--brandy-hero-button-secondary-bg, var(--button-secondary-bg));
+  border-color: var(--brandy-hero-button-secondary-border, var(--button-secondary-border));
+  color: var(--brandy-hero-button-secondary-text, var(--button-secondary-text));
 }
 
 :root[data-brandy-hero-background="on"] .hero-actions .button--secondary:hover {
-  background: var(--brandy-hero-button-secondary-hover-bg);
+  background: var(--brandy-hero-button-secondary-hover-bg, var(--button-secondary-hover));
 }
 
 .hero-copy__content {

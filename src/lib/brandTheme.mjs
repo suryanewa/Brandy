@@ -739,12 +739,25 @@ export function generateBrandDerivationRemix(options = {}) {
 export function getHeroBackgroundCopyColors(
   tone,
   seedColors = {},
+  options = {},
 ) {
+  return getHeroVisualContrastColors({
+    tone,
+    seedColors,
+    ...options,
+  });
+}
+
+export function getHeroVisualContrastColors({
+  tone,
+  seedColors = {},
+  source = "hiro",
+  buttonTokens = {},
+} = {}) {
   const primary = normalizeHexColor(seedColors.primary ?? DEFAULT_BRAND_SEEDS.primary);
   const secondary = normalizeHexColor(seedColors.secondary ?? DEFAULT_BRAND_SEEDS.secondary);
   const gradientTint = mixHex(primary, secondary, 0.38);
-  const scrimBase = tone === "light" ? "#ffffff" : "#000000";
-  const scrimWeight = tone === "light" ? 0.76 : 0.58;
+  const { scrimBase, scrimWeight } = getHeroScrimMix(tone, source);
   const representativeBg = mixHex(gradientTint, scrimBase, scrimWeight);
   const text = getContrastText(representativeBg);
   const muted = ensureContrastColor(
@@ -752,8 +765,79 @@ export function getHeroBackgroundCopyColors(
     representativeBg,
     3,
   );
+  const buttons = resolveHeroButtonColors(representativeBg, buttonTokens, text);
 
-  return { text, muted, representativeBg };
+  return { text, muted, representativeBg, buttons };
+}
+
+function getHeroScrimMix(tone, source) {
+  if (source === "hiro") {
+    return tone === "light"
+      ? { scrimBase: "#ffffff", scrimWeight: 0.34 }
+      : { scrimBase: "#000000", scrimWeight: 0.24 };
+  }
+
+  return tone === "light"
+    ? { scrimBase: "#ffffff", scrimWeight: 0.76 }
+    : { scrimBase: "#000000", scrimWeight: 0.58 };
+}
+
+function resolveHeroButtonColors(representativeBg, buttonTokens, copyText) {
+  const primaryBg = ensureContrastAgainstBackground(
+    normalizeHexColor(buttonTokens.primaryBg ?? DEFAULT_BRAND_SEEDS.primary),
+    representativeBg,
+  );
+  const primaryText = getContrastText(primaryBg);
+  const primaryHover = ensureBackgroundContrastForText(
+    normalizeHexColor(buttonTokens.primaryHover ?? primaryBg),
+    primaryText,
+  );
+  const secondaryText = ensureContrastColor(
+    normalizeHexColor(buttonTokens.secondaryText ?? copyText),
+    representativeBg,
+  );
+  const secondaryBg = ensureBackgroundContrastForText(
+    mixHex(representativeBg, secondaryText, 0.14),
+    secondaryText,
+  );
+  const secondaryHover = ensureBackgroundContrastForText(
+    mixHex(representativeBg, secondaryText, 0.24),
+    secondaryText,
+  );
+  const secondaryBorder = ensureContrastColor(
+    mixHex(secondaryBg, secondaryText, 0.52),
+    representativeBg,
+    2.5,
+  );
+
+  return {
+    primaryBg,
+    primaryHover,
+    primaryText,
+    secondaryBg,
+    secondaryBorder,
+    secondaryHover,
+    secondaryText,
+  };
+}
+
+function ensureContrastAgainstBackground(color, background, minimumRatio = 3) {
+  if (getContrastRatio(color, background) >= minimumRatio) return color;
+
+  const candidates = ["#ffffff", "#111416", "#000000"];
+  let bestCandidate = candidates[0];
+  let bestRatio = 0;
+
+  for (const candidate of candidates) {
+    const ratio = getContrastRatio(candidate, background);
+    if (ratio >= minimumRatio) return candidate;
+    if (ratio > bestRatio) {
+      bestRatio = ratio;
+      bestCandidate = candidate;
+    }
+  }
+
+  return bestCandidate;
 }
 
 export function normalizeHexColor(value) {

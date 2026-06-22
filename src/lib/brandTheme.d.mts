@@ -59,13 +59,36 @@ export type PaletteRemixResult = {
 
 export type HeroBackgroundTone = "dark" | "light";
 
+export type HeroBackgroundSource = "hiro" | "default";
+
+export type HeroButtonContrastTokens = Partial<{
+  primaryBg: string;
+  primaryHover: string;
+  primaryText: string;
+  secondaryBg: string;
+  secondaryBorder: string;
+  secondaryHover: string;
+  secondaryText: string;
+}>;
+
 export type HeroBackgroundCopyColors = {
   text: string;
   muted: string;
   representativeBg: string;
 };
 
+export type HeroVisualContrastColors = HeroBackgroundCopyColors & {
+  buttons: Required<HeroButtonContrastTokens>;
+};
+
 export type HeroBackgroundCopyColorSeeds = Partial<Pick<BrandSeeds, "primary" | "secondary">>;
+
+export type HeroVisualContrastOptions = {
+  buttonTokens?: HeroButtonContrastTokens;
+  seedColors?: HeroBackgroundCopyColorSeeds;
+  source?: HeroBackgroundSource;
+  tone: HeroBackgroundTone;
+};
 
 export type BrandThemeOptions = {
   darkMode?: boolean;
@@ -104,6 +127,10 @@ export function generateBrandDerivationRemix(
 export function getHeroBackgroundCopyColors(
   tone: HeroBackgroundTone,
   seedColors?: HeroBackgroundCopyColorSeeds,
-): HeroBackgroundCopyColors;
+  options?: Pick<HeroVisualContrastOptions, "buttonTokens" | "source">,
+): HeroVisualContrastColors;
+export function getHeroVisualContrastColors(
+  options: HeroVisualContrastOptions,
+): HeroVisualContrastColors;
 export function normalizeHexColor(value: string): string;
 export function isHexColor(value: string): boolean;

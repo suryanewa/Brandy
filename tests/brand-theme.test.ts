@@ -5,7 +5,7 @@ import {
   generateBrandDerivationRemix,
   generateBrandThemeTokens,
   generatePaletteRemix,
-  getHeroBackgroundCopyColors,
+  getHeroVisualContrastColors,
   isHexColor,
   PALETTE_REMIX_SCHEMES,
   normalizeHexColor,
@@ -190,10 +190,46 @@ describe("brand theme generator", () => {
   it("keeps hero background copy readable across palette remixes", () => {
     for (let step = 0; step < 200; step += 1) {
       const remix = generatePaletteRemix(DEFAULT_BRAND_SEEDS, { step });
+      const tokens = generateBrandThemeTokens(remix.palette, {
+        derivation: generateBrandDerivationRemix({ step }),
+      });
+
       for (const tone of ["dark", "light"] as const) {
-        const copy = getHeroBackgroundCopyColors(tone, remix.palette);
-        expect(contrastRatio(copy.text, copy.representativeBg)).toBeGreaterThanOrEqual(4.5);
-        expect(contrastRatio(copy.muted, copy.representativeBg)).toBeGreaterThanOrEqual(3);
+        const contrast = getHeroVisualContrastColors({
+          tone,
+          seedColors: remix.palette,
+          source: "hiro",
+          buttonTokens: {
+            primaryBg: tokens["--button-primary-bg"],
+            primaryHover: tokens["--button-primary-hover"],
+            primaryText: tokens["--button-primary-text"],
+            secondaryBg: tokens["--button-secondary-bg"],
+            secondaryBorder: tokens["--button-secondary-border"],
+            secondaryHover: tokens["--button-secondary-hover"],
+            secondaryText: tokens["--button-secondary-text"],
+          },
+        });
+
+        expect(contrastRatio(contrast.text, contrast.representativeBg)).toBeGreaterThanOrEqual(4.5);
+        expect(contrastRatio(contrast.muted, contrast.representativeBg)).toBeGreaterThanOrEqual(3);
+        expect(
+          contrastRatio(contrast.buttons.primaryText, contrast.buttons.primaryBg),
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          contrastRatio(contrast.buttons.primaryText, contrast.buttons.primaryHover),
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          contrastRatio(contrast.buttons.secondaryText, contrast.representativeBg),
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          contrastRatio(contrast.buttons.secondaryText, contrast.buttons.secondaryBg),
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          contrastRatio(contrast.buttons.secondaryText, contrast.buttons.secondaryHover),
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          contrastRatio(contrast.buttons.primaryBg, contrast.representativeBg),
+        ).toBeGreaterThanOrEqual(3);
       }
     }
   });

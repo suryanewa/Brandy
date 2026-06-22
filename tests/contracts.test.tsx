@@ -73,10 +73,22 @@ describe("modular contracts", () => {
   });
 
   it("keeps hero background CTA colors contrast-safe across palette remixes", () => {
-    expect(sectionsCss).toContain("--brandy-hero-button-primary-bg: var(--button-primary-bg);");
-    expect(sectionsCss).toContain("--brandy-hero-button-primary-text: var(--button-primary-text);");
-    expect(sectionsCss).toContain("--brandy-hero-button-secondary-bg: var(--button-secondary-bg);");
-    expect(sectionsCss).toContain("--brandy-hero-button-secondary-text: var(--button-secondary-text);");
+    expect(sectionsCss).toContain(
+      "background: var(--brandy-hero-button-primary-bg, var(--button-primary-bg));",
+    );
+    expect(sectionsCss).toContain(
+      "color: var(--brandy-hero-button-primary-text, var(--button-primary-text));",
+    );
+    expect(sectionsCss).toContain(
+      "background: var(--brandy-hero-button-secondary-bg, var(--button-secondary-bg));",
+    );
+    expect(sectionsCss).toContain(
+      "color: var(--brandy-hero-button-secondary-text, var(--button-secondary-text));",
+    );
+    expect(sectionsCss).not.toContain("--brandy-hero-button-primary-bg: var(--button-primary-bg);");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-primary-text: var(--button-primary-text);");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-secondary-bg: var(--button-secondary-bg);");
+    expect(sectionsCss).not.toContain("--brandy-hero-button-secondary-text: var(--button-secondary-text);");
     expect(sectionsCss).not.toContain("--brandy-hero-button-primary-bg: var(--white);");
     expect(sectionsCss).not.toContain("--brandy-hero-button-primary-text: var(--ink-950);");
     expect(sectionsCss).not.toContain("--brandy-hero-button-primary-bg: #ffffff;");
@@ -86,7 +98,10 @@ describe("modular contracts", () => {
     expect(sectionsCss).toContain("--brandy-hero-background-text: #111416;");
     expect(sectionsCss).not.toContain("--brandy-hero-background-text: var(--white);");
     expect(sectionsCss).not.toContain("--brandy-hero-background-text: var(--ink-950);");
-    expect(sectionsCss).toContain("color: var(--brandy-hero-button-primary-text);");
+    expect(sectionsCss).toContain(
+      "color: var(--brandy-hero-button-primary-text, var(--button-primary-text));",
+    );
+    expect(sectionsCss).toContain(':root[data-brandy-hero-shader="on"] .hero-section__shader::after');
     const primaryButtonRule = sectionsCss.match(
       /:root\[data-brandy-hero-background="on"\] \.hero-actions \.button--primary \{[^}]+\}/,
     )?.[0];

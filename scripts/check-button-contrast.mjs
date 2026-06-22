@@ -3,7 +3,7 @@ import {
   generateBrandDerivationRemix,
   generateBrandThemeTokens,
   generatePaletteRemix,
-  getHeroBackgroundCopyColors,
+  getHeroVisualContrastColors,
   sanitizeBrandSeeds,
 } from "../src/lib/brandTheme.mjs";
 
@@ -135,21 +135,63 @@ for (const mode of modes) {
   }
 }
 
-// Test 5: Hero copy colors against representative scrim+tint backgrounds
+// Test 5: Hero copy and CTA colors against representative scrim+tint backgrounds
 for (let step = 0; step < 200; step += 1) {
   const remix = generatePaletteRemix(DEFAULT_BRAND_SEEDS, { step });
+  const tokens = generateBrandThemeTokens(remix.palette, {
+    derivation: generateBrandDerivationRemix({ step }),
+  });
+
   for (const tone of ["dark", "light"]) {
-    const copy = getHeroBackgroundCopyColors(tone, remix.palette);
-    totalChecks += 2;
-    const textRatio = contrastRatio(copy.text, copy.representativeBg);
-    const mutedRatio = contrastRatio(copy.muted, copy.representativeBg);
+    const contrast = getHeroVisualContrastColors({
+      tone,
+      seedColors: remix.palette,
+      source: "hiro",
+      buttonTokens: {
+        primaryBg: tokens["--button-primary-bg"],
+        primaryHover: tokens["--button-primary-hover"],
+        primaryText: tokens["--button-primary-text"],
+        secondaryBg: tokens["--button-secondary-bg"],
+        secondaryBorder: tokens["--button-secondary-border"],
+        secondaryHover: tokens["--button-secondary-hover"],
+        secondaryText: tokens["--button-secondary-text"],
+      },
+    });
+    totalChecks += 8;
+    const textRatio = contrastRatio(contrast.text, contrast.representativeBg);
+    const mutedRatio = contrastRatio(contrast.muted, contrast.representativeBg);
+    const primaryTextRatio = contrastRatio(
+      contrast.buttons.primaryText,
+      contrast.buttons.primaryBg,
+    );
+    const primaryBgRatio = contrastRatio(
+      contrast.buttons.primaryBg,
+      contrast.representativeBg,
+    );
+    const secondaryTextRatio = contrastRatio(
+      contrast.buttons.secondaryText,
+      contrast.representativeBg,
+    );
+    const secondaryFillTextRatio = contrastRatio(
+      contrast.buttons.secondaryText,
+      contrast.buttons.secondaryBg,
+    );
+    const secondaryHoverTextRatio = contrastRatio(
+      contrast.buttons.secondaryText,
+      contrast.buttons.secondaryHover,
+    );
+    const primaryHoverTextRatio = contrastRatio(
+      contrast.buttons.primaryText,
+      contrast.buttons.primaryHover,
+    );
+
     if (textRatio < 4.5) {
       failures.push({
         label: `hero-copy/${tone}/step=${step}`,
         textKey: "text",
         bgKey: "representativeBg",
-        text: copy.text,
-        bg: copy.representativeBg,
+        text: contrast.text,
+        bg: contrast.representativeBg,
         ratio: textRatio.toFixed(3),
       });
     }
@@ -158,9 +200,69 @@ for (let step = 0; step < 200; step += 1) {
         label: `hero-copy-muted/${tone}/step=${step}`,
         textKey: "muted",
         bgKey: "representativeBg",
-        text: copy.muted,
-        bg: copy.representativeBg,
+        text: contrast.muted,
+        bg: contrast.representativeBg,
         ratio: mutedRatio.toFixed(3),
+      });
+    }
+    if (primaryTextRatio < 4.5) {
+      failures.push({
+        label: `hero-primary-text/${tone}/step=${step}`,
+        textKey: "primaryText",
+        bgKey: "primaryBg",
+        text: contrast.buttons.primaryText,
+        bg: contrast.buttons.primaryBg,
+        ratio: primaryTextRatio.toFixed(3),
+      });
+    }
+    if (primaryHoverTextRatio < 4.5) {
+      failures.push({
+        label: `hero-primary-hover-text/${tone}/step=${step}`,
+        textKey: "primaryText",
+        bgKey: "primaryHover",
+        text: contrast.buttons.primaryText,
+        bg: contrast.buttons.primaryHover,
+        ratio: primaryHoverTextRatio.toFixed(3),
+      });
+    }
+    if (primaryBgRatio < 3) {
+      failures.push({
+        label: `hero-primary-bg/${tone}/step=${step}`,
+        textKey: "primaryBg",
+        bgKey: "representativeBg",
+        text: contrast.buttons.primaryBg,
+        bg: contrast.representativeBg,
+        ratio: primaryBgRatio.toFixed(3),
+      });
+    }
+    if (secondaryTextRatio < 4.5) {
+      failures.push({
+        label: `hero-secondary-text/${tone}/step=${step}`,
+        textKey: "secondaryText",
+        bgKey: "representativeBg",
+        text: contrast.buttons.secondaryText,
+        bg: contrast.representativeBg,
+        ratio: secondaryTextRatio.toFixed(3),
+      });
+    }
+    if (secondaryFillTextRatio < 4.5) {
+      failures.push({
+        label: `hero-secondary-fill-text/${tone}/step=${step}`,
+        textKey: "secondaryText",
+        bgKey: "secondaryBg",
+        text: contrast.buttons.secondaryText,
+        bg: contrast.buttons.secondaryBg,
+        ratio: secondaryFillTextRatio.toFixed(3),
+      });
+    }
+    if (secondaryHoverTextRatio < 4.5) {
+      failures.push({
+        label: `hero-secondary-hover-text/${tone}/step=${step}`,
+        textKey: "secondaryText",
+        bgKey: "secondaryHover",
+        text: contrast.buttons.secondaryText,
+        bg: contrast.buttons.secondaryHover,
+        ratio: secondaryHoverTextRatio.toFixed(3),
       });
     }
   }
