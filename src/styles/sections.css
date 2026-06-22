@@ -533,8 +533,19 @@
   flex: 0 0 auto;
 }
 
-:root[data-brandy-content-preset="bottom-crop-card"] .section:has(.content-section) {
+:root[data-brandy-content-preset="centered-stack"] .content-layout.split {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+
+:root[data-brandy-content-preset="bottom-crop-card"] .section:has(.content-layout) {
+  align-items: flex-start;
   overflow: hidden;
+}
+
+:root[data-brandy-content-preset="bottom-crop-card"] .content-layout.split {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
 }
 
 :root[data-brandy-content-preset="bottom-crop-card"] .content-browser-shape {
@@ -542,14 +553,19 @@
   transform: translateY(var(--space-10));
 }
 
-:root[data-brandy-content-preset="left-copy-right-card"] .split > :is(.section-header, .stack),
-:root[data-brandy-content-preset="right-copy-left-card"] .split > :is(.problem-empty-shape, .solution-empty-shape, .before-after) {
+:root[data-brandy-content-preset="left-copy-right-card"] .content-layout.split > :is(.section-header, .stack),
+:root[data-brandy-content-preset="right-copy-left-card"] .content-layout.split > .content-browser-shape {
   order: 1;
 }
 
-:root[data-brandy-content-preset="left-copy-right-card"] .split > :is(.problem-empty-shape, .solution-empty-shape, .before-after),
-:root[data-brandy-content-preset="right-copy-left-card"] .split > :is(.section-header, .stack) {
+:root[data-brandy-content-preset="left-copy-right-card"] .content-layout.split > .content-browser-shape,
+:root[data-brandy-content-preset="right-copy-left-card"] .content-layout.split > :is(.section-header, .stack) {
   order: 2;
+}
+
+:root[data-brandy-content-preset="left-copy-right-card"] .content-layout .section-header,
+:root[data-brandy-content-preset="right-copy-left-card"] .content-layout .section-header {
+  text-align: var(--section-header-left-align);
 }
 
 .how-it-works-layout {
@@ -808,10 +824,6 @@
   color: var(--section-link-color, var(--link-color));
   font-size: var(--font-size-caption);
   font-weight: 800;
-}
-
-.content-section > .section-header {
-  margin-bottom: 0;
 }
 
 .bento-layout {

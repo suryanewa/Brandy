@@ -234,6 +234,24 @@ describe("modular contracts", () => {
     expect(patternsCss).toContain("-webkit-line-clamp: 2;");
   });
 
+  it("renders the content browser card for every content preset", () => {
+    window.history.pushState({}, "", "/");
+    render(<App />);
+
+    for (const preset of [
+      "centered-stack",
+      "bottom-crop-card",
+      "left-copy-right-card",
+      "right-copy-left-card",
+    ] as const) {
+      applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, content: preset });
+
+      expect(
+        document.querySelector("#content .content-browser-shape .browser-frame__content"),
+      ).toBeTruthy();
+    }
+  });
+
   it("applies card presets to repeated card grids", () => {
     expect(sectionsCss).toContain(":root[data-brandy-cards-preset=\"two-by-two\"]");
     expect(sectionsCss).toContain(
@@ -248,13 +266,38 @@ describe("modular contracts", () => {
 
     const featureGrid = document.querySelector("#cards .feature-grid");
     expect(featureGrid).toBeTruthy();
-    expect(document.querySelectorAll("#cards .feature-grid > .card").length).toBe(4);
+    expect(document.querySelectorAll("#cards .feature-grid > .card").length).toBe(8);
+
+    const visibleCardCount = () =>
+      Array.from(document.querySelectorAll("#cards .feature-grid > .card")).filter(
+        (card) => window.getComputedStyle(card).display !== "none",
+      ).length;
 
     applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "two-by-two" });
     expect(document.documentElement.dataset.brandyCardsPreset).toBe("two-by-two");
+    expect(visibleCardCount()).toBe(4);
 
     applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "one-by-two" });
     expect(document.documentElement.dataset.brandyCardsPreset).toBe("one-by-two");
+    expect(visibleCardCount()).toBe(2);
+
+    applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "two-by-three" });
+    expect(visibleCardCount()).toBe(6);
+
+    applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "two-by-four" });
+    expect(visibleCardCount()).toBe(8);
+
+    applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "three-two" });
+    expect(visibleCardCount()).toBe(5);
+
+    applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "two-three" });
+    expect(visibleCardCount()).toBe(5);
+
+    applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "three-four" });
+    expect(visibleCardCount()).toBe(7);
+
+    applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "four-three" });
+    expect(visibleCardCount()).toBe(7);
   });
 
   it("keeps repeated card groups in one row where required", () => {

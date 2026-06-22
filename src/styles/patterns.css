@@ -17,6 +17,7 @@
   -webkit-line-clamp: 2;
   display: -webkit-box;
   overflow: hidden;
+  padding-block-end: 0.08em;
 }
 
 .section-header[data-description-max-lines="2"] .section-header__description {
@@ -24,6 +25,7 @@
   -webkit-line-clamp: 2;
   display: -webkit-box;
   overflow: hidden;
+  padding-block-end: 0.08em;
 }
 
 .section-header__description {
@@ -175,8 +177,11 @@
   min-height: var(--browser-content-min-height);
 }
 
-.demo-browser-shape {
+.demo-browser-shape,
+.content-browser-shape {
   min-height: calc(var(--browser-bar-height) + var(--browser-content-min-height));
+  min-width: 0;
+  width: 100%;
 }
 
 .marquee {
