@@ -58,7 +58,7 @@ export function generateHeroBackground(
     showRing: false,
   };
 
-  const gradientDataUrl = renderHeroGradientDataUrl(config);
+  const gradientDataUrl = renderHeroGradientDataUrl(config, colors[0], random);
 
   return {
     backgroundColor: colors[0],
@@ -73,16 +73,20 @@ export function generateHeroBackground(
   };
 }
 
-function renderHeroGradientDataUrl(config: {
-  blendMode: string;
-  blurStrength: number;
-  colors: string[];
-  height: number;
-  isBlurred: boolean;
-  seed: number;
-  showRing: boolean;
-  width: number;
-}) {
+function renderHeroGradientDataUrl(
+  config: {
+    blendMode: string;
+    blurStrength: number;
+    colors: string[];
+    height: number;
+    isBlurred: boolean;
+    seed: number;
+    showRing: boolean;
+    width: number;
+  },
+  primaryColor: string,
+  random: () => number,
+) {
   if (typeof document === "undefined") {
     return null;
   }
@@ -97,8 +101,38 @@ function renderHeroGradientDataUrl(config: {
   }
 
   renderGradient(context, config);
+  ensurePrimaryColorPresence(context, primaryColor, config.width, config.height, random);
   const dataUrl = canvas.toDataURL("image/jpeg", HERO_GRADIENT_QUALITY);
   return dataUrl.startsWith("data:image/jpeg") ? dataUrl : null;
+}
+
+function ensurePrimaryColorPresence(
+  context: CanvasRenderingContext2D,
+  primaryColor: string,
+  width: number,
+  height: number,
+  random: () => number,
+) {
+  const blurAmount = Math.max(width, height) * 0.1;
+  context.filter = `blur(${blurAmount}px)`;
+  context.globalCompositeOperation = "soft-light";
+  context.globalAlpha = 0.42 + random() * 0.18;
+  context.fillStyle = primaryColor;
+
+  const blobCount = 2 + Math.floor(random() * 2);
+  for (let index = 0; index < blobCount; index += 1) {
+    context.beginPath();
+    const centerX = width * (0.18 + random() * 0.64);
+    const centerY = height * (0.12 + random() * 0.76);
+    const radiusX = width * (0.2 + random() * 0.24);
+    const radiusY = height * (0.16 + random() * 0.26);
+    context.ellipse(centerX, centerY, radiusX, radiusY, random() * Math.PI, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  context.globalAlpha = 1;
+  context.filter = "none";
+  context.globalCompositeOperation = "source-over";
 }
 
 function buildCssGradientFallback(colors: string[]) {

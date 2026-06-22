@@ -264,10 +264,11 @@
     linear-gradient(
       var(--brandy-hero-background-scrim),
       var(--brandy-hero-background-scrim)
-    );
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
+    ),
+    var(--brandy-hero-background-image);
+  background-position: center, var(--brandy-hero-background-position, center);
+  background-repeat: no-repeat, var(--brandy-hero-background-repeat, no-repeat);
+  background-size: cover, var(--brandy-hero-background-size, cover);
 }
 
 :root[data-brandy-hero-background-tone="light"] .hero-section {

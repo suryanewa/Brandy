@@ -193,9 +193,13 @@ export function applyPreparedHeroRemixCommit(): boolean {
 }
 
 export function syncHeroVisualFromDesignValues(values: DesignOverlayValues) {
+  void values;
   if (!globalHeroBackgroundEnabled && !globalHeroShaderEnabled) return;
+  if (typeof document === "undefined") return;
 
-  syncHeroBackgroundToPalette(getPaletteFromDesignValues(values));
+  // Read the palette from computed CSS so hero backgrounds match the live
+  // brand tokens on the page, not stale overlay defaults.
+  syncHeroBackgroundToPalette(readBrandPaletteColors());
 }
 
 function persistHeroBackgroundEnabled(enabled: boolean) {
@@ -314,8 +318,6 @@ function publishHeroVisualArtifacts(
   });
   const root = document.documentElement;
   const canRenderShaderLayer = globalHeroShaderEnabled && Boolean(background.gradientDataUrl && shader);
-  const showCssBackgroundImage =
-    globalHeroBackgroundEnabled && !(globalHeroShaderEnabled && background.gradientDataUrl);
   const shaderDisplayScale =
     canRenderShaderLayer && shader
       ? readHeroShaderDisplayScale(shader.type)
@@ -339,7 +341,7 @@ function publishHeroVisualArtifacts(
   setRootStyleProperty("--brandy-hero-background-color", background.backgroundColor);
   setRootStyleProperty(
     "--brandy-hero-background-image",
-    showCssBackgroundImage ? background.backgroundImage : "",
+    globalHeroBackgroundEnabled ? background.backgroundImage : "",
   );
   setRootStyleProperty("--brandy-hero-background-position", background.backgroundPosition);
   setRootStyleProperty("--brandy-hero-background-repeat", background.backgroundRepeat);

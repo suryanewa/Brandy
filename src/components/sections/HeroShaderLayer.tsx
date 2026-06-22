@@ -12,6 +12,7 @@ import {
   HERO_VISUAL_CHANGE_EVENT,
   getHeroVisualState,
   registerHeroVisualSyncRender,
+  subscribeHeroVisual,
   type HeroVisualState,
 } from "../overlay/heroBackgroundRuntime";
 import {
@@ -33,7 +34,11 @@ function subscribeHeroShaderLayout(onStoreChange: () => void) {
 
 export function HeroShaderLayer() {
   const [, forceRender] = useReducer((tick: number) => tick + 1, 0);
-  const visual = getHeroVisualState();
+  const visual = useSyncExternalStore(
+    subscribeHeroVisual,
+    getHeroVisualState,
+    getHeroVisualState,
+  );
   const [readyImageUrl, setReadyImageUrl] = useState<string | null>(() =>
     visual.gradientDataUrl,
   );

@@ -60,6 +60,7 @@ export default defineConfig({
     alias: {
       "@gradients": GRADIENTS_SRC_PATH,
     },
+    dedupe: ["react", "react-dom"],
   },
   test: {
     alias: {
