@@ -211,7 +211,10 @@ describe("brand theme generator", () => {
         });
 
         expect(contrastRatio(contrast.text, contrast.representativeBg)).toBeGreaterThanOrEqual(4.5);
-        expect(contrastRatio(contrast.muted, contrast.representativeBg)).toBeGreaterThanOrEqual(3);
+        expect(contrastRatio(contrast.muted, contrast.representativeBg)).toBeGreaterThanOrEqual(4.5);
+        expect(
+          Math.sign(relativeLuminance(contrast.text) - 0.5),
+        ).toBe(Math.sign(relativeLuminance(contrast.muted) - 0.5));
         expect(
           contrastRatio(contrast.buttons.primaryText, contrast.buttons.primaryBg),
         ).toBeGreaterThanOrEqual(4.5);

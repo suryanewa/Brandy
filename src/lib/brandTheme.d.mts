@@ -72,6 +72,7 @@ export type HeroButtonContrastTokens = Partial<{
 }>;
 
 export type HeroBackgroundCopyColors = {
+  challengingBg: string;
   text: string;
   muted: string;
   representativeBg: string;

@@ -195,7 +195,7 @@ for (let step = 0; step < 200; step += 1) {
         ratio: textRatio.toFixed(3),
       });
     }
-    if (mutedRatio < 3) {
+    if (mutedRatio < 4.5) {
       failures.push({
         label: `hero-copy-muted/${tone}/step=${step}`,
         textKey: "muted",

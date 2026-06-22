@@ -205,12 +205,12 @@
 
 :root[data-brandy-hero-background="on"] {
   --brandy-hero-background-text: #ffffff;
-  --brandy-hero-background-muted: color-mix(in srgb, var(--brandy-hero-background-text) 78%, transparent);
+  --brandy-hero-background-muted: color-mix(in srgb, var(--brandy-hero-background-text) 78%, #000000);
 }
 
 :root[data-brandy-hero-background-tone="light"] {
   --brandy-hero-background-text: #111416;
-  --brandy-hero-background-muted: color-mix(in srgb, var(--brandy-hero-background-text) 78%, transparent);
+  --brandy-hero-background-muted: color-mix(in srgb, var(--brandy-hero-background-text) 78%, #ffffff);
 }
 
 :root[data-brandy-hero-background="on"] .hero-section {
@@ -385,6 +385,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
+  width: 100%;
 }
 
 :root[data-brandy-hero-preset="editorial"] .hero-copy__title {
@@ -392,6 +393,14 @@
   margin-inline: auto;
   max-width: min(100%, 11ch);
   text-align: center;
+  width: 100%;
+}
+
+:root[data-brandy-hero-preset="editorial"] .hero-copy__line {
+  margin-inline: auto;
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
 }
 
 .section.logo-marquee-section {

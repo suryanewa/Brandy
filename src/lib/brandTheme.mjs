@@ -759,15 +759,12 @@ export function getHeroVisualContrastColors({
   const gradientTint = mixHex(primary, secondary, 0.38);
   const { scrimBase, scrimWeight } = getHeroScrimMix(tone, source);
   const representativeBg = mixHex(gradientTint, scrimBase, scrimWeight);
+  const challengingBg = getHeroChallengingBackground(gradientTint, tone, source);
   const text = getContrastText(representativeBg);
-  const muted = ensureContrastColor(
-    mixHex(text, representativeBg, 0.42),
-    representativeBg,
-    3,
-  );
+  const muted = getHeroMutedCopyColor(text, representativeBg, challengingBg);
   const buttons = resolveHeroButtonColors(representativeBg, buttonTokens, text);
 
-  return { text, muted, representativeBg, buttons };
+  return { text, muted, representativeBg, challengingBg, buttons };
 }
 
 function getHeroScrimMix(tone, source) {
@@ -780,6 +777,48 @@ function getHeroScrimMix(tone, source) {
   return tone === "light"
     ? { scrimBase: "#ffffff", scrimWeight: 0.76 }
     : { scrimBase: "#000000", scrimWeight: 0.58 };
+}
+
+function getHeroChallengingBackground(gradientTint, tone, source) {
+  const { scrimWeight } = getHeroScrimMix(tone, source);
+
+  return tone === "light"
+    ? mixHex(gradientTint, "#000000", Math.max(scrimWeight * 0.45, 0.1))
+    : mixHex(gradientTint, "#ffffff", Math.max(0.2 - scrimWeight * 0.45, 0.1));
+}
+
+function getHeroMutedCopyColor(text, representativeBg, challengingBg) {
+  const minimumRatio = 4.5;
+  const textIsLight = getRelativeLuminance(text) > 0.5;
+  const surfaces = [representativeBg, challengingBg];
+
+  for (const weight of [0.16, 0.22, 0.28, 0.34, 0.4, 0.46, 0.52, 0.58, 0.64]) {
+    for (const surface of surfaces) {
+      const candidate = mixHex(text, surface, weight);
+      if ((getRelativeLuminance(candidate) > 0.5) !== textIsLight) continue;
+      if (
+        surfaces.every((background) => getContrastRatio(candidate, background) >= minimumRatio)
+      ) {
+        return candidate;
+      }
+    }
+  }
+
+  if (
+    surfaces.every((background) => getContrastRatio(text, background) >= minimumRatio)
+  ) {
+    return text;
+  }
+
+  for (const weight of [0.1, 0.16, 0.22, 0.28, 0.34, 0.4, 0.46, 0.52, 0.58, 0.64, 0.7]) {
+    const candidate = mixHex(text, representativeBg, weight);
+    if ((getRelativeLuminance(candidate) > 0.5) !== textIsLight) continue;
+    if (getContrastRatio(candidate, representativeBg) >= minimumRatio) {
+      return candidate;
+    }
+  }
+
+  return text;
 }
 
 function resolveHeroButtonColors(representativeBg, buttonTokens, copyText) {
