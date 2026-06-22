@@ -20,7 +20,7 @@ describe("App", () => {
     );
     expect(
       screen.getAllByRole("link", {
-        name: /View system/,
+        name: /View content|Explore modules/,
       }).length,
     ).toBeGreaterThan(0);
   });
@@ -84,8 +84,8 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(document.querySelector("#sections")?.getAttribute("aria-labelledby")).toBe(
-      "features-title",
+    expect(document.querySelector("#cards")?.getAttribute("aria-labelledby")).toBe(
+      "cards-title",
     );
     expect(document.querySelector("#faq")?.getAttribute("aria-labelledby")).toBe(
       "faq-title",

@@ -9,16 +9,16 @@ export const landingPage = {
   nav: {
     links: [
       {
-        label: "System",
-        href: "#system",
+        label: "Content",
+        href: "#content",
       },
       {
-        label: "Modules",
-        href: "#sections",
+        label: "Cards",
+        href: "#cards",
       },
       {
-        label: "Demo",
-        href: "#demo",
+        label: "Bento",
+        href: "#bento",
       },
       {
         label: "FAQ",
@@ -26,20 +26,20 @@ export const landingPage = {
       },
     ],
     cta: {
-      label: "View system",
-      href: "#system",
+      label: "Explore modules",
+      href: "#cards",
     },
   },
   hero: {
     title: "Brand surfaces, generated from seeds.",
     description: "Choose the brand DNA, then preview launch-ready pages built from generated tokens, primitives, patterns, and sections.",
     primaryCta: {
-      label: "View system",
-      href: "#system",
+      label: "View content",
+      href: "#content",
     },
     secondaryCta: {
       label: "Explore modules",
-      href: "#sections",
+      href: "#cards",
     },
   },
   layers: [
@@ -57,7 +57,7 @@ export const landingPage = {
     },
     {
       title: "Sections",
-      description: "Hero, demo, problem, features, use cases, FAQ, final CTA, and footer modules.",
+      description: "Hero, logos, content, cards, bento, FAQ, final CTA, and footer modules.",
     },
     {
       title: "Page",
@@ -132,9 +132,10 @@ export const landingPage = {
     modules: [
       "Navbar",
       "Hero",
-      "System map",
-      "Demo",
-      "Features",
+      "Logos",
+      "Content",
+      "Cards",
+      "Bento",
       "FAQ",
       "Final CTA",
     ],
@@ -251,22 +252,22 @@ export const landingPage = {
     description: "Use Brandy as the foundation for launch pages, waitlists, product pages, and campaign variants.",
     cta: {
       label: "Explore modules",
-      href: "#sections",
+      href: "#cards",
     },
   },
   footer: {
     links: [
       {
-        label: "System",
-        href: "#system",
+        label: "Content",
+        href: "#content",
       },
       {
-        label: "Demo",
-        href: "#demo",
+        label: "Cards",
+        href: "#cards",
       },
       {
-        label: "Modules",
-        href: "#sections",
+        label: "Bento",
+        href: "#bento",
       },
       {
         label: "FAQ",

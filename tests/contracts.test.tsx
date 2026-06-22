@@ -208,8 +208,6 @@ describe("modular contracts", () => {
       landingPage.systemMap,
       landingPage.featureOverview,
       landingPage.demo,
-      landingPage.useCaseOverview,
-      landingPage.starter,
     ];
 
     for (const { title } of repeatedHeaders) {
@@ -248,9 +246,9 @@ describe("modular contracts", () => {
     window.history.pushState({}, "", "/");
     render(<App />);
 
-    const featureGrid = document.querySelector("#sections .feature-grid");
+    const featureGrid = document.querySelector("#cards .feature-grid");
     expect(featureGrid).toBeTruthy();
-    expect(document.querySelectorAll("#sections .feature-grid > .card").length).toBe(4);
+    expect(document.querySelectorAll("#cards .feature-grid > .card").length).toBe(4);
 
     applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "two-by-two" });
     expect(document.documentElement.dataset.brandyCardsPreset).toBe("two-by-two");
@@ -263,10 +261,7 @@ describe("modular contracts", () => {
     render(<App />);
 
     expect(
-      document.querySelector("#how-it-works .how-it-works-grid")?.classList,
-    ).toContain("one-row-card-grid");
-    expect(
-      document.querySelector("#use-cases .use-cases-grid")?.classList,
+      document.querySelector("#bento .bento-grid")?.classList,
     ).toContain("one-row-card-grid");
     expect(sectionsCss).toContain(".grid.one-row-card-grid");
     expect(sectionsCss).toContain("display: flex;");

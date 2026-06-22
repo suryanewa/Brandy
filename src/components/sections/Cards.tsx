@@ -2,11 +2,11 @@ import { landingPage } from "../../content/landing";
 import { FeatureGrid, SectionHeader } from "../patterns";
 import { Container, Section } from "../primitives";
 
-export function Features() {
+export function Cards() {
   return (
     <Section
-      aria-labelledby="features-title"
-      id="sections"
+      aria-labelledby="cards-title"
+      id="cards"
       size="lg"
       variant="muted"
     >
@@ -14,7 +14,7 @@ export function Features() {
         <SectionHeader
           description={landingPage.featureOverview.description}
           descriptionMaxLines={2}
-          headingId="features-title"
+          headingId="cards-title"
           title={landingPage.featureOverview.title}
           titleMaxLines={2}
         />

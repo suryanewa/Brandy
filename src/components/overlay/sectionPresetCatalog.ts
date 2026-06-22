@@ -12,9 +12,6 @@ export type SectionGroupKey =
   | "content"
   | "cards"
   | "bento"
-  | "testimonials"
-  | "pricing"
-  | "team"
   | "faq"
   | "cta"
   | "footer";
@@ -84,9 +81,6 @@ export const SECTION_GROUPS: readonly {
       { label: "Center hero / perimeter support", value: "center-hero-perimeter" },
     ],
   },
-  { key: "testimonials", presets: [{ label: "Default", value: "default" }] },
-  { key: "pricing", presets: [{ label: "Default", value: "default" }] },
-  { key: "team", presets: [{ label: "Default", value: "default" }] },
   { key: "faq", presets: [{ label: "Default", value: "default" }] },
   { key: "cta", presets: [{ label: "Default", value: "default" }] },
   { key: "footer", presets: [{ label: "Default", value: "default" }] },

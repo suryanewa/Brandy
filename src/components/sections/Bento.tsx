@@ -2,18 +2,18 @@ import { landingPage } from "../../content/landing";
 import { SectionHeader } from "../patterns";
 import { Card, Container, Grid, Heading, Section, Stack, Text } from "../primitives";
 
-export function HowItWorks() {
+export function Bento() {
   return (
-    <Section aria-labelledby="how-it-works-title" id="how-it-works" size="md">
-      <Container className="how-it-works-layout">
+    <Section aria-labelledby="bento-title" id="bento" size="md">
+      <Container className="bento-layout">
         <SectionHeader
           description={landingPage.systemMap.description}
           descriptionMaxLines={2}
-          headingId="how-it-works-title"
+          headingId="bento-title"
           title={landingPage.systemMap.title}
           titleMaxLines={2}
         />
-        <Grid className="centered-card-grid one-row-card-grid how-it-works-grid" columns={3}>
+        <Grid className="centered-card-grid one-row-card-grid bento-grid" columns={3}>
           {landingPage.howItWorks.map((step) => (
             <Card className="step-card" key={step.title}>
               <Stack gap="sm">

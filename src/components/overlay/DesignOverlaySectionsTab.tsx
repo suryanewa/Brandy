@@ -4,10 +4,8 @@ import {
   MessageSquare,
   Navigation,
   PanelBottom,
-  PanelTop,
   Rows3,
   Star,
-  Users,
 } from "lucide-react";
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
@@ -108,9 +106,6 @@ const SECTION_GROUPS = [
       { label: "Center hero / perimeter support", value: "center-hero-perimeter" },
     ],
   },
-  { key: "testimonials", title: "Testimonials", icon: <MessageSquare aria-hidden="true" />, presets: DEFAULT_PRESET },
-  { key: "pricing", title: "Pricing", icon: <PanelTop aria-hidden="true" />, presets: DEFAULT_PRESET },
-  { key: "team", title: "Team", icon: <Users aria-hidden="true" />, presets: DEFAULT_PRESET },
   { key: "faq", title: "FAQ", icon: <MessageSquare aria-hidden="true" />, presets: DEFAULT_PRESET },
   { key: "cta", title: "CTA", icon: <Star aria-hidden="true" />, presets: DEFAULT_PRESET },
   { key: "footer", title: "Footer", icon: <PanelBottom aria-hidden="true" />, presets: DEFAULT_PRESET },

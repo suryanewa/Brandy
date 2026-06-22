@@ -9,26 +9,26 @@ brand:
   description: "A brand surface testing tool for React teams who want tiny creative inputs, generated design tokens, and reusable landing page sections."
 nav:
   links:
-    - label: "System"
-      href: "#system"
-    - label: "Modules"
-      href: "#sections"
-    - label: "Demo"
-      href: "#demo"
+    - label: "Content"
+      href: "#content"
+    - label: "Cards"
+      href: "#cards"
+    - label: "Bento"
+      href: "#bento"
     - label: "FAQ"
       href: "#faq"
   cta:
-    label: "View system"
-    href: "#system"
+    label: "Explore modules"
+    href: "#cards"
 hero:
   title: "Brand surfaces, generated from seeds."
   description: "Choose the brand DNA, then preview launch-ready pages built from generated tokens, primitives, patterns, and sections."
   primaryCta:
-    label: "View system"
-    href: "#system"
+    label: "View content"
+    href: "#content"
   secondaryCta:
     label: "Explore modules"
-    href: "#sections"
+    href: "#cards"
 layers:
   - title: "Generated tokens"
     description: "Semantic color, type, spacing, radius, stroke, shadow, motion, and container values derived from creative seeds."
@@ -37,7 +37,7 @@ layers:
   - title: "Patterns"
     description: "Reusable arrangements like SectionHeader, BrowserFrame, FAQAccordion, and DemoFrame."
   - title: "Sections"
-    description: "Hero, demo, problem, features, use cases, FAQ, final CTA, and footer modules."
+    description: "Hero, logos, content, cards, bento, FAQ, final CTA, and footer modules."
   - title: "Page"
     description: "A composition file that orders modules instead of inventing layout rules."
 systemMap:
@@ -86,9 +86,10 @@ demo:
   modules:
     - "Navbar"
     - "Hero"
-    - "System map"
-    - "Demo"
-    - "Features"
+    - "Logos"
+    - "Content"
+    - "Cards"
+    - "Bento"
     - "FAQ"
     - "Final CTA"
   tokenSets:
@@ -166,15 +167,15 @@ finalCta:
   description: "Use Brandy as the foundation for launch pages, waitlists, product pages, and campaign variants."
   cta:
     label: "Explore modules"
-    href: "#sections"
+    href: "#cards"
 footer:
   links:
-    - label: "System"
-      href: "#system"
-    - label: "Demo"
-      href: "#demo"
-    - label: "Modules"
-      href: "#sections"
+    - label: "Content"
+      href: "#content"
+    - label: "Cards"
+      href: "#cards"
+    - label: "Bento"
+      href: "#bento"
     - label: "FAQ"
       href: "#faq"
     - label: "GitHub"

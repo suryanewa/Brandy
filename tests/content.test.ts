@@ -9,8 +9,8 @@ describe("landing content", () => {
   });
 
   it("defines CTA targets for the main persuasion path", () => {
-    expect(landingPage.hero.primaryCta.href).toBe("#system");
-    expect(landingPage.hero.secondaryCta.href).toBe("#sections");
-    expect(landingPage.finalCta.cta.href).toBe("#sections");
+    expect(landingPage.hero.primaryCta.href).toBe("#content");
+    expect(landingPage.hero.secondaryCta.href).toBe("#cards");
+    expect(landingPage.finalCta.cta.href).toBe("#cards");
   });
 });
