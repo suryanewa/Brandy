@@ -14,6 +14,7 @@ import {
 
 const BRANDY_SYNC_ROUTE = "/__brandy/sync/design";
 const MAX_SYNC_BODY_BYTES = 256 * 1024;
+const OVERLAY_SYNC_HMR_SUPPRESSION_MS = 7_000;
 const SOURCE_RELOAD_SUPPRESSION_MS = 5_000;
 const DESIGN_SOURCE_PATH = fileURLToPath(
   new URL("./content/design-tokens.yaml", import.meta.url),
@@ -21,6 +22,17 @@ const DESIGN_SOURCE_PATH = fileURLToPath(
 const COPY_SOURCE_PATH = fileURLToPath(
   new URL("./content/landing-copy.md", import.meta.url),
 );
+const TOKENS_CSS_PATH = fileURLToPath(
+  new URL("./src/styles/tokens.css", import.meta.url),
+);
+const TOKEN_CATALOG_PATH = fileURLToPath(
+  new URL("./src/components/overlay/designTokenCatalog.ts", import.meta.url),
+);
+const OVERLAY_SYNC_GENERATED_PATHS = [
+  DESIGN_SOURCE_PATH,
+  TOKENS_CSS_PATH,
+  TOKEN_CATALOG_PATH,
+] as const;
 const WATCHED_SOURCE_PATHS = new Map([
   [normalizeWatchedPath(DESIGN_SOURCE_PATH), "design"],
   [normalizeWatchedPath(COPY_SOURCE_PATH), "copy"],
@@ -35,10 +47,27 @@ type SourceReloadSuppression = {
 };
 
 const sourceReloadSuppressions = new Map<string, SourceReloadSuppression>();
+let overlaySyncHmrSuppressedUntil = 0;
+
+const GRADIENTS_SRC_PATH = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../gradients/src",
+);
 
 export default defineConfig({
   plugins: [react(), brandySourceSyncPlugin()],
+  resolve: {
+    alias: {
+      "@gradients": GRADIENTS_SRC_PATH,
+    },
+  },
   test: {
+    alias: {
+      "@paper-design/shaders-react": path.resolve(
+        path.dirname(fileURLToPath(import.meta.url)),
+        "tests/mocks/paper-design-shaders-react.tsx",
+      ),
+    },
     environment: "jsdom",
     globals: true,
   },
@@ -57,6 +86,11 @@ function brandySourceSyncPlugin(): Plugin {
       server.middlewares.use(BRANDY_SYNC_ROUTE, (request, response, next) => {
         void handleDesignSyncRequest(server, request, response, next);
       });
+    },
+    handleHotUpdate({ file }) {
+      if (isOverlaySyncHmrSuppressed()) return [];
+      if (shouldSuppressSourceReload(file)) return [];
+      return undefined;
     },
   };
 }
@@ -148,8 +182,10 @@ async function syncOverlayDesignTokens(
   lockup?: LockupSyncPayload,
   typography?: TypographySyncPayload,
 ) {
-  const finishSuppressingSourceReload =
-    beginSuppressingSourceReload(DESIGN_SOURCE_PATH);
+  const finishSuppressingOverlaySyncHmr = beginSuppressingOverlaySyncHmr();
+  const finishSuppressingSourceReloads = OVERLAY_SYNC_GENERATED_PATHS.map(
+    beginSuppressingSourceReload,
+  );
 
   try {
     return await syncDesignTokensFromValues(values, {
@@ -160,7 +196,10 @@ async function syncOverlayDesignTokens(
       typography,
     });
   } finally {
-    finishSuppressingSourceReload();
+    for (const finishSuppressingSourceReload of finishSuppressingSourceReloads) {
+      finishSuppressingSourceReload();
+    }
+    finishSuppressingOverlaySyncHmr();
   }
 }
 
@@ -673,6 +712,24 @@ function loadKnownDesignTokenNames(): Set<string> {
 
 function sendFullReload(server: ViteDevServer) {
   server.ws.send({ type: "full-reload" });
+}
+
+function beginSuppressingOverlaySyncHmr(): () => void {
+  overlaySyncHmrSuppressedUntil = Math.max(
+    overlaySyncHmrSuppressedUntil,
+    Date.now() + OVERLAY_SYNC_HMR_SUPPRESSION_MS,
+  );
+
+  return () => {
+    overlaySyncHmrSuppressedUntil = Math.max(
+      overlaySyncHmrSuppressedUntil,
+      Date.now() + OVERLAY_SYNC_HMR_SUPPRESSION_MS,
+    );
+  };
+}
+
+function isOverlaySyncHmrSuppressed(): boolean {
+  return overlaySyncHmrSuppressedUntil >= Date.now();
 }
 
 function beginSuppressingSourceReload(filePath: string): () => void {

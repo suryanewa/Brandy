@@ -3,6 +3,10 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { App } from "../src/App";
 import { Button, Section } from "../src/components/primitives";
+import {
+  applySectionPresetAttributes,
+  DEFAULT_SECTION_PRESETS,
+} from "../src/components/overlay/sectionPresetCatalog";
 import { landingPage } from "../src/content/landing";
 
 const supportedSwatches = new Set(["green", "white", "radius"]);
@@ -211,6 +215,29 @@ describe("modular contracts", () => {
       '.section-header[data-description-max-lines="2"] .section-header__description',
     );
     expect(patternsCss).toContain("-webkit-line-clamp: 2;");
+  });
+
+  it("applies card presets to repeated card grids", () => {
+    expect(sectionsCss).toContain(":root[data-brandy-cards-preset=\"two-by-two\"]");
+    expect(sectionsCss).toContain(
+      ":root[data-brandy-cards-preset] :is(.feature-grid, .use-cases-grid, .how-it-works-grid)",
+    );
+    expect(sectionsCss).toContain("display: grid;");
+    expect(sectionsCss).toContain(":root[data-brandy-cards-preset=\"three-two\"]");
+    expect(sectionsCss).toContain(":root[data-brandy-cards-preset=\"four-three\"]");
+
+    window.history.pushState({}, "", "/");
+    render(<App />);
+
+    const featureGrid = document.querySelector("#sections .feature-grid");
+    expect(featureGrid).toBeTruthy();
+    expect(document.querySelectorAll("#sections .feature-grid > .card").length).toBe(4);
+
+    applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "two-by-two" });
+    expect(document.documentElement.dataset.brandyCardsPreset).toBe("two-by-two");
+
+    applySectionPresetAttributes({ ...DEFAULT_SECTION_PRESETS, cards: "one-by-two" });
+    expect(document.documentElement.dataset.brandyCardsPreset).toBe("one-by-two");
   });
 
   it("keeps repeated card groups in one row where required", () => {

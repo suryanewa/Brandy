@@ -200,7 +200,7 @@ describe("brand theme generator", () => {
 
   it("remixes derived color distances while preserving readable contrast", () => {
     const derivation = generateBrandDerivationRemix({ step: 0 });
-    const repeat = generateBrandDerivationRemix({ step: 0 });
+    const repeat = generateBrandDerivationRemix({ step: 0, salt: 0 });
 
     expect(derivation).toMatchObject({
       backgroundDistancePercent: 161,

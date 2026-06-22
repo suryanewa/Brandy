@@ -165,6 +165,35 @@
   align-items: center;
 }
 
+:root[data-brandy-hero-background="on"] .hero-section {
+  overflow: hidden;
+  position: relative;
+}
+
+:root[data-brandy-hero-remixing="true"] .hero-section__shader {
+  visibility: hidden;
+}
+
+.hero-section__shader {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.hero-section__shader-canvas {
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+:root[data-brandy-hero-background="on"] .hero-section > .container {
+  position: relative;
+  z-index: 1;
+}
+
 :root[data-brandy-hero-background="on"] {
   --brandy-hero-background-text: #ffffff;
   --brandy-hero-background-muted: color-mix(in srgb, var(--brandy-hero-background-text) 78%, transparent);
@@ -202,6 +231,36 @@
   background-position: center, center, var(--brandy-hero-background-position, center);
   background-repeat: no-repeat, no-repeat, var(--brandy-hero-background-repeat, no-repeat);
   background-size: cover, cover, var(--brandy-hero-background-size, cover);
+}
+
+:root[data-brandy-hero-background-source="hiro"] .hero-section {
+  --brandy-hero-background-scrim: rgb(0 0 0 / 0.24);
+
+  background-image:
+    linear-gradient(
+      var(--brandy-hero-background-scrim),
+      var(--brandy-hero-background-scrim)
+    ),
+    var(--brandy-hero-background-image);
+  background-position: center, var(--brandy-hero-background-position, center);
+  background-repeat: no-repeat, var(--brandy-hero-background-repeat, no-repeat);
+  background-size: cover, var(--brandy-hero-background-size, cover);
+}
+
+:root[data-brandy-hero-background-source="hiro"][data-brandy-hero-background-tone="light"] .hero-section {
+  --brandy-hero-background-scrim: rgb(255 255 255 / 0.34);
+}
+
+:root[data-brandy-hero-background="on"][data-brandy-hero-shader="on"] .hero-section,
+:root[data-brandy-hero-background-source="hiro"][data-brandy-hero-shader="on"] .hero-section {
+  background-image:
+    linear-gradient(
+      var(--brandy-hero-background-scrim),
+      var(--brandy-hero-background-scrim)
+    );
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 :root[data-brandy-hero-background-tone="light"] .hero-section {
@@ -506,10 +565,6 @@
   order: 2;
 }
 
-:root[data-brandy-content-preset="right-copy-left-card"] .split .section-header {
-  text-align: right;
-}
-
 .how-it-works-layout {
   display: grid;
   justify-items: stretch;
@@ -543,37 +598,219 @@
   max-width: 22rem;
 }
 
-:root[data-brandy-cards-preset="one-by-two"] {
+:root[data-brandy-cards-preset="one-by-two"],
+:root[data-brandy-cards-preset="two-by-two"] {
   --brandy-section-card-columns: 2;
 }
 
 :root[data-brandy-cards-preset="one-by-three"],
-:root[data-brandy-cards-preset="two-by-three"],
-:root[data-brandy-cards-preset="three-two"],
-:root[data-brandy-cards-preset="two-three"] {
+:root[data-brandy-cards-preset="two-by-three"] {
   --brandy-section-card-columns: 3;
 }
 
 :root[data-brandy-cards-preset="one-by-four"],
-:root[data-brandy-cards-preset="two-by-four"],
-:root[data-brandy-cards-preset="three-four"],
-:root[data-brandy-cards-preset="four-three"] {
+:root[data-brandy-cards-preset="two-by-four"] {
   --brandy-section-card-columns: 4;
 }
 
-:root[data-brandy-cards-preset] :is(.feature-grid, .use-cases-grid, .centered-card-grid, .one-row-card-grid) {
+:root[data-brandy-cards-preset] :is(.feature-grid, .use-cases-grid, .how-it-works-grid) {
   display: grid;
+  flex-wrap: unset;
   gap: var(--space-6);
   grid-template-columns: repeat(var(--brandy-section-card-columns, 3), minmax(0, min(22rem, 100%)));
   justify-content: center;
   justify-items: stretch;
   margin-inline: auto;
+  width: 100%;
 }
 
-:root[data-brandy-cards-preset] :is(.feature-grid, .use-cases-grid, .centered-card-grid, .one-row-card-grid) > .card {
+:root[data-brandy-cards-preset] :is(.feature-grid, .use-cases-grid, .how-it-works-grid) > .card {
+  flex: unset;
   inline-size: 100%;
   max-width: 22rem;
   min-height: 0;
+}
+
+:root[data-brandy-cards-preset="one-by-two"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 3) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="one-by-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 4) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="one-by-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 5) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="two-by-two"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 5) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="two-by-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 7) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="two-by-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 9) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="three-two"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid) {
+  grid-template-columns: repeat(6, minmax(0, min(11rem, 100%)));
+}
+
+:root[data-brandy-cards-preset="three-two"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(-n + 3) {
+  grid-column: span 2;
+}
+
+:root[data-brandy-cards-preset="three-two"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+:root[data-brandy-cards-preset="three-two"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(5) {
+  grid-column: 4 / span 2;
+}
+
+:root[data-brandy-cards-preset="three-two"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 6) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="two-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid) {
+  grid-template-columns: repeat(6, minmax(0, min(11rem, 100%)));
+}
+
+:root[data-brandy-cards-preset="two-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(1) {
+  grid-column: 1 / span 3;
+}
+
+:root[data-brandy-cards-preset="two-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(2) {
+  grid-column: 4 / span 3;
+}
+
+:root[data-brandy-cards-preset="two-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(3) {
+  grid-column: 1 / span 2;
+}
+
+:root[data-brandy-cards-preset="two-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(4) {
+  grid-column: 3 / span 2;
+}
+
+:root[data-brandy-cards-preset="two-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(5) {
+  grid-column: 5 / span 2;
+}
+
+:root[data-brandy-cards-preset="two-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 6) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="three-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid) {
+  grid-template-columns: repeat(12, minmax(0, min(5.5rem, 100%)));
+}
+
+:root[data-brandy-cards-preset="three-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(-n + 3) {
+  grid-column: span 4;
+}
+
+:root[data-brandy-cards-preset="three-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(4) {
+  grid-column: 1 / span 3;
+}
+
+:root[data-brandy-cards-preset="three-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(5) {
+  grid-column: 4 / span 3;
+}
+
+:root[data-brandy-cards-preset="three-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(6) {
+  grid-column: 7 / span 3;
+}
+
+:root[data-brandy-cards-preset="three-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(7) {
+  grid-column: 10 / span 3;
+}
+
+:root[data-brandy-cards-preset="three-four"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 8) {
+  display: none;
+}
+
+:root[data-brandy-cards-preset="four-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid) {
+  grid-template-columns: repeat(12, minmax(0, min(5.5rem, 100%)));
+}
+
+:root[data-brandy-cards-preset="four-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(-n + 4) {
+  grid-column: span 3;
+}
+
+:root[data-brandy-cards-preset="four-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(5) {
+  grid-column: 1 / span 4;
+}
+
+:root[data-brandy-cards-preset="four-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(6) {
+  grid-column: 5 / span 4;
+}
+
+:root[data-brandy-cards-preset="four-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(7) {
+  grid-column: 9 / span 4;
+}
+
+:root[data-brandy-cards-preset="four-three"]
+  :is(.feature-grid, .use-cases-grid, .how-it-works-grid)
+  > .card:nth-child(n + 8) {
+  display: none;
 }
 
 .step-card {

@@ -6,6 +6,7 @@ import {
   within,
   waitFor,
 } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DesignOverlay } from "../src/components/overlay";
 import {
@@ -16,6 +17,11 @@ import {
   snapToStep,
 } from "../src/components/overlay/designOverlayModel";
 import { DESIGN_TOKEN_STORAGE_KEY } from "../src/components/overlay/designTokenCatalog";
+import {
+  getHeroVisualGeneration,
+  resetHeroBackgroundRuntimeState,
+} from "../src/components/overlay/heroBackgroundRuntime";
+import { resetPaletteRemixHistory } from "../src/components/overlay/designOverlayRemix";
 vi.setConfig({ testTimeout: 10000 });
 
 const SOURCE_SYNC_TEST_WAIT_MS = 700;
@@ -32,10 +38,15 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.useRealTimers();
   window.localStorage.clear();
+  resetHeroBackgroundRuntimeState();
+  resetPaletteRemixHistory();
   delete document.documentElement.dataset.brandyHeroBackground;
   delete document.documentElement.dataset.brandyHeroBackgroundId;
   delete document.documentElement.dataset.brandyHeroBackgroundSource;
   delete document.documentElement.dataset.brandyHeroBackgroundTone;
+  delete document.documentElement.dataset.brandyHeroShader;
+  delete document.documentElement.dataset.brandyHeroShaderType;
+  delete document.documentElement.dataset.brandyHeroShaderPreset;
   document.documentElement.removeAttribute("style");
 });
 
@@ -243,9 +254,7 @@ describe("DesignOverlay", () => {
     expect(backgroundToggle.checked).toBe(true);
     expect(document.documentElement.dataset.brandyHeroBackground).toBe("on");
     expect(document.documentElement.dataset.brandyHeroBackgroundId).toBeTruthy();
-    expect(document.documentElement.dataset.brandyHeroBackgroundSource).toMatch(
-      /^(aceternity|animateui|gradientshub|kokonutui|magicui|patterncraft|reactbits|uilayouts|vengenceui)$/,
-    );
+    expect(document.documentElement.dataset.brandyHeroBackgroundSource).toBe("hiro");
     expect(document.documentElement.dataset.brandyHeroBackgroundTone).toMatch(
       /^(dark|light)$/,
     );
@@ -287,6 +296,35 @@ describe("DesignOverlay", () => {
     expect(
       document.documentElement.style.getPropertyValue("--brandy-hero-background-size"),
     ).toBe("");
+  });
+
+  it("adds a palette-matched hero shader layer from the sections tab", async () => {
+    render(<DesignOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Sections" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hero" }));
+
+    const shaderToggle = screen.getByRole("switch", {
+      name: "Shader",
+    }) as HTMLInputElement;
+    expect(shaderToggle.checked).toBe(false);
+    expect(document.documentElement.dataset.brandyHeroShader).toBeUndefined();
+
+    fireEvent.click(shaderToggle);
+
+    await waitFor(() => {
+      expect(shaderToggle.checked).toBe(true);
+      expect(document.documentElement.dataset.brandyHeroBackground).toBe("on");
+      expect(document.documentElement.dataset.brandyHeroShader).toBe("on");
+      expect(document.documentElement.dataset.brandyHeroShaderType).toBeTruthy();
+    });
+    expect(
+      document.documentElement.style.getPropertyValue("--brandy-hero-background-image"),
+    ).toBe("");
+
+    fireEvent.click(shaderToggle);
+    expect(shaderToggle.checked).toBe(false);
+    expect(document.documentElement.dataset.brandyHeroShader).toBeUndefined();
   });
 
   it("omits vertical navbar presets from the sections tab", () => {
@@ -559,7 +597,7 @@ describe("DesignOverlay", () => {
     expect(payload.values["--button-primary-hover"]).toBeUndefined();
   });
 
-  it("remixes palette seeds and syncs the source brand colors", async () => {
+  it("remixes palette seeds without source-sync churn", async () => {
     vi.useFakeTimers();
     vi.spyOn(Math, "random").mockReturnValue(0);
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -604,32 +642,7 @@ describe("DesignOverlay", () => {
 
     await waitForSourceSyncDebounce();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-
-    const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
-    const payload = JSON.parse(String(requestInit.body)) as {
-      brand: Record<string, string>;
-      brandDerivation: Record<string, number>;
-      values: Record<string, string>;
-    };
-
-    expect(payload.brand).toEqual({
-      accent: "#fc4232",
-      highlight: "#d6eec0",
-      primary: "#f7a036",
-      secondary: "#dfe83b",
-    });
-    expect(payload.brandDerivation).toMatchObject({
-      backgroundDistancePercent: 161,
-      buttonPrimaryBgDistancePercent: 100,
-      footerBackgroundDistancePercent: 196,
-      footerBorderDistancePercent: 98,
-      linkHoverDistancePercent: 121,
-      primaryHoverDistancePercent: 146,
-      secondaryTextDistancePercent: 112,
-    });
-    expect(payload.values["--brand-primary-500"]).toBeUndefined();
-    expect(payload.values["--gradient-hero-accent"]).toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("randomizes palette toggles on section remix unless they are locked", () => {
@@ -659,9 +672,9 @@ describe("DesignOverlay", () => {
     randomSpy.mockReturnValue(0.9);
     fireEvent.keyDown(window, { key: " " });
 
-    expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
-      "#f7a036",
-    );
+    const primary = document.documentElement.style.getPropertyValue("--brand-primary-500");
+    expect(primary).not.toBe("");
+    expect(primary).not.toBe("#635bff");
     expect(
       document.documentElement.style.getPropertyValue("--gradient-hero-accent"),
     ).not.toBe("");
@@ -679,6 +692,31 @@ describe("DesignOverlay", () => {
     ).toBe(true);
   });
 
+  it("commits one stable remix generation per shortcut or button in StrictMode", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    render(
+      <StrictMode>
+        <DesignOverlay />
+      </StrictMode>,
+    );
+
+    randomSpy.mockReturnValue(0.9);
+    fireEvent.keyDown(window, { key: " " });
+
+    expect(getHeroVisualGeneration()).toBe(1);
+    expect(document.documentElement.style.getPropertyValue("--font-size-display")).not.toBe(
+      "",
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--section-padding-y-md"),
+    ).not.toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
+
+    expect(getHeroVisualGeneration()).toBe(2);
+  });
+
   it("remixes with Space while focus is inside the settings panel", () => {
     const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
     render(<DesignOverlay />);
@@ -690,9 +728,9 @@ describe("DesignOverlay", () => {
     randomSpy.mockReturnValue(0.9);
     fireEvent.keyDown(paletteToggle, { key: " " });
 
-    expect(document.documentElement.style.getPropertyValue("--brand-primary-500")).toBe(
-      "#f7a036",
-    );
+    const primary = document.documentElement.style.getPropertyValue("--brand-primary-500");
+    expect(primary).not.toBe("");
+    expect(primary).not.toBe("#635bff");
     expect(document.activeElement).not.toBe(paletteToggle);
   });
 
@@ -712,20 +750,19 @@ describe("DesignOverlay", () => {
     ).toBe("");
   });
 
-  it("keeps sequential remixes anchored to the starting seed palette", () => {
+  it("keeps sequential palette remixes producing different colors", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     render(<DesignOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Open design settings" }));
 
     fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
-    fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
+    const firstPrimary = (screen.getByLabelText("Primary hex color") as HTMLInputElement).value;
 
-    expect((screen.getByLabelText("Primary hex color") as HTMLInputElement).value).toBe(
-      "#b0ade5",
-    );
-    expect((screen.getByLabelText("Secondary hex color") as HTMLInputElement).value).toBe(
-      "#dee299",
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Remix palette" }));
+    const secondPrimary = (screen.getByLabelText("Primary hex color") as HTMLInputElement).value;
+
+    expect(firstPrimary).not.toBe("#635bff");
+    expect(secondPrimary).not.toBe(firstPrimary);
   });
 
   it("does not remix with Space while typing in controls", () => {
@@ -883,7 +920,7 @@ describe("DesignOverlay", () => {
     );
   });
 
-  it("remixes typography pairings and syncs the source typography seeds", async () => {
+  it("remixes typography pairings without source-sync churn", async () => {
     vi.useFakeTimers();
     vi.spyOn(Math, "random").mockReturnValue(0);
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -946,27 +983,7 @@ describe("DesignOverlay", () => {
 
     await waitForSourceSyncDebounce();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-
-    const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
-    const payload = JSON.parse(String(requestInit.body)) as {
-      typography: Record<string, string | number>;
-      values: Record<string, string>;
-    };
-
-    expect(payload.typography).toEqual({
-      density: 58,
-      headlineStyle: 64,
-      pairing: "display_plus_text",
-      primaryFont: "inter",
-      scale: 72,
-      secondaryFont: "roboto",
-      style: "geometric",
-      tightness: 54,
-      weight: 64,
-    });
-    expect(payload.values["--font-family-heading"]).toBeUndefined();
-    expect(payload.values["--font-size-display"]).toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("samples typography remixes from the random source at click time", () => {
@@ -981,7 +998,7 @@ describe("DesignOverlay", () => {
     expect(randomSpy.mock.calls.length).toBeGreaterThan(callsBeforeRemix);
   });
 
-  it("remixes layout controls and syncs the source layout seeds", async () => {
+  it("remixes layout controls without source-sync churn", async () => {
     vi.useFakeTimers();
     vi.spyOn(Math, "random").mockReturnValue(0);
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -1059,27 +1076,7 @@ describe("DesignOverlay", () => {
 
     await waitForSourceSyncDebounce();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-
-    const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
-    const payload = JSON.parse(String(requestInit.body)) as {
-      layout: Record<string, string | number>;
-      values: Record<string, string>;
-    };
-
-    expect(payload.layout).toEqual({
-      gridDensity,
-      heroBalance,
-      heroScale,
-      pageGutter,
-      radius,
-      spacing,
-      textWidth,
-      width: pageWidth,
-    });
-    expect(payload.values["--section-padding-y-md"]).toBeUndefined();
-    expect(payload.values["--container-lg"]).toBeUndefined();
-    expect(payload.values["--hero-grid-text-fr"]).toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("randomizes concrete font pairings when type style or pairing selections repeat", () => {
@@ -1211,6 +1208,12 @@ describe("DesignOverlay", () => {
     expect(payload.values["--section-padding-y-md"]).toBeUndefined();
     expect(payload.values["--font-size-body"]).toBeUndefined();
     expect(payload.values["--font-weight-heading"]).toBeUndefined();
+    expect(
+      JSON.parse(window.localStorage.getItem(DESIGN_OVERLAY_STORAGE_KEY) ?? "{}"),
+    ).toMatchObject({
+      sectionSpacing: 110,
+      typographyWeight: 85,
+    });
     await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
     expect(screen.queryByText("Auto-synced to YAML")).toBeNull();
   });

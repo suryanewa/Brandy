@@ -6,11 +6,9 @@ import {
   SlidersHorizontal,
   Type,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   BRAND_GENERATED_TOKEN_NAMES,
-  generateBrandDerivationRemix,
-  generatePaletteRemix,
 } from "../../lib/brandTheme.mjs";
 import { LAYOUT_GENERATED_TOKEN_NAMES, generateLayoutRemix } from "../../lib/layoutTheme.mjs";
 import { LOCKUP_GENERATED_TOKEN_NAMES, generateLockupRemix } from "../../lib/lockupTheme.mjs";
@@ -18,7 +16,6 @@ import { TYPOGRAPHY_GENERATED_TOKEN_NAMES } from "../../lib/typographyTheme.mjs"
 import {
   DEFAULT_DESIGN_OVERLAY_VALUES,
   DESIGN_CSS_VARIABLE_NAMES,
-  DESIGN_OVERLAY_STORAGE_KEY,
   DESIGN_VALUES_CHANGE_EVENT,
   areDesignValuesEqual,
   getDesignBrandDerivation,
@@ -29,7 +26,6 @@ import {
   getDesignTypographySeeds,
   persistDesignValueDiff,
   readStoredDesignValues,
-  type DesignCssVariableName,
   type DesignOverlayGroupKey,
   type DesignOverlayValues,
 } from "./designOverlayModel";
@@ -63,25 +59,29 @@ import {
 } from "./DesignOverlayControls";
 import {
   DESIGN_TOKEN_CSS_VARIABLE_NAMES,
-  DESIGN_TOKEN_STORAGE_KEY,
-  getDesignTokenCssVariables,
   persistDesignTokenValueDiff,
   readStoredDesignTokenValues,
   type DesignTokenValueMap,
-  type DesignTokenVariableName,
 } from "./designTokenCatalog";
 import { CollapsibleGroup, GroupRemixAction, ParameterActions } from "./DesignOverlayGroups";
+import {
+  applyPreparedHeroRemixCommit,
+  commitHeroRemixToPage,
+  flushHeroRemixLayout,
+  getHeroVisualGeneration,
+  syncHeroVisualFromDesignValues,
+} from "./heroBackgroundRuntime";
+import { applyDesignPageCss } from "./designOverlayPageSync";
 import { DesignOverlayPaletteControls } from "./DesignOverlayPaletteControls";
 import { DesignOverlaySectionsTab } from "./DesignOverlaySectionsTab";
 import { DesignOverlayTabs, type DesignOverlayTab } from "./DesignOverlayTabs";
 import {
   applyDesignValuesPatch,
-  getBooleanRemixPatch,
+  buildPaletteRemixPatch,
   getLayoutRemixPatch,
   getLayoutRemixSalt,
   getLockupRemixPatch,
   getLockupRemixSalt,
-  getPaletteRemixSalt,
   getRandomTypographyPresetPatch,
   getRandomTypographyRemixPatch,
   getUnlockedPatch,
@@ -139,16 +139,14 @@ export function DesignOverlay({
   const restoreRef = useRef<InlineRestore | null>(null);
   const lastSyncedSourcePayloadRef = useRef("");
   const latestSourceSyncPayloadRef = useRef("");
-  const paletteRemixBaseRef = useRef<ReturnType<typeof getDesignBrandSeeds> | null>(
-    null,
-  );
-  const paletteRemixSaltRef = useRef(getPaletteRemixSalt());
   const paletteRemixStepRef = useRef(0);
   const layoutRemixSaltRef = useRef(getLayoutRemixSalt());
   const layoutRemixStepRef = useRef(0);
   const lockupRemixSaltRef = useRef(getLockupRemixSalt());
   const lockupRemixStepRef = useRef(0);
   const typographyPresetPairsRef = useRef(new Map<string, string>());
+  const pageSyncedFromRemixRef = useRef(false);
+  const syncedHeroGenerationRef = useRef(-1);
   const [open, setOpen] = useState(initialOpen);
   const [panelRendered, setPanelRendered] = useState(initialOpen);
   const [expandedGroups, setExpandedGroups] =
@@ -166,6 +164,7 @@ export function DesignOverlay({
   const [values, setValues] = useState<DesignOverlayValues>(() =>
     readStoredDesignValues(resolvedDefaults),
   );
+  const valuesRef = useRef(values);
   const [tokenValues, setTokenValues] = useState<DesignTokenValueMap>(() =>
     readStoredDesignTokenValues(),
   );
@@ -186,6 +185,50 @@ export function DesignOverlay({
     if (typeof document === "undefined") return null;
     return document.documentElement;
   }, [targetRoot]);
+
+  const applyPageCss = useCallback(
+    (nextValues: DesignOverlayValues, nextTokenValues: DesignTokenValueMap = tokenValues) => {
+      const target = resolveTargetRoot();
+      if (!target) return;
+      applyDesignPageCss(target, nextValues, resolvedDefaults, nextTokenValues);
+    },
+    [resolveTargetRoot, resolvedDefaults, tokenValues],
+  );
+
+  const dispatchDesignValuesChange = useCallback((nextValues: DesignOverlayValues) => {
+    window.dispatchEvent(
+      new CustomEvent<DesignOverlayValues>(DESIGN_VALUES_CHANGE_EVENT, {
+        detail: nextValues,
+      }),
+    );
+  }, []);
+
+  const setValuesSnapshot = useCallback((nextValues: DesignOverlayValues) => {
+    valuesRef.current = nextValues;
+    setValues(nextValues);
+  }, []);
+
+  const commitDesignSnapshotToPage = useCallback(
+    (nextValues: DesignOverlayValues) => {
+      applyPageCss(nextValues);
+      dispatchDesignValuesChange(nextValues);
+    },
+    [applyPageCss, dispatchDesignValuesChange],
+  );
+
+  const commitRemixToPage = useCallback(
+    (nextValues: DesignOverlayValues, remixSectionPresets = false) => {
+      commitHeroRemixToPage({
+        applyCss: () => applyPageCss(nextValues),
+        remixSectionPresets,
+        values: nextValues,
+      });
+      syncedHeroGenerationRef.current = getHeroVisualGeneration();
+      pageSyncedFromRemixRef.current = true;
+      dispatchDesignValuesChange(nextValues);
+    },
+    [applyPageCss, dispatchDesignValuesChange],
+  );
 
   const restoreInlineVariables = useCallback(() => {
     const restore = restoreRef.current;
@@ -276,39 +319,37 @@ export function DesignOverlay({
     return restoreInlineVariables;
   }, [resolveTargetRoot, restoreInlineVariables]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    valuesRef.current = values;
+
     const target = resolveTargetRoot();
     if (!target) return;
 
-    const designIsDirty = !areDesignValuesEqual(values, resolvedDefaults);
-    const curatedVariables: Partial<Record<DesignCssVariableName, string>> =
-      designIsDirty ? getDesignCssVariables(values) : {};
-    const directVariables = getDesignTokenCssVariables(tokenValues);
+    applyDesignPageCss(target, values, resolvedDefaults, tokenValues);
 
-    for (const name of TRACKED_CSS_VARIABLE_NAMES) {
-      const nextValue =
-        directVariables[name as DesignTokenVariableName] ??
-        curatedVariables[name as DesignCssVariableName];
-
-      if (nextValue) {
-        target.style.setProperty(name, nextValue);
-      } else {
-        target.style.removeProperty(name);
-      }
+    if (pageSyncedFromRemixRef.current) {
+      pageSyncedFromRemixRef.current = false;
+      return;
     }
-  }, [resolveTargetRoot, resolvedDefaults, tokenValues, values]);
+
+    flushHeroRemixLayout();
+
+    if (!applyPreparedHeroRemixCommit()) {
+      syncHeroVisualFromDesignValues(values);
+    }
+
+    dispatchDesignValuesChange(values);
+  }, [
+    dispatchDesignValuesChange,
+    resolveTargetRoot,
+    resolvedDefaults,
+    tokenValues,
+    values,
+  ]);
 
   useEffect(() => {
     persistDesignValueDiff(values, resolvedDefaults);
   }, [resolvedDefaults, values]);
-
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent<DesignOverlayValues>(DESIGN_VALUES_CHANGE_EVENT, {
-        detail: values,
-      }),
-    );
-  }, [values]);
 
   useEffect(() => {
     persistDesignTokenValueDiff(tokenValues);
@@ -385,6 +426,11 @@ export function DesignOverlay({
     setSourceSyncState("idle");
     setSourceSyncMessage("");
   }, []);
+  const cancelSourceSyncForRemix = useCallback(() => {
+    setSourceSyncUserEdited(false);
+    setSourceSyncState("idle");
+    setSourceSyncMessage("");
+  }, []);
 
   const updateValue = useCallback(
     <Key extends keyof DesignOverlayValues,>(
@@ -433,8 +479,6 @@ export function DesignOverlay({
   );
   const updateBrandColorValue = useCallback(
     (key: "primaryColor" | "secondaryColor" | "accentColor" | "highlightColor", value: string) => {
-      paletteRemixBaseRef.current = null;
-      paletteRemixSaltRef.current = getPaletteRemixSalt();
       paletteRemixStepRef.current = 0;
       updateValue(key, value);
     },
@@ -462,53 +506,55 @@ export function DesignOverlay({
   }, []);
 
   const getNextPaletteRemixPatch = useCallback(
-    (current: DesignOverlayValues): DesignValuesPatch => {
-      const remixStep = paletteRemixStepRef.current;
-      paletteRemixStepRef.current += 1;
-      const remixBase = paletteRemixBaseRef.current ?? getDesignBrandSeeds(current);
-      paletteRemixBaseRef.current = remixBase;
-      const remix = generatePaletteRemix(remixBase, {
-        salt: paletteRemixSaltRef.current,
-        step: remixStep,
-      });
-
-      return {
-        ...generateBrandDerivationRemix({ step: remixStep }),
-        ...getBooleanRemixPatch(),
-        primaryColor: remix.palette.primary,
-        secondaryColor: remix.palette.secondary,
-        accentColor: remix.palette.accent,
-        highlightColor: remix.palette.highlight,
-      };
-    },
+    (current: DesignOverlayValues): DesignValuesPatch =>
+      buildPaletteRemixPatch(current, () => {
+        const remixStep = paletteRemixStepRef.current;
+        paletteRemixStepRef.current += 1;
+        return remixStep;
+      }),
     [],
   );
 
   const remixPalette = useCallback(() => {
     if (lockedGroups.has("palette")) return;
-    markSourceSyncDirty();
-    setValues((current) => {
-      const patch = getUnlockedPatch(getNextPaletteRemixPatch(current), lockedKeys);
-      return applyDesignValuesPatch(current, patch);
-    });
-  }, [getNextPaletteRemixPatch, lockedGroups, lockedKeys, markSourceSyncDirty]);
+    cancelSourceSyncForRemix();
+    const current = valuesRef.current;
+    const patch = getUnlockedPatch(getNextPaletteRemixPatch(current), lockedKeys);
+    const next = applyDesignValuesPatch(current, patch);
+    setValuesSnapshot(next);
+    commitRemixToPage(next);
+  }, [
+    cancelSourceSyncForRemix,
+    commitRemixToPage,
+    getNextPaletteRemixPatch,
+    lockedGroups,
+    lockedKeys,
+    setValuesSnapshot,
+  ]);
 
   const remixTypography = useCallback(() => {
     if (lockedGroups.has("typography")) return;
-    markSourceSyncDirty();
-    setValues((current) => {
-      const currentPair = `${current.typographyPrimaryFont}/${current.typographySecondaryFont}`;
-      const patch = getUnlockedPatch(
-        getRandomTypographyRemixPatch(currentPair),
-        lockedKeys,
-      );
-      return applyDesignValuesPatch(current, patch);
-    });
-  }, [lockedGroups, lockedKeys, markSourceSyncDirty]);
+    cancelSourceSyncForRemix();
+    const current = valuesRef.current;
+    const currentPair = `${current.typographyPrimaryFont}/${current.typographySecondaryFont}`;
+    const patch = getUnlockedPatch(
+      getRandomTypographyRemixPatch(currentPair),
+      lockedKeys,
+    );
+    const next = applyDesignValuesPatch(current, patch);
+    setValuesSnapshot(next);
+    commitDesignSnapshotToPage(next);
+  }, [
+    cancelSourceSyncForRemix,
+    commitDesignSnapshotToPage,
+    lockedGroups,
+    lockedKeys,
+    setValuesSnapshot,
+  ]);
 
   const remixLayout = useCallback(() => {
     if (lockedGroups.has("layout")) return;
-    markSourceSyncDirty();
+    cancelSourceSyncForRemix();
     const remixStep = layoutRemixStepRef.current;
     layoutRemixStepRef.current += 1;
     const remix = generateLayoutRemix({
@@ -517,13 +563,21 @@ export function DesignOverlay({
     });
 
     const patch = getUnlockedPatch(getLayoutRemixPatch(remix), lockedKeys);
+    const next = applyDesignValuesPatch(valuesRef.current, patch);
 
-    setValues((current) => applyDesignValuesPatch(current, patch));
-  }, [lockedGroups, lockedKeys, markSourceSyncDirty]);
+    setValuesSnapshot(next);
+    commitDesignSnapshotToPage(next);
+  }, [
+    cancelSourceSyncForRemix,
+    commitDesignSnapshotToPage,
+    lockedGroups,
+    lockedKeys,
+    setValuesSnapshot,
+  ]);
 
   const remixLockup = useCallback(() => {
     if (lockedGroups.has("lockup")) return;
-    markSourceSyncDirty();
+    cancelSourceSyncForRemix();
     const remixStep = lockupRemixStepRef.current;
     lockupRemixStepRef.current += 1;
     const remix = generateLockupRemix({
@@ -532,9 +586,81 @@ export function DesignOverlay({
     });
 
     const patch = getUnlockedPatch(getLockupRemixPatch(remix), lockedKeys);
+    const next = applyDesignValuesPatch(valuesRef.current, patch);
 
-    setValues((current) => applyDesignValuesPatch(current, patch));
-  }, [lockedGroups, lockedKeys, markSourceSyncDirty]);
+    setValuesSnapshot(next);
+    commitDesignSnapshotToPage(next);
+  }, [
+    cancelSourceSyncForRemix,
+    commitDesignSnapshotToPage,
+    lockedGroups,
+    lockedKeys,
+    setValuesSnapshot,
+  ]);
+
+  const applyGlobalRemix = useCallback(() => {
+    cancelSourceSyncForRemix();
+    let next = valuesRef.current;
+
+    if (!lockedGroups.has("palette")) {
+      next = applyDesignValuesPatch(
+        next,
+        getUnlockedPatch(getNextPaletteRemixPatch(next), lockedKeys),
+      );
+    }
+
+    if (!lockedGroups.has("typography")) {
+      const currentPair = `${next.typographyPrimaryFont}/${next.typographySecondaryFont}`;
+      next = applyDesignValuesPatch(
+        next,
+        getUnlockedPatch(getRandomTypographyRemixPatch(currentPair), lockedKeys),
+      );
+    }
+
+    if (!lockedGroups.has("layout")) {
+      const remixStep = layoutRemixStepRef.current;
+      layoutRemixStepRef.current += 1;
+      next = applyDesignValuesPatch(
+        next,
+        getUnlockedPatch(
+          getLayoutRemixPatch(
+            generateLayoutRemix({
+              salt: layoutRemixSaltRef.current,
+              step: remixStep,
+            }),
+          ),
+          lockedKeys,
+        ),
+      );
+    }
+
+    if (!lockedGroups.has("lockup")) {
+      const remixStep = lockupRemixStepRef.current;
+      lockupRemixStepRef.current += 1;
+      next = applyDesignValuesPatch(
+        next,
+        getUnlockedPatch(
+          getLockupRemixPatch(
+            generateLockupRemix({
+              salt: lockupRemixSaltRef.current,
+              step: remixStep,
+            }),
+          ),
+          lockedKeys,
+        ),
+      );
+    }
+
+    setValuesSnapshot(next);
+    commitRemixToPage(next, true);
+  }, [
+    cancelSourceSyncForRemix,
+    commitRemixToPage,
+    getNextPaletteRemixPatch,
+    lockedGroups,
+    lockedKeys,
+    setValuesSnapshot,
+  ]);
 
   const updateTypographyPresetValue = useCallback(
     <Key extends TypographySelectSettingKey>(
@@ -543,45 +669,45 @@ export function DesignOverlay({
     ) => {
       markSourceSyncDirty();
       const presetKey = key === "typographyStyle" ? "style" : "pairing";
+      const historyKey = `${presetKey}:${nextValue}`;
+      const patch = getRandomTypographyPresetPatch(
+        presetKey,
+        nextValue,
+        typographyPresetPairsRef.current.get(historyKey),
+      );
 
-      setValues((current) => {
-        const historyKey = `${presetKey}:${nextValue}`;
-        const patch = getRandomTypographyPresetPatch(
-          presetKey,
-          nextValue,
-          typographyPresetPairsRef.current.get(historyKey),
-        );
-        typographyPresetPairsRef.current.set(
-          historyKey,
-          `${patch.typographyPrimaryFont}/${patch.typographySecondaryFont}`,
-        );
-        return applyDesignValuesPatch(current, patch);
-      });
+      typographyPresetPairsRef.current.set(
+        historyKey,
+        `${patch.typographyPrimaryFont}/${patch.typographySecondaryFont}`,
+      );
+      setValuesSnapshot(applyDesignValuesPatch(valuesRef.current, patch));
     },
-    [markSourceSyncDirty],
+    [markSourceSyncDirty, setValuesSnapshot],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const handlePaletteRemixShortcut = (event: KeyboardEvent) => {
       if (!isPaletteRemixShortcut(event)) return;
       event.preventDefault();
-      remixPalette();
-      remixTypography();
-      remixLayout();
-      remixLockup();
-      window.dispatchEvent(new CustomEvent("brandy:section-presets-remix"));
+      applyGlobalRemix();
+    };
+    const blockPaletteRemixShortcutDefault = (event: KeyboardEvent) => {
+      if (!isPaletteRemixShortcut(event)) return;
+      event.preventDefault();
     };
 
-    window.addEventListener("keydown", handlePaletteRemixShortcut);
-    return () => window.removeEventListener("keydown", handlePaletteRemixShortcut);
-  }, [remixLayout, remixLockup, remixPalette, remixTypography]);
+    window.addEventListener("keydown", handlePaletteRemixShortcut, { capture: true });
+    window.addEventListener("keyup", blockPaletteRemixShortcutDefault, { capture: true });
+    return () => {
+      window.removeEventListener("keydown", handlePaletteRemixShortcut, { capture: true });
+      window.removeEventListener("keyup", blockPaletteRemixShortcutDefault, { capture: true });
+    };
+  }, [applyGlobalRemix]);
 
   const resetAll = useCallback(() => {
     markSourceSyncDirty();
     setValues({ ...resolvedDefaults });
     setTokenValues({});
-    paletteRemixBaseRef.current = null;
-    paletteRemixSaltRef.current = getPaletteRemixSalt();
     paletteRemixStepRef.current = 0;
     layoutRemixSaltRef.current = getLayoutRemixSalt();
     layoutRemixStepRef.current = 0;
@@ -598,8 +724,6 @@ export function DesignOverlay({
       if (keys === TYPOGRAPHY_KEYS && lockedGroups.has("typography")) return;
       markSourceSyncDirty();
       if (keys === PALETTE_KEYS) {
-        paletteRemixBaseRef.current = null;
-        paletteRemixSaltRef.current = getPaletteRemixSalt();
         paletteRemixStepRef.current = 0;
       }
       if (keys === LAYOUT_KEYS) {
@@ -640,50 +764,65 @@ export function DesignOverlay({
     (key: ResetKey) => {
       if (lockedKeys.has(key)) return;
 
-      markSourceSyncDirty();
-      setValues((current) => {
-        let patch: DesignValuesPatch = {};
+      cancelSourceSyncForRemix();
+      const current = valuesRef.current;
+      let patch: DesignValuesPatch = {};
+      let shouldRemixHero = false;
 
-        if ((PALETTE_COLOR_KEYS as readonly ResetKey[]).includes(key)) {
-          patch = getNextPaletteRemixPatch(current);
-        } else if ((DERIVED_COLOR_CONTROLS as readonly { key: ResetKey }[]).some(
-          (control) => control.key === key,
-        )) {
-          patch = getNextPaletteRemixPatch(current);
-        } else if (key === "darkMode" || key === "mutedMode" || key === "highContrast") {
-          Object.assign(patch, { [key]: !current[key] });
-        } else if ((TYPOGRAPHY_KEYS as readonly ResetKey[]).includes(key)) {
-          patch = getRandomTypographyRemixPatch(
-            `${current.typographyPrimaryFont}/${current.typographySecondaryFont}`,
-          );
-        } else if ((LAYOUT_KEYS as readonly ResetKey[]).includes(key)) {
-          const remixStep = layoutRemixStepRef.current;
-          layoutRemixStepRef.current += 1;
-          patch = getLayoutRemixPatch(
-            generateLayoutRemix({
-              salt: layoutRemixSaltRef.current,
-              step: remixStep,
-            }),
-          );
-        } else if ((LOCKUP_KEYS as readonly ResetKey[]).includes(key)) {
-          const remixStep = lockupRemixStepRef.current;
-          lockupRemixStepRef.current += 1;
-          patch = getLockupRemixPatch(
-            generateLockupRemix({
-              salt: lockupRemixSaltRef.current,
-              step: remixStep,
-            }),
-          );
-        }
+      if ((PALETTE_COLOR_KEYS as readonly ResetKey[]).includes(key)) {
+        shouldRemixHero = true;
+        patch = getNextPaletteRemixPatch(current);
+      } else if ((DERIVED_COLOR_CONTROLS as readonly { key: ResetKey }[]).some(
+        (control) => control.key === key,
+      )) {
+        shouldRemixHero = true;
+        patch = getNextPaletteRemixPatch(current);
+      } else if (key === "darkMode" || key === "mutedMode" || key === "highContrast") {
+        Object.assign(patch, { [key]: !current[key] });
+      } else if ((TYPOGRAPHY_KEYS as readonly ResetKey[]).includes(key)) {
+        patch = getRandomTypographyRemixPatch(
+          `${current.typographyPrimaryFont}/${current.typographySecondaryFont}`,
+        );
+      } else if ((LAYOUT_KEYS as readonly ResetKey[]).includes(key)) {
+        const remixStep = layoutRemixStepRef.current;
+        layoutRemixStepRef.current += 1;
+        patch = getLayoutRemixPatch(
+          generateLayoutRemix({
+            salt: layoutRemixSaltRef.current,
+            step: remixStep,
+          }),
+        );
+      } else if ((LOCKUP_KEYS as readonly ResetKey[]).includes(key)) {
+        const remixStep = lockupRemixStepRef.current;
+        lockupRemixStepRef.current += 1;
+        patch = getLockupRemixPatch(
+          generateLockupRemix({
+            salt: lockupRemixSaltRef.current,
+            step: remixStep,
+          }),
+        );
+      }
 
-        if (!(key in patch)) return current;
+      if (!(key in patch)) return;
 
-        const singleValuePatch: DesignValuesPatch = {};
-        Object.assign(singleValuePatch, { [key]: patch[key] });
-        return applyDesignValuesPatch(current, singleValuePatch);
-      });
+      const singleValuePatch: DesignValuesPatch = {};
+      Object.assign(singleValuePatch, { [key]: patch[key] });
+      const next = applyDesignValuesPatch(current, singleValuePatch);
+      setValuesSnapshot(next);
+      if (shouldRemixHero) {
+        commitRemixToPage(next);
+      } else {
+        commitDesignSnapshotToPage(next);
+      }
     },
-    [getNextPaletteRemixPatch, lockedKeys, markSourceSyncDirty],
+    [
+      commitDesignSnapshotToPage,
+      commitRemixToPage,
+      cancelSourceSyncForRemix,
+      getNextPaletteRemixPatch,
+      lockedKeys,
+      setValuesSnapshot,
+    ],
   );
 
   const renderParameterActions = useCallback(
@@ -742,8 +881,6 @@ export function DesignOverlay({
             return;
           }
 
-          window.localStorage.removeItem(DESIGN_OVERLAY_STORAGE_KEY);
-          window.localStorage.removeItem(DESIGN_TOKEN_STORAGE_KEY);
           lastSyncedSourcePayloadRef.current = sourceSyncPayload;
           setSourceSyncUserEdited(false);
           setSourceSyncState("synced");

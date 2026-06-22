@@ -13,42 +13,26 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { SelectControl, ToggleControl } from "./DesignOverlayControls";
 import { CollapsibleGroup, GroupRemixAction } from "./DesignOverlayGroups";
-import { getHeroBackgroundCopyColors } from "../../lib/brandTheme.mjs";
 import {
-  getHeroGradientTone,
-  selectHeroGradientBackground,
-} from "./heroGradientBackgrounds";
+  getGlobalHeroBackgroundEnabled,
+  getGlobalHeroShaderEnabled,
+  setGlobalHeroBackgroundEnabled,
+  setGlobalHeroShaderEnabled,
+} from "./heroBackgroundRuntime";
 
-const SECTION_PRESETS_CHANGE_EVENT = "brandy:section-presets-change";
-const SECTION_PRESETS_REMIX_EVENT = "brandy:section-presets-remix";
-
-type SectionGroupKey =
-  | "buttons"
-  | "navbar"
-  | "hero"
-  | "logos"
-  | "content"
-  | "cards"
-  | "bento"
-  | "testimonials"
-  | "pricing"
-  | "team"
-  | "faq"
-  | "cta"
-  | "footer";
-
-type PresetOption = { label: string; value: string };
-
-type SectionGroupConfig = {
-  icon: ReactElement;
-  key: SectionGroupKey;
-  presets: readonly PresetOption[];
-  title: string;
-};
-
-const SECTION_PRESET_STORAGE_KEY = "brandy:section-presets:v1";
-const HERO_BACKGROUND_STORAGE_KEY = "brandy:hero-background:v1";
-const DEFAULT_HERO_BACKGROUND_ENABLED = false;
+import {
+  applySectionPresetAttributes,
+  areSectionPresetsDefault,
+  DEFAULT_HERO_BACKGROUND_ENABLED,
+  DEFAULT_HERO_SHADER_ENABLED,
+  DEFAULT_SECTION_PRESETS,
+  sanitizeSectionPresets,
+  SECTION_PRESET_STORAGE_KEY,
+  SECTION_PRESETS_CHANGE_EVENT,
+  SECTION_PRESETS_REMIX_EVENT,
+  type SectionGroupKey,
+} from "./sectionPresetCatalog";
+import { readStoredSectionPresets } from "./sectionPresetRuntime";
 
 const DEFAULT_PRESET = [{ label: "Default", value: "default" }] as const;
 
@@ -136,16 +120,20 @@ const SECTION_GROUPS = [
   { key: "footer", title: "Footer", icon: <PanelBottom aria-hidden="true" />, presets: DEFAULT_PRESET },
 ] as const satisfies readonly SectionGroupConfig[];
 
-const DEFAULT_SECTION_PRESETS = Object.fromEntries(
-  SECTION_GROUPS.map(({ key, presets }) => [key, presets[0].value]),
-) as Record<SectionGroupKey, string>;
+type PresetOption = { label: string; value: string };
+
+type SectionGroupConfig = {
+  icon: ReactElement;
+  key: SectionGroupKey;
+  presets: readonly PresetOption[];
+  title: string;
+};
 
 const INITIAL_SECTION_GROUP_STATE = Object.fromEntries(
   SECTION_GROUPS.map(({ key }) => [key, false]),
 ) as Record<SectionGroupKey, boolean>;
 
 let globalSectionPresets = readStoredSectionPresets();
-let globalHeroBackgroundEnabled = readStoredHeroBackgroundEnabled();
 let globalLockedSections: ReadonlySet<SectionGroupKey> = new Set();
 
 function remixAllSectionPresets() {
@@ -166,13 +154,15 @@ export function DesignOverlaySectionsTab({ baseId }: { baseId: string }) {
   );
   const [presets, setPresets] = useState(globalSectionPresets);
   const [heroBackgroundEnabled, setHeroBackgroundEnabled] = useState(
-    globalHeroBackgroundEnabled,
+    getGlobalHeroBackgroundEnabled(),
   );
+  const [heroShaderEnabled, setHeroShaderEnabled] = useState(getGlobalHeroShaderEnabled());
 
   useEffect(() => {
     const syncPresets = () => {
       setPresets(globalSectionPresets);
-      setHeroBackgroundEnabled(globalHeroBackgroundEnabled);
+      setHeroBackgroundEnabled(getGlobalHeroBackgroundEnabled());
+      setHeroShaderEnabled(getGlobalHeroShaderEnabled());
     };
     window.addEventListener(SECTION_PRESETS_CHANGE_EVENT, syncPresets);
     return () => window.removeEventListener(SECTION_PRESETS_CHANGE_EVENT, syncPresets);
@@ -197,7 +187,10 @@ export function DesignOverlaySectionsTab({ baseId }: { baseId: string }) {
   const resetPreset = (key: SectionGroupKey) => {
     if (lockedSections.has(key)) return;
     setGlobalSectionPresets((current) => ({ ...current, [key]: DEFAULT_SECTION_PRESETS[key] }));
-    if (key === "hero") setGlobalHeroBackgroundEnabled(DEFAULT_HERO_BACKGROUND_ENABLED);
+    if (key === "hero") {
+      setGlobalHeroBackgroundEnabled(DEFAULT_HERO_BACKGROUND_ENABLED);
+      setGlobalHeroShaderEnabled(DEFAULT_HERO_SHADER_ENABLED);
+    }
   };
   const remixPreset = ({ key, presets: options }: SectionGroupConfig) => {
     if (lockedSections.has(key) || options.length < 2) return;
@@ -209,6 +202,10 @@ export function DesignOverlaySectionsTab({ baseId }: { baseId: string }) {
   const updateHeroBackground = (enabled: boolean) => {
     if (lockedSections.has("hero")) return;
     setGlobalHeroBackgroundEnabled(enabled);
+  };
+  const updateHeroShader = (enabled: boolean) => {
+    if (lockedSections.has("hero")) return;
+    setGlobalHeroShaderEnabled(enabled);
   };
 
   return (
@@ -230,12 +227,20 @@ export function DesignOverlaySectionsTab({ baseId }: { baseId: string }) {
             actions={<GroupRemixAction label={key} locked={locked} onRemix={() => remixPreset(config)} />}
           >
             {key === "hero" ? (
-              <ToggleControl
-                id={`${baseId}-section-${key}-background`}
-                label="Background"
-                checked={heroBackgroundEnabled}
-                onChange={updateHeroBackground}
-              />
+              <>
+                <ToggleControl
+                  id={`${baseId}-section-${key}-background`}
+                  label="Background"
+                  checked={heroBackgroundEnabled}
+                  onChange={updateHeroBackground}
+                />
+                <ToggleControl
+                  id={`${baseId}-section-${key}-shader`}
+                  label="Shader"
+                  checked={heroShaderEnabled}
+                  onChange={updateHeroShader}
+                />
+              </>
             ) : null}
             <SelectControl
               id={`${baseId}-section-${key}-preset`}
@@ -251,18 +256,6 @@ export function DesignOverlaySectionsTab({ baseId }: { baseId: string }) {
   );
 }
 
-function readStoredSectionPresets(): Record<SectionGroupKey, string> {
-  if (typeof window === "undefined") return DEFAULT_SECTION_PRESETS;
-
-  try {
-    const raw = window.localStorage.getItem(SECTION_PRESET_STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as Partial<Record<SectionGroupKey, string>>) : {};
-    return sanitizeSectionPresets(parsed);
-  } catch {
-    return DEFAULT_SECTION_PRESETS;
-  }
-}
-
 function persistSectionPresets(presets: Record<SectionGroupKey, string>) {
   if (typeof window === "undefined") return;
 
@@ -274,40 +267,9 @@ function persistSectionPresets(presets: Record<SectionGroupKey, string>) {
   window.localStorage.setItem(SECTION_PRESET_STORAGE_KEY, JSON.stringify(presets));
 }
 
-function readStoredHeroBackgroundEnabled() {
-  if (typeof window === "undefined") return DEFAULT_HERO_BACKGROUND_ENABLED;
-  return window.localStorage.getItem(HERO_BACKGROUND_STORAGE_KEY) === "true";
-}
-
-function persistHeroBackgroundEnabled(enabled: boolean) {
-  if (typeof window === "undefined") return;
-
-  if (enabled === DEFAULT_HERO_BACKGROUND_ENABLED) {
-    window.localStorage.removeItem(HERO_BACKGROUND_STORAGE_KEY);
-    return;
-  }
-
-  window.localStorage.setItem(HERO_BACKGROUND_STORAGE_KEY, String(enabled));
-}
-
-function sanitizeSectionPresets(
-  value: Partial<Record<SectionGroupKey, string>>,
-): Record<SectionGroupKey, string> {
-  return Object.fromEntries(
-    SECTION_GROUPS.map(({ key, presets }) => {
-      const next = value[key];
-      return [
-        key,
-        presets.some((option) => option.value === next)
-          ? next
-          : DEFAULT_SECTION_PRESETS[key],
-      ];
-    }),
-  ) as Record<SectionGroupKey, string>;
-}
-
-function areSectionPresetsDefault(presets: Record<SectionGroupKey, string>) {
-  return SECTION_GROUPS.every(({ key }) => presets[key] === DEFAULT_SECTION_PRESETS[key]);
+function getRandomDifferentPresetValue(options: readonly PresetOption[], currentValue: string) {
+  const available = options.filter((option) => option.value !== currentValue);
+  return (available[Math.floor(Math.random() * available.length)] ?? options[0]).value;
 }
 
 function setGlobalSectionPresets(
@@ -319,105 +281,6 @@ function setGlobalSectionPresets(
   window.dispatchEvent(new CustomEvent(SECTION_PRESETS_CHANGE_EVENT));
 }
 
-function setGlobalHeroBackgroundEnabled(enabled: boolean) {
-  globalHeroBackgroundEnabled = enabled;
-  persistHeroBackgroundEnabled(enabled);
-  applyHeroBackgroundAttributes(enabled);
-  window.dispatchEvent(new CustomEvent(SECTION_PRESETS_CHANGE_EVENT));
-}
-
-function getRandomDifferentPresetValue(options: readonly PresetOption[], currentValue: string) {
-  const available = options.filter((option) => option.value !== currentValue);
-  return (available[Math.floor(Math.random() * available.length)] ?? options[0]).value;
-}
-
-function applySectionPresetAttributes(presets: Record<SectionGroupKey, string>) {
-  if (typeof document === "undefined") return;
-
-  for (const [key, value] of Object.entries(presets)) {
-    document.documentElement.dataset[`brandy${toDatasetKey(key)}Preset`] = value;
-  }
-}
-
-function applyHeroBackgroundAttributes(enabled: boolean) {
-  if (typeof document === "undefined") return;
-
-  const root = document.documentElement;
-  if (!enabled) {
-    delete root.dataset.brandyHeroBackground;
-    delete root.dataset.brandyHeroBackgroundId;
-    delete root.dataset.brandyHeroBackgroundSource;
-    delete root.dataset.brandyHeroBackgroundTone;
-    removeRootStyleProperty("--brandy-hero-background-color");
-    removeRootStyleProperty("--brandy-hero-background-image");
-    removeRootStyleProperty("--brandy-hero-background-position");
-    removeRootStyleProperty("--brandy-hero-background-repeat");
-    removeRootStyleProperty("--brandy-hero-background-size");
-    removeRootStyleProperty("--brandy-hero-background-text");
-    removeRootStyleProperty("--brandy-hero-background-muted");
-    return;
-  }
-
-  const styles = getComputedStyle(root);
-  const primaryColor = getCssColor(styles, "--brand-primary-500", "#635bff");
-  const secondaryColor = getCssColor(styles, "--brand-secondary-500", "#00d4ff");
-  const background = selectHeroGradientBackground({
-    primaryColor,
-    secondaryColor,
-  });
-  const tone = getHeroGradientTone(background);
-  const copyColors = getHeroBackgroundCopyColors(tone, {
-    primary: primaryColor,
-    secondary: secondaryColor,
-  });
-
-  root.dataset.brandyHeroBackground = "on";
-  root.dataset.brandyHeroBackgroundId = background.id;
-  root.dataset.brandyHeroBackgroundSource = background.source;
-  root.dataset.brandyHeroBackgroundTone = tone;
-  setRootStyleProperty("--brandy-hero-background-color", background.backgroundColor);
-  setRootStyleProperty("--brandy-hero-background-image", background.backgroundImage);
-  setRootStyleProperty("--brandy-hero-background-position", background.backgroundPosition);
-  setRootStyleProperty("--brandy-hero-background-repeat", background.backgroundRepeat);
-  setRootStyleProperty("--brandy-hero-background-size", background.backgroundSize);
-  setRootStyleProperty("--brandy-hero-background-text", copyColors.text);
-  setRootStyleProperty("--brandy-hero-background-muted", copyColors.muted);
-}
-
-function getCssColor(styles: CSSStyleDeclaration, property: string, fallback: string) {
-  const value = styles.getPropertyValue(property).trim();
-  return /^#[\da-f]{6}$/i.test(value) ? value : fallback;
-}
-
-function setRootStyleProperty(property: string, value: string) {
-  const root = document.documentElement;
-  if (root.style.getPropertyValue(property) !== value) {
-    root.style.setProperty(property, value);
-  }
-}
-
-function removeRootStyleProperty(property: string) {
-  const root = document.documentElement;
-  if (root.style.getPropertyValue(property)) {
-    root.style.removeProperty(property);
-  }
-}
-
-function toDatasetKey(key: string) {
-  return key.slice(0, 1).toUpperCase() + key.slice(1);
-}
-
-applySectionPresetAttributes(readStoredSectionPresets());
-applyHeroBackgroundAttributes(readStoredHeroBackgroundEnabled());
-
 if (typeof window !== "undefined") {
   window.addEventListener(SECTION_PRESETS_REMIX_EVENT, remixAllSectionPresets);
-
-  const heroBackgroundObserver = new MutationObserver(() => {
-    applyHeroBackgroundAttributes(globalHeroBackgroundEnabled);
-  });
-  heroBackgroundObserver.observe(document.documentElement, {
-    attributeFilter: ["style"],
-    attributes: true,
-  });
 }

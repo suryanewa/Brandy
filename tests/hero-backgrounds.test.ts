@@ -1,63 +1,65 @@
 import { describe, expect, it } from "vitest";
-import { EXTERNAL_HERO_BACKGROUNDS } from "../src/components/overlay/externalHeroBackgrounds";
-import {
-  HERO_BACKGROUNDS,
-  selectHeroGradientBackground,
-} from "../src/components/overlay/heroGradientBackgrounds";
-import { PATTERN_CRAFT_BACKGROUNDS } from "../src/components/overlay/patternCraftBackgrounds";
+import { generateHeroBackground } from "../src/components/overlay/heroGeneratedBackground";
 
-describe("hero background catalog", () => {
-  it("includes PatternCraft hero backgrounds in palette matching", () => {
-    const tealPattern = PATTERN_CRAFT_BACKGROUNDS.find(
-      (background) => background.id === "patterncraft-top-teal-glow",
-    );
-    const selectedPattern = selectHeroGradientBackground({
-      primaryColor: "#14b8a6",
-      secondaryColor: "#10b981",
+describe("hero generated backgrounds", () => {
+  it("builds a hiro gradient from the brand palette seeds", () => {
+    const background = generateHeroBackground({
+      primary: "#177527",
+      secondary: "#00d4ff",
+      accent: "#ff6b35",
+      highlight: "#fde68a",
     });
 
-    expect(PATTERN_CRAFT_BACKGROUNDS).toHaveLength(257);
-    expect(HERO_BACKGROUNDS).toEqual(expect.arrayContaining([...PATTERN_CRAFT_BACKGROUNDS]));
-    expect(tealPattern?.backgroundImage).toContain("#14b8a6");
-    expect(tealPattern?.backgroundSize).toBe("100% 100%");
-    expect(selectedPattern.source).toBe("patterncraft");
+    expect(background.source).toBe("hiro");
+    expect(background.id).toMatch(/^hiro-[0-9a-f]+-\d+$/);
+    expect(background.backgroundImage).toMatch(
+      /^url\("data:image\/jpeg;base64,|^linear-gradient\(/,
+    );
+    expect(background.backgroundColor).toBe("#177527");
+    expect(background.backgroundSize).toBe("cover");
+    expect(background.tone).toMatch(/^(dark|light)$/);
   });
 
-  it("includes external library hero backgrounds in palette matching", () => {
-    const countsBySource = EXTERNAL_HERO_BACKGROUNDS.reduce<Record<string, number>>(
-      (counts, background) => {
-        counts[background.source] = (counts[background.source] ?? 0) + 1;
-        return counts;
-      },
-      {},
-    );
-    const selectedExternal = selectHeroGradientBackground({
-      primaryColor: "#f43f5e",
-      secondaryColor: "#8b5cf6",
+  it("changes the generated background when palette seeds change", () => {
+    const initial = generateHeroBackground({
+      primary: "#177527",
+      secondary: "#00d4ff",
+      accent: "#ff6b35",
+      highlight: "#fde68a",
+    });
+    const remixed = generateHeroBackground({
+      primary: "#f97316",
+      secondary: "#00d4ff",
+      accent: "#ff6b35",
+      highlight: "#fde68a",
     });
 
-    expect(EXTERNAL_HERO_BACKGROUNDS).toHaveLength(88);
-    expect(countsBySource).toMatchObject({
-      aceternity: 11,
-      animateui: 7,
-      kokonutui: 4,
-      magicui: 11,
-      reactbits: 45,
-      uilayouts: 3,
-      vengenceui: 7,
-    });
-    expect(HERO_BACKGROUNDS).toEqual(expect.arrayContaining([...EXTERNAL_HERO_BACKGROUNDS]));
-    expect(EXTERNAL_HERO_BACKGROUNDS.map((background) => background.id)).toEqual(
-      expect.arrayContaining([
-        "aceternity-aurora-background",
-        "animateui-gradient-background",
-        "kokonutui-flow-field",
-        "magicui-flickering-grid",
-        "reactbits-ferrofluid",
-        "uilayouts-berries-mesh-gradient",
-        "vengenceui-aurora-hero",
-      ]),
-    );
-    expect(selectedExternal.backgroundImage).not.toBe("");
+    expect(remixed.id).not.toBe(initial.id);
+    expect(remixed.backgroundImage).not.toBe(initial.backgroundImage);
+  });
+
+  it("keeps generation deterministic for the same palette", () => {
+    const palette = {
+      primary: "#635bff",
+      secondary: "#00d4ff",
+      accent: "#ff6b35",
+      highlight: "#fde68a",
+    };
+
+    expect(generateHeroBackground(palette)).toEqual(generateHeroBackground(palette));
+  });
+
+  it("creates a fresh hero background on each remix generation", () => {
+    const palette = {
+      primary: "#635bff",
+      secondary: "#00d4ff",
+      accent: "#ff6b35",
+      highlight: "#fde68a",
+    };
+
+    const initial = generateHeroBackground(palette, { generation: 0 });
+    const remixed = generateHeroBackground(palette, { generation: 1 });
+
+    expect(remixed.id).not.toBe(initial.id);
   });
 });

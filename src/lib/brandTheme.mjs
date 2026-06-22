@@ -310,6 +310,13 @@ export function sanitizeBrandSeeds(seeds = {}) {
   };
 }
 
+export function areBrandSeedsEqual(left = {}, right = {}) {
+  const normalizedLeft = sanitizeBrandSeeds(left);
+  const normalizedRight = sanitizeBrandSeeds(right);
+
+  return BRAND_SEED_KEYS.every((key) => normalizedLeft[key] === normalizedRight[key]);
+}
+
 export function sanitizeBrandDerivationControls(controls = {}) {
   return Object.fromEntries(
     BRAND_DERIVATION_KEYS.map((key) => [
@@ -650,7 +657,8 @@ export function generatePaletteRemix(seeds = {}, options = {}) {
   );
   const step = Number.isFinite(options.step) ? Math.max(0, Math.floor(options.step)) : 0;
   const salt = Number.isFinite(options.salt) ? Math.max(0, Math.floor(options.salt)) : 0;
-  const remixStep = step + salt;
+  const entropy = Number.isFinite(options.entropy) ? Math.max(0, Math.floor(options.entropy)) : 0;
+  const remixStep = step + salt + entropy;
   const scheme = requestedScheme ?? PALETTE_REMIX_SCHEMES[remixStep % PALETTE_REMIX_SCHEMES.length];
   const profile = requestedScheme
     ? null
@@ -714,12 +722,14 @@ export function generatePaletteRemix(seeds = {}, options = {}) {
 
 export function generateBrandDerivationRemix(options = {}) {
   const step = Number.isFinite(options.step) ? Math.max(0, Math.floor(options.step)) : 0;
+  const salt = Number.isFinite(options.salt) ? Math.max(0, Math.floor(options.salt)) : 0;
+  const remixStep = step + salt;
 
   return sanitizeBrandDerivationControls(
     Object.fromEntries(
       BRAND_DERIVATION_KEYS.map((key, index) => {
         const [min, max] = DERIVATION_REMIX_RANGES[key];
-        const ratio = getDeterministicRemixRatio(step, index);
+        const ratio = getDeterministicRemixRatio(remixStep, index);
         return [key, Math.round(min + (max - min) * ratio)];
       }),
     ),

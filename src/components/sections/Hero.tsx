@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { landingPage } from "../../content/landing";
 import { Button, Cluster, Container, Heading, Section, Stack, Text } from "../primitives";
+import { HeroShaderLayer } from "./HeroShaderLayer";
 
 export function Hero() {
   const titleLines = getBalancedLines(landingPage.hero.title, {
@@ -15,6 +16,7 @@ export function Hero() {
       id="top"
       size="hero"
     >
+      <HeroShaderLayer />
       <Container className="hero-grid" size="xl">
         <Stack className="hero-copy" gap="lg">
           <Stack className="hero-copy__content" gap="md">

@@ -1,4 +1,9 @@
-import type { BrandDerivationControls } from "../../lib/brandTheme.mjs";
+import {
+  areBrandSeedsEqual,
+  generateBrandDerivationRemix,
+  generatePaletteRemix,
+  type BrandDerivationControls,
+} from "../../lib/brandTheme.mjs";
 import type { LayoutSeeds } from "../../lib/layoutTheme.mjs";
 import type { LockupSeeds } from "../../lib/lockupTheme.mjs";
 import {
@@ -7,7 +12,7 @@ import {
   type TypographySeeds,
   type TypographyStyle,
 } from "../../lib/typographyTheme.mjs";
-import type { DesignOverlayValues } from "./designOverlayModel";
+import { getDesignBrandSeeds, type DesignOverlayValues } from "./designOverlayModel";
 import type { ResetKey } from "./designOverlayControlConfig";
 
 export type DesignValuesPatch = Partial<DesignOverlayValues>;
@@ -16,6 +21,42 @@ const PALETTE_REMIX_SALT_RANGE = 4096;
 const LAYOUT_REMIX_SALT_RANGE = 4096;
 const LOCKUP_REMIX_SALT_RANGE = 4096;
 const TYPOGRAPHY_REMIX_SALT_RANGE = 4096;
+const PALETTE_REMIX_MAX_ATTEMPTS = 32;
+const PALETTE_REMIX_HISTORY_LIMIT = 8;
+
+const remixPaletteHistory: string[] = [];
+
+function buildPaletteHistoryKey(seeds: ReturnType<typeof getDesignBrandSeeds>) {
+  return [
+    seeds.primary,
+    seeds.secondary,
+    seeds.accent,
+    seeds.highlight,
+  ].join(":");
+}
+
+function isRecentlyRemixedPalette(seeds: ReturnType<typeof getDesignBrandSeeds>) {
+  const key = buildPaletteHistoryKey(seeds);
+  return remixPaletteHistory.includes(key);
+}
+
+function rememberRemixedPalette(seeds: ReturnType<typeof getDesignBrandSeeds>) {
+  const key = buildPaletteHistoryKey(seeds);
+  remixPaletteHistory.push(key);
+  if (remixPaletteHistory.length > PALETTE_REMIX_HISTORY_LIMIT) {
+    remixPaletteHistory.shift();
+  }
+}
+
+export function resetPaletteRemixHistory() {
+  remixPaletteHistory.length = 0;
+}
+
+function createPaletteRemixEntropy() {
+  const clock =
+    typeof performance !== "undefined" ? performance.now() : Date.now();
+  return Math.floor(Math.random() * 1_000_000) ^ Math.floor(clock);
+}
 
 const BOOLEAN_REMIX_KEYS = ["darkMode", "mutedMode", "highContrast"] as const;
 
@@ -44,6 +85,52 @@ export function getUnlockedPatch(
   }
 
   return unlockedPatch;
+}
+
+export function buildPaletteRemixPatch(
+  current: DesignOverlayValues,
+  consumeRemixStep: () => number,
+): DesignValuesPatch {
+  const currentSeeds = getDesignBrandSeeds(current);
+  let remix = generatePaletteRemix(currentSeeds, { salt: 0, step: 0 });
+  let remixStep = 0;
+  let remixSalt = 0;
+
+  for (let attempt = 0; attempt < PALETTE_REMIX_MAX_ATTEMPTS; attempt += 1) {
+    remixStep = consumeRemixStep();
+    remixSalt = getPaletteRemixSalt();
+    remix = generatePaletteRemix(currentSeeds, {
+      entropy: createPaletteRemixEntropy(),
+      salt: remixSalt,
+      step: remixStep,
+    });
+
+    const isCurrentPalette = areBrandSeedsEqual(remix.palette, currentSeeds);
+    const isRecentPalette = isRecentlyRemixedPalette(remix.palette);
+    if (!isCurrentPalette && !isRecentPalette) break;
+  }
+
+  if (
+    areBrandSeedsEqual(remix.palette, currentSeeds) ||
+    isRecentlyRemixedPalette(remix.palette)
+  ) {
+    remix = generatePaletteRemix(currentSeeds, {
+      entropy: createPaletteRemixEntropy() ^ Date.now(),
+      salt: getPaletteRemixSalt(),
+      step: remixStep + 1,
+    });
+  }
+
+  rememberRemixedPalette(remix.palette);
+
+  return {
+    ...generateBrandDerivationRemix({ step: remixStep, salt: remixSalt }),
+    ...getBooleanRemixPatch(),
+    primaryColor: remix.palette.primary,
+    secondaryColor: remix.palette.secondary,
+    accentColor: remix.palette.accent,
+    highlightColor: remix.palette.highlight,
+  };
 }
 
 export function getTypographyRemixPatch(

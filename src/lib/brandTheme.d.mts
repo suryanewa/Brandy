@@ -40,12 +40,14 @@ export type PaletteRemixScheme = {
 };
 
 export type PaletteRemixOptions = {
+  entropy?: number;
   salt?: number;
   scheme?: PaletteRemixSchemeId;
   step?: number;
 };
 
 export type BrandDerivationRemixOptions = {
+  salt?: number;
   step?: number;
 };
 
@@ -81,6 +83,10 @@ export const BRAND_GENERATED_TOKEN_NAMES: readonly `--${string}`[];
 export const PALETTE_REMIX_SCHEMES: readonly PaletteRemixScheme[];
 
 export function sanitizeBrandSeeds(seeds?: Partial<BrandSeeds>): BrandSeeds;
+export function areBrandSeedsEqual(
+  left?: Partial<BrandSeeds>,
+  right?: Partial<BrandSeeds>,
+): boolean;
 export function sanitizeBrandDerivationControls(
   controls?: Partial<BrandDerivationControls>,
 ): BrandDerivationControls;
