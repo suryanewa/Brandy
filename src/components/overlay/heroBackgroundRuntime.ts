@@ -15,7 +15,7 @@ import {
   type HeroGeneratedBackground,
 } from "./heroGeneratedBackground";
 import {
-  getHeroShaderDisplayScale,
+  measureHeroShaderDisplayScale,
   selectHeroShader,
   type HeroShaderSelection,
 } from "./heroShaderSelection";
@@ -374,22 +374,40 @@ function publishHeroVisualArtifacts(
     shader: globalHeroShaderEnabled ? shader : null,
     shaderDisplayScale,
   });
+
+  if (canRenderShaderLayer && shader) {
+    scheduleHeroShaderDisplayScaleRefresh(shader.type);
+  }
 }
 
 function readHeroShaderDisplayScale(shaderType: HeroShaderSelection["type"]) {
-  if (typeof document === "undefined") return 1;
-
-  const heroSection = document.querySelector(".hero-section");
-  const width = heroSection?.clientWidth ?? HERO_SHADER_RENDER_WIDTH;
-  const height = heroSection?.clientHeight ?? HERO_SHADER_RENDER_HEIGHT;
-
-  return getHeroShaderDisplayScale(
-    width,
-    height,
+  return measureHeroShaderDisplayScale(
     shaderType,
     HERO_SHADER_RENDER_WIDTH,
     HERO_SHADER_RENDER_HEIGHT,
   );
+}
+
+function scheduleHeroShaderDisplayScaleRefresh(shaderType: HeroShaderSelection["type"]) {
+  if (typeof window === "undefined") return;
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const nextScale = measureHeroShaderDisplayScale(
+        shaderType,
+        HERO_SHADER_RENDER_WIDTH,
+        HERO_SHADER_RENDER_HEIGHT,
+      );
+      if (nextScale <= 0 || nextScale === currentHeroVisualState.shaderDisplayScale) {
+        return;
+      }
+
+      publishHeroVisualState({
+        ...currentHeroVisualState,
+        shaderDisplayScale: nextScale,
+      });
+    });
+  });
 }
 
 function clearHeroVisualAttributes() {

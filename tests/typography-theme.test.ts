@@ -9,6 +9,8 @@ import {
   generateTypographyMediaThemeTokens,
   generateTypographyRemix,
   generateTypographyThemeTokens,
+  isSerifFontStack,
+  resolveButtonFontStack,
   sanitizeTypographySeeds,
 } from "../src/lib/typographyTheme.mjs";
 
@@ -37,6 +39,8 @@ describe("typography theme generator", () => {
 
     expect(tokens["--font-family-heading"]).toContain("Inter");
     expect(tokens["--font-family-body"]).toContain("Roboto");
+    expect(tokens["--font-family-button"]).toContain("Roboto");
+    expect(isSerifFontStack(tokens["--font-family-button"])).toBe(false);
     expect(tokens["--font-size-display"]).toBe("5.875rem");
     expect(tokens["--font-size-body"]).toBe("1rem");
     expect(tokens["--line-height-display"]).toBe("1.02");
@@ -64,6 +68,9 @@ describe("typography theme generator", () => {
     expect(tokens["--font-family-heading"]).toBe(
       "Georgia, \"Times New Roman\", Times, serif",
     );
+    expect(tokens["--font-family-body"]).toContain("Inter");
+    expect(tokens["--font-family-button"]).toContain("Inter");
+    expect(isSerifFontStack(tokens["--font-family-button"])).toBe(false);
     expect(tokens["--font-size-display"]).toBe("6.7825rem");
     expect(tokens["--font-size-body"]).toBe("1.016rem");
     expect(tokens["--line-height-display"]).toBe("0.945");
@@ -99,6 +106,38 @@ describe("typography theme generator", () => {
     });
   });
 
+  it("never resolves button fonts to a serif stack", () => {
+    const remixes = Array.from({ length: 110 }, (_, step) =>
+      generateTypographyRemix({ salt: 0, step }),
+    );
+
+    for (const remix of remixes) {
+      const buttonFont = generateTypographyThemeTokens(remix)["--font-family-button"];
+      expect(isSerifFontStack(buttonFont)).toBe(false);
+    }
+  });
+
+  it("prefers the non-serif body stack for buttons before heading", () => {
+    expect(
+      resolveButtonFontStack({
+        body: "Inter, ui-sans-serif, system-ui, sans-serif",
+        heading: "Georgia, \"Times New Roman\", Times, serif",
+      }),
+    ).toBe("Inter, ui-sans-serif, system-ui, sans-serif");
+    expect(
+      resolveButtonFontStack({
+        body: "Georgia, \"Times New Roman\", Times, serif",
+        heading: "Inter, ui-sans-serif, system-ui, sans-serif",
+      }),
+    ).toBe("Inter, ui-sans-serif, system-ui, sans-serif");
+    expect(
+      resolveButtonFontStack({
+        body: "Georgia, \"Times New Roman\", Times, serif",
+        heading: "Lora, Georgia, \"Times New Roman\", serif",
+      }),
+    ).toContain("Roboto");
+  });
+
   it("generates deterministic curated typography remixes", () => {
     expect(generateTypographyRemix({ salt: 0, step: 0 })).toEqual({
       density: 58,
@@ -131,7 +170,7 @@ describe("typography theme generator", () => {
   });
 
   it("covers every typography style and pairing across remix presets", () => {
-    expect(TYPOGRAPHY_FONT_IDS.length).toBeGreaterThanOrEqual(70);
+    expect(TYPOGRAPHY_FONT_IDS.length).toBeGreaterThanOrEqual(130);
 
     const remixes = Array.from({ length: 110 }, (_, step) =>
       generateTypographyRemix({ salt: 0, step }),

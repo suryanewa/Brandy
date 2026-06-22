@@ -38,6 +38,20 @@ describe("App", () => {
     ).toBeTruthy();
   });
 
+  it("renders the font lab route", () => {
+    window.history.pushState({}, "", "/fonts");
+
+    render(<App />);
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Font preview route",
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole("searchbox")).toBeTruthy();
+  });
+
   it("renders every registered section label in the section lab", () => {
     window.history.pushState({}, "", "/sections");
 

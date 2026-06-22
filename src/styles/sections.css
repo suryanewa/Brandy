@@ -913,3 +913,69 @@
   top: var(--space-4);
   z-index: var(--z-raised);
 }
+
+.font-lab__search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 28rem;
+}
+
+.font-lab__search-label {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-label);
+}
+
+.font-lab__search input {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font: inherit;
+  padding: var(--space-3) var(--space-4);
+}
+
+.font-lab__grid {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+}
+
+.font-lab__card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.font-lab__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.font-lab__sample {
+  margin: 0;
+}
+
+.font-lab__sample--display {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-heading);
+  letter-spacing: var(--letter-spacing-heading);
+  line-height: var(--line-height-h3);
+}
+
+.font-lab__sample--body {
+  color: var(--color-muted);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.font-lab__sample--alphabet {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  line-height: 1.5;
+}

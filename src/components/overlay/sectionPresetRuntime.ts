@@ -5,7 +5,6 @@ import {
   SECTION_PRESET_STORAGE_KEY,
   type SectionGroupKey,
 } from "./sectionPresetCatalog";
-import { initHeroBackground } from "./heroBackgroundRuntime";
 
 export function readStoredSectionPresets(): Record<SectionGroupKey, string> {
   if (typeof window === "undefined") return DEFAULT_SECTION_PRESETS;
@@ -21,7 +20,6 @@ export function readStoredSectionPresets(): Record<SectionGroupKey, string> {
 
 export function initSectionPresets() {
   applySectionPresetAttributes(readStoredSectionPresets());
-  initHeroBackground();
 }
 
 export { readStoredHeroBackgroundEnabled, readStoredHeroShaderEnabled } from "./heroBackgroundRuntime";

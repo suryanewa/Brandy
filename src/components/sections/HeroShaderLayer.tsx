@@ -6,26 +6,48 @@ import {
   PaperTexture,
   Water,
 } from "@paper-design/shaders-react";
-import { useLayoutEffect, useReducer, useState } from "react";
+import { useLayoutEffect, useReducer, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import {
+  HERO_VISUAL_CHANGE_EVENT,
   getHeroVisualState,
   registerHeroVisualSyncRender,
   type HeroVisualState,
 } from "../overlay/heroBackgroundRuntime";
 import {
-  getHeroShaderDisplayScale,
   getHeroShaderRenderProps,
+  measureHeroShaderDisplayScale,
 } from "../overlay/heroShaderSelection";
 
 const HERO_SHADER_RENDER_WIDTH = 1280;
 const HERO_SHADER_RENDER_HEIGHT = 720;
+
+function subscribeHeroShaderLayout(onStoreChange: () => void) {
+  window.addEventListener("resize", onStoreChange);
+  window.addEventListener(HERO_VISUAL_CHANGE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("resize", onStoreChange);
+    window.removeEventListener(HERO_VISUAL_CHANGE_EVENT, onStoreChange);
+  };
+}
 
 export function HeroShaderLayer() {
   const [, forceRender] = useReducer((tick: number) => tick + 1, 0);
   const visual = getHeroVisualState();
   const [readyImageUrl, setReadyImageUrl] = useState<string | null>(() =>
     visual.gradientDataUrl,
+  );
+  const displayScale = useSyncExternalStore(
+    subscribeHeroShaderLayout,
+    () =>
+      visual.shaderEnabled && visual.shader
+        ? measureHeroShaderDisplayScale(
+            visual.shader.type,
+            HERO_SHADER_RENDER_WIDTH,
+            HERO_SHADER_RENDER_HEIGHT,
+          )
+        : 0,
+    () => 0,
   );
 
   useLayoutEffect(() => {
@@ -73,16 +95,9 @@ export function HeroShaderLayer() {
     return null;
   }
 
-  const displayScale =
-    visual.shaderDisplayScale > 0
-      ? visual.shaderDisplayScale
-      : getHeroShaderDisplayScale(
-          HERO_SHADER_RENDER_WIDTH,
-          HERO_SHADER_RENDER_HEIGHT,
-          visual.shader.type,
-          HERO_SHADER_RENDER_WIDTH,
-          HERO_SHADER_RENDER_HEIGHT,
-        );
+  if (displayScale <= 0) {
+    return null;
+  }
 
   return (
     <div className="hero-section__shader" aria-hidden="true">

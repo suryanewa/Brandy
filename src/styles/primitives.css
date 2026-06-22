@@ -244,6 +244,7 @@ main > .section:not(.hero-section) > .container > :is(.stack, .split, .grid, .ma
   cursor: pointer;
   display: inline-flex;
   flex-wrap: wrap;
+  font-family: var(--font-family-button);
   font-size: var(--button-font-size);
   font-weight: var(--button-font-weight);
   gap: var(--space-2);

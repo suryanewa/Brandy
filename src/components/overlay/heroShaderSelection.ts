@@ -83,10 +83,41 @@ export function getHeroShaderDisplayScale(
   baseWidth: number,
   baseHeight: number,
 ) {
-  if (containerWidth <= 0 || containerHeight <= 0) return 1;
+  if (containerWidth <= 0 || containerHeight <= 0) return 0;
 
   const coverScale = Math.max(containerWidth / baseWidth, containerHeight / baseHeight);
   return coverScale * getShaderOverflowScale(shaderType);
+}
+
+export function getHeroShaderContainerSize() {
+  if (typeof document === "undefined") {
+    return { height: 0, width: 0 };
+  }
+
+  const heroSection = document.querySelector(".hero-section");
+  const width = heroSection?.clientWidth ?? 0;
+  const height = heroSection?.clientHeight ?? 0;
+  if (width > 0 && height > 0) {
+    return { height, width };
+  }
+
+  const styles = getComputedStyle(document.documentElement);
+  const navbarHeight = Number.parseFloat(styles.getPropertyValue("--navbar-min-height")) || 64;
+  const stroke = Number.parseFloat(styles.getPropertyValue("--stroke-thin")) || 1;
+
+  return {
+    width: window.innerWidth,
+    height: Math.max(window.innerHeight - navbarHeight - stroke, 0),
+  };
+}
+
+export function measureHeroShaderDisplayScale(
+  shaderType: HeroShaderType,
+  baseWidth: number,
+  baseHeight: number,
+) {
+  const { height, width } = getHeroShaderContainerSize();
+  return getHeroShaderDisplayScale(width, height, shaderType, baseWidth, baseHeight);
 }
 
 function getShaderOverflowScale(shaderType: HeroShaderType) {

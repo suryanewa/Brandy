@@ -353,6 +353,7 @@ export const DESIGN_CSS_VARIABLE_NAMES = [
   "--demo-layer-font-size",
   "--font-family-heading",
   "--font-family-body",
+  "--font-family-button",
   "--font-size-display",
   "--font-size-h1",
   "--font-size-h2",
