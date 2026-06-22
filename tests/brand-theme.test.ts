@@ -8,6 +8,7 @@ import {
   getHeroVisualContrastColors,
   isHexColor,
   PALETTE_REMIX_SCHEMES,
+  PALETTE_REMIX_GENERATOR_SCHEMES,
   normalizeHexColor,
   sanitizeBrandSeeds,
 } from "../src/lib/brandTheme.mjs";
@@ -157,8 +158,76 @@ describe("brand theme generator", () => {
     expect(remix.palette).not.toEqual(sanitizeBrandSeeds(DEFAULT_BRAND_SEEDS));
   });
 
+  it("remixes brand seeds with deterministic fettepalette ramps", () => {
+    const remix = generatePaletteRemix(DEFAULT_BRAND_SEEDS, {
+      scheme: "fettepalette",
+      step: 4,
+    });
+    const repeat = generatePaletteRemix(DEFAULT_BRAND_SEEDS, {
+      scheme: "fettepalette",
+      step: 4,
+      salt: 0,
+      entropy: 0,
+    });
+
+    expect(remix).toMatchObject({
+      scheme: "fettepalette",
+      schemeLabel: "FettePalette",
+    });
+    expect(repeat).toEqual(remix);
+    expect(Object.values(remix.palette).every(isHexColor)).toBe(true);
+    expect(remix.palette).not.toEqual(sanitizeBrandSeeds(DEFAULT_BRAND_SEEDS));
+  });
+
+  it("remixes brand seeds with deterministic rampensau ramps", () => {
+    const remix = generatePaletteRemix(DEFAULT_BRAND_SEEDS, {
+      scheme: "rampensau",
+      step: 6,
+    });
+    const repeat = generatePaletteRemix(DEFAULT_BRAND_SEEDS, {
+      scheme: "rampensau",
+      step: 6,
+      salt: 0,
+      entropy: 0,
+    });
+
+    expect(remix).toMatchObject({
+      scheme: "rampensau",
+      schemeLabel: "RampenSau",
+    });
+    expect(repeat).toEqual(remix);
+    expect(Object.values(remix.palette).every(isHexColor)).toBe(true);
+    expect(remix.palette).not.toEqual(sanitizeBrandSeeds(DEFAULT_BRAND_SEEDS));
+  });
+
+  it("remixes brand seeds with deterministic poline palettes", () => {
+    const remix = generatePaletteRemix(DEFAULT_BRAND_SEEDS, {
+      scheme: "poline",
+      step: 5,
+    });
+    const repeat = generatePaletteRemix(DEFAULT_BRAND_SEEDS, {
+      scheme: "poline",
+      step: 5,
+      salt: 0,
+      entropy: 0,
+    });
+
+    expect(remix).toMatchObject({
+      scheme: "poline",
+      schemeLabel: "Poline",
+    });
+    expect(repeat).toEqual(remix);
+    expect(Object.values(remix.palette).every(isHexColor)).toBe(true);
+    expect(remix.palette).not.toEqual(sanitizeBrandSeeds(DEFAULT_BRAND_SEEDS));
+  });
+
   it("cycles through all supported palette remix families", () => {
-    const schemeIds = PALETTE_REMIX_SCHEMES.map((scheme) => scheme.id);
+    const schemeIds = [
+      ...PALETTE_REMIX_SCHEMES.map((scheme) => scheme.id),
+      "fettepalette",
+      "rampensau",
+      "poline",
+    ];
     const remixedSchemeIds = schemeIds.map(
       (_, step) => generatePaletteRemix(DEFAULT_BRAND_SEEDS, { step }).scheme,
     );
@@ -167,8 +236,11 @@ describe("brand theme generator", () => {
   });
 
   it("covers the hue wheel across early remix steps", () => {
+    const remixFamilyCount =
+      PALETTE_REMIX_SCHEMES.length + PALETTE_REMIX_GENERATOR_SCHEMES.length;
+    const earlyRemixStepCount = remixFamilyCount + 5;
     const primaryHueBuckets = new Set(
-      Array.from({ length: 12 }, (_, step) =>
+      Array.from({ length: earlyRemixStepCount }, (_, step) =>
         getHueBucket(generatePaletteRemix(DEFAULT_BRAND_SEEDS, { step }).palette.primary),
       ),
     );

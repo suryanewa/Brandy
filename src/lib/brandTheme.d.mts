@@ -32,7 +32,10 @@ export type PaletteRemixSchemeId =
   | "tetradic"
   | "square"
   | "monochrome"
-  | "compound";
+  | "compound"
+  | "fettepalette"
+  | "rampensau"
+  | "poline";
 
 export type PaletteRemixScheme = {
   id: PaletteRemixSchemeId;
@@ -105,6 +108,10 @@ export const DEFAULT_BRAND_DERIVATION_CONTROLS: BrandDerivationControls;
 export const DEFAULT_BRAND_SEEDS: BrandSeeds;
 export const BRAND_GENERATED_TOKEN_NAMES: readonly `--${string}`[];
 export const PALETTE_REMIX_SCHEMES: readonly PaletteRemixScheme[];
+export const FETTEPALETTE_REMIX_SCHEME: PaletteRemixScheme;
+export const RAMPENSAU_REMIX_SCHEME: PaletteRemixScheme;
+export const POLINE_REMIX_SCHEME: PaletteRemixScheme;
+export const PALETTE_REMIX_GENERATOR_SCHEMES: readonly PaletteRemixScheme[];
 
 export function sanitizeBrandSeeds(seeds?: Partial<BrandSeeds>): BrandSeeds;
 export function areBrandSeedsEqual(

@@ -1,3 +1,14 @@
+import {
+  generateRandomColorRamp,
+  generateRandomColorRampParams,
+} from "fettepalette";
+import {
+  generateColorRamp,
+  generateColorRampParams,
+  utils as rampensauUtils,
+} from "rampensau";
+import { Poline, positionFunctions } from "poline";
+
 export const BRAND_SEED_KEYS = ["primary", "secondary", "accent", "highlight"];
 
 export const DEFAULT_BRAND_SEEDS = {
@@ -205,6 +216,35 @@ export const PALETTE_REMIX_SCHEMES = [
     lightness: [0.96, 1.04, 1.02, 1.24],
   },
 ];
+
+export const FETTEPALETTE_REMIX_SCHEME = {
+  id: "fettepalette",
+  label: "FettePalette",
+};
+
+export const RAMPENSAU_REMIX_SCHEME = {
+  id: "rampensau",
+  label: "RampenSau",
+};
+
+export const POLINE_REMIX_SCHEME = {
+  id: "poline",
+  label: "Poline",
+};
+
+export const PALETTE_REMIX_GENERATOR_SCHEMES = [
+  FETTEPALETTE_REMIX_SCHEME,
+  RAMPENSAU_REMIX_SCHEME,
+  POLINE_REMIX_SCHEME,
+];
+
+const FETTEPALETTE_CURVE_METHODS =
+  generateRandomColorRampParams.curveMethod.props.options.filter(
+    (method) => method !== "random",
+  );
+
+const RAMPENSAU_CURVE_METHODS = generateColorRampParams.curveMethod.props.options;
+const POLINE_POSITION_FUNCTIONS = Object.values(positionFunctions);
 
 export const BRAND_GENERATED_TOKEN_NAMES = [
   ...["primary", "secondary", "accent", "highlight"].flatMap((name) =>
@@ -659,7 +699,34 @@ export function generatePaletteRemix(seeds = {}, options = {}) {
   const salt = Number.isFinite(options.salt) ? Math.max(0, Math.floor(options.salt)) : 0;
   const entropy = Number.isFinite(options.entropy) ? Math.max(0, Math.floor(options.entropy)) : 0;
   const remixStep = step + salt + entropy;
-  const scheme = requestedScheme ?? PALETTE_REMIX_SCHEMES[remixStep % PALETTE_REMIX_SCHEMES.length];
+  const generatorSchemes = PALETTE_REMIX_GENERATOR_SCHEMES;
+  const requestedGenerator = generatorSchemes.find((scheme) => scheme.id === options.scheme);
+  const harmonySchemeCount = PALETTE_REMIX_SCHEMES.length;
+  const remixFamilyCount = harmonySchemeCount + generatorSchemes.length;
+  const remixFamilyIndex = remixStep % remixFamilyCount;
+  const generatorFromCycle =
+    !requestedScheme && remixFamilyIndex >= harmonySchemeCount
+      ? generatorSchemes[remixFamilyIndex - harmonySchemeCount]
+      : null;
+
+  if (requestedGenerator || generatorFromCycle) {
+    const generatorScheme = requestedGenerator ?? generatorFromCycle;
+    switch (generatorScheme.id) {
+      case FETTEPALETTE_REMIX_SCHEME.id:
+        return generateFettepalettePaletteRemix(normalizedSeeds, remixStep);
+      case RAMPENSAU_REMIX_SCHEME.id:
+        return generateRampensauPaletteRemix(normalizedSeeds, remixStep);
+      case POLINE_REMIX_SCHEME.id:
+        return generatePolinePaletteRemix(normalizedSeeds, remixStep);
+      default: {
+        const unsupportedGenerator = generatorScheme.id;
+        throw new Error(`Unsupported palette generator: ${unsupportedGenerator}`);
+      }
+    }
+  }
+
+  const scheme =
+    requestedScheme ?? PALETTE_REMIX_SCHEMES[remixFamilyIndex % harmonySchemeCount];
   const profile = requestedScheme
     ? null
     : PALETTE_REMIX_PROFILES[remixStep % PALETTE_REMIX_PROFILES.length];
@@ -1120,6 +1187,242 @@ function hslToHex({ h, s, l }) {
 
 function wrapHue(hue) {
   return ((hue % 360) + 360) % 360;
+}
+
+function getRemixStepHueShift(remixStep) {
+  const hueCycle = Math.floor(remixStep / REMIX_HUE_SHIFTS.length);
+  return (
+    REMIX_HUE_SHIFTS[remixStep % REMIX_HUE_SHIFTS.length] + hueCycle * (GOLDEN_ANGLE / 3)
+  );
+}
+
+function getDeterministicRemixRange(step, index, { min, max }) {
+  return min + (max - min) * getDeterministicRemixRatio(step, index);
+}
+
+function fettepaletteHslToHex([hue, saturation, lightness]) {
+  return hslToHex({
+    h: wrapHue(hue),
+    s: clampNumber(saturation * 100, 0, 100),
+    l: clampNumber(lightness * 100, 0, 100),
+  });
+}
+
+function pickFettepaletteColor(colors, index) {
+  if (!colors.length) return "#000000";
+  const normalizedIndex = ((index % colors.length) + colors.length) % colors.length;
+  return fettepaletteHslToHex(colors[normalizedIndex]);
+}
+
+function generateFettepalettePaletteRemix(seeds, remixStep) {
+  const base = rgbToHsl(hexToRgb(seeds.primary));
+  const params = generateRandomColorRampParams;
+  const centerHue = wrapHue((base.h || 0) + getRemixStepHueShift(remixStep));
+  const ramp = generateRandomColorRamp({
+    total: Math.round(
+      getDeterministicRemixRange(remixStep, 4, params.total.props),
+    ),
+    centerHue,
+    hueCycle: getDeterministicRemixRange(remixStep, 5, params.hueCycle.props),
+    offsetTint: getDeterministicRemixRange(remixStep, 6, params.offsetTint.props),
+    offsetShade: getDeterministicRemixRange(remixStep, 7, params.offsetShade.props),
+    curveAccent: getDeterministicRemixRange(remixStep, 8, params.curveAccent.props),
+    tintShadeHueShift: getDeterministicRemixRange(
+      remixStep,
+      9,
+      params.tintShadeHueShift.props,
+    ),
+    curveMethod:
+      FETTEPALETTE_CURVE_METHODS[
+        Math.floor(
+          getDeterministicRemixRatio(remixStep, 3) * FETTEPALETTE_CURVE_METHODS.length,
+        )
+      ],
+    offsetCurveModTint: getDeterministicRemixRange(
+      remixStep,
+      10,
+      params.offsetCurveModTint.props,
+    ),
+    offsetCurveModShade: getDeterministicRemixRange(
+      remixStep,
+      11,
+      params.offsetCurveModShade.props,
+    ),
+    minSaturationLight: [
+      getDeterministicRemixRange(remixStep, 12, params.minSaturation.props),
+      getDeterministicRemixRange(remixStep, 13, params.minLight.props),
+    ],
+    maxSaturationLight: [
+      getDeterministicRemixRange(remixStep, 14, params.maxSaturation.props),
+      getDeterministicRemixRange(remixStep, 15, params.maxLight.props),
+    ],
+    colorModel: "hsl",
+  });
+  const baseCount = ramp.base.length;
+  const primaryIndex = Math.floor(getDeterministicRemixRatio(remixStep, 16) * baseCount);
+  const secondaryIndex =
+    (primaryIndex + Math.max(1, Math.floor(baseCount / 3))) % Math.max(baseCount, 1);
+  const accentIndex =
+    (primaryIndex + Math.max(1, Math.floor(baseCount / 2))) % Math.max(baseCount, 1);
+  const highlightIndex = Math.min(
+    Math.max(ramp.light.length - 1, 0),
+    Math.floor(getDeterministicRemixRatio(remixStep, 17) * ramp.light.length),
+  );
+
+  return {
+    palette: {
+      primary: pickFettepaletteColor(ramp.base, primaryIndex),
+      secondary: pickFettepaletteColor(ramp.base, secondaryIndex),
+      accent: pickFettepaletteColor(ramp.dark.length ? ramp.dark : ramp.base, accentIndex),
+      highlight: pickFettepaletteColor(ramp.light, highlightIndex),
+    },
+    scheme: FETTEPALETTE_REMIX_SCHEME.id,
+    schemeLabel: FETTEPALETTE_REMIX_SCHEME.label,
+  };
+}
+
+function resolveRampensauCurveMethod(curveMethod) {
+  switch (curveMethod) {
+    case "power":
+      return "pow";
+    case "sine":
+      return "arc";
+    case "linear":
+      return null;
+    default:
+      return curveMethod;
+  }
+}
+
+function getRampensauCurveEasings(curveMethod, curveAccent) {
+  const resolvedCurveMethod = resolveRampensauCurveMethod(curveMethod);
+  if (resolvedCurveMethod === null) {
+    return {
+      sEasing: (value) => value,
+      lEasing: (value) => value,
+    };
+  }
+
+  return rampensauUtils.makeCurveEasings(resolvedCurveMethod, curveAccent);
+}
+
+function generateRampensauPaletteRemix(seeds, remixStep) {
+  const base = rgbToHsl(hexToRgb(seeds.primary));
+  const params = generateColorRampParams;
+  const curveMethod =
+    RAMPENSAU_CURVE_METHODS[
+      Math.floor(
+        getDeterministicRemixRatio(remixStep, 27) * RAMPENSAU_CURVE_METHODS.length,
+      )
+    ];
+  const curveAccent = getDeterministicRemixRange(remixStep, 28, params.curveAccent.props);
+  const { sEasing, lEasing } = getRampensauCurveEasings(curveMethod, curveAccent);
+  const ramp = generateColorRamp({
+    total: Math.round(getDeterministicRemixRange(remixStep, 20, params.total.props)),
+    hStart: wrapHue((base.h || 0) + getRemixStepHueShift(remixStep)),
+    hStartCenter: getDeterministicRemixRange(remixStep, 21, params.hStartCenter.props),
+    hCycles: getDeterministicRemixRange(remixStep, 22, params.hCycles.props),
+    sRange: [
+      getDeterministicRemixRange(remixStep, 23, params.minSaturation.props),
+      getDeterministicRemixRange(remixStep, 24, params.maxSaturation.props),
+    ],
+    lRange: [
+      getDeterministicRemixRange(remixStep, 25, params.minLight.props),
+      getDeterministicRemixRange(remixStep, 26, params.maxLight.props),
+    ],
+    sEasing,
+    lEasing,
+  });
+  const total = ramp.length;
+  const primaryIndex = Math.min(
+    total - 1,
+    Math.floor(total * (0.35 + getDeterministicRemixRatio(remixStep, 30) * 0.25)),
+  );
+  const secondaryIndex = Math.min(
+    total - 1,
+    primaryIndex + Math.max(1, Math.floor(total / 4)),
+  );
+  const accentIndex = Math.min(
+    Math.max(Math.floor(total * 0.35), 1) - 1,
+    Math.floor(getDeterministicRemixRatio(remixStep, 32) * Math.max(Math.floor(total * 0.35), 1)),
+  );
+  const highlightIndex = Math.min(
+    total - 1,
+    Math.floor(total * 0.65 + getDeterministicRemixRatio(remixStep, 31) * Math.max(1, Math.floor(total * 0.35))),
+  );
+
+  return {
+    palette: {
+      primary: pickFettepaletteColor(ramp, primaryIndex),
+      secondary: pickFettepaletteColor(ramp, secondaryIndex),
+      accent: pickFettepaletteColor(ramp, accentIndex),
+      highlight: pickFettepaletteColor(ramp, highlightIndex),
+    },
+    scheme: RAMPENSAU_REMIX_SCHEME.id,
+    schemeLabel: RAMPENSAU_REMIX_SCHEME.label,
+  };
+}
+
+function pickPolinePositionFunction(remixStep, index) {
+  return POLINE_POSITION_FUNCTIONS[
+    Math.floor(
+      getDeterministicRemixRatio(remixStep, 50 + index) * POLINE_POSITION_FUNCTIONS.length,
+    )
+  ];
+}
+
+function buildPolineAnchorColors(seeds, remixStep) {
+  const base = rgbToHsl(hexToRgb(seeds.primary));
+  const centerHue = wrapHue((base.h || 0) + getRemixStepHueShift(remixStep));
+  const anchorCount = 2 + Math.floor(getDeterministicRemixRatio(remixStep, 40) * 2);
+
+  return Array.from({ length: anchorCount }, (_, index) => {
+    const hueSpread = 360 / anchorCount;
+    const hue = wrapHue(
+      centerHue +
+        index * hueSpread +
+        (getDeterministicRemixRatio(remixStep, 41 + index) - 0.5) * (hueSpread * 0.35),
+    );
+    const saturation = clampNumber(
+      0.32 + getDeterministicRemixRatio(remixStep, 45 + index) * 0.58,
+      0.22,
+      0.96,
+    );
+    const lightness = clampNumber(
+      0.18 + getDeterministicRemixRatio(remixStep, 49 + index) * 0.68,
+      0.12,
+      0.9,
+    );
+
+    return [hue, saturation, lightness];
+  });
+}
+
+function generatePolinePaletteRemix(seeds, remixStep) {
+  const poline = new Poline({
+    anchorColors: buildPolineAnchorColors(seeds, remixStep),
+    numPoints: Math.round(3 + getDeterministicRemixRatio(remixStep, 44) * 6),
+    positionFunctionX: pickPolinePositionFunction(remixStep, 0),
+    positionFunctionY: pickPolinePositionFunction(remixStep, 1),
+    positionFunctionZ: pickPolinePositionFunction(remixStep, 2),
+    invertedLightness: getDeterministicRemixRatio(remixStep, 54) > 0.5,
+    closedLoop: getDeterministicRemixRatio(remixStep, 55) > 0.65,
+  });
+  const hueShift = (getDeterministicRemixRatio(remixStep, 56) - 0.5) * 72;
+  if (hueShift !== 0) {
+    poline.shiftHue(hueShift);
+  }
+
+  return {
+    palette: {
+      primary: fettepaletteHslToHex(poline.getColorAt(0.18).hsl),
+      secondary: fettepaletteHslToHex(poline.getColorAt(0.42).hsl),
+      accent: fettepaletteHslToHex(poline.getColorAt(0.68).hsl),
+      highlight: fettepaletteHslToHex(poline.getColorAt(0.88).hsl),
+    },
+    scheme: POLINE_REMIX_SCHEME.id,
+    schemeLabel: POLINE_REMIX_SCHEME.label,
+  };
 }
 
 function getDeterministicRemixRatio(step, index) {
